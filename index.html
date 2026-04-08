@@ -3,78 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>遊戲經驗值追蹤工具</title>
+    <title>首戰龍王 - 經驗值表白牆</title>
+    <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 Tesseract.js -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #FF9800;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 350px; /* 左邊主工具，右邊活動欄 */
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr; /* 螢幕小的時候變為上下排列 */
+            }
+        }
+        .card { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            margin-bottom: 20px; 
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
         .input-group { margin: 10px 0; display: flex; align-items: center; }
         .input-group label { width: 120px; font-weight: bold; }
         input[type="text"], input[type="number"] { padding: 8px; width: 150px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background-color: #4CAF50; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 15px; margin: 5px; }
+        
+        button { background-color: var(--primary-color); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 15px; margin: 5px 0; transition: 0.3s;}
         button:hover { background-color: #45a049; }
-        .action-btn { background-color: #008CBA; }
+        .action-btn { background-color: #008CBA; margin-right: 5px;}
         .action-btn:hover { background-color: #007B9E; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        
         #status { color: #d9534f; font-weight: bold; margin-top: 10px; }
         
         #canvasContainer { position: relative; max-width: 100%; overflow: auto; border: 2px dashed #ccc; margin-top: 10px; display: none; }
-        canvas { cursor: crosshair; display: block; }
+        canvas.capture { cursor: crosshair; display: block; }
         .toolbar { margin-top: 10px; display: none; padding: 10px; background: #eef; border-radius: 5px; }
         
-        #expChart { margin-top: 20px; }
+        /* 活動區塊樣式 */
+        .event-sidebar {
+            background: linear-gradient(135deg, #fff9e6, #fff);
+            border: 2px solid var(--secondary-color);
+        }
+        .event-text {
+            line-height: 1.6;
+            white-space: pre-wrap; /* 讓換行符號生效 */
+            font-size: 15px;
+        }
+        .highlight { color: #d35400; font-weight: bold; }
+        
+        /* 排行榜樣式 */
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        .leaderboard-item:nth-child(1) .rank { background: #FFD700; color: #000; } /* 金 */
+        .leaderboard-item:nth-child(2) .rank { background: #C0C0C0; color: #000; } /* 銀 */
+        .leaderboard-item:nth-child(3) .rank { background: #CD7F32; color: #fff; } /* 銅 */
+        .rank {
+            background: #eee;
+            padding: 2px 8px;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .player-info { flex-grow: 1; }
+        .player-lv { font-weight: bold; color: var(--secondary-color); }
+
     </style>
 </head>
 <body>
 
-    <h2>📈 經驗值追蹤工具 (精準擷取版)</h2>
+    <h2 style="text-align: center; color: #2c3e50;">🐲 首戰龍王 - 經驗值表白牆 📈</h2>
 
-    <div class="card">
-        <h3>1. 擷取遊戲視窗畫面</h3>
-        <button id="captureBtn">🖥️ 選擇視窗並擷取畫面</button>
-        <div id="status"></div>
-        
-        <div id="canvasContainer">
-            <canvas id="screenCanvas"></canvas>
+    <div class="container">
+        <!-- 左邊：主要工具區 -->
+        <div class="main-content">
+            <div class="card">
+                <h3>1. 擷取遊戲視窗畫面</h3>
+                <button id="captureBtn">🖥️ 選擇視窗並擷取畫面</button>
+                <div id="status">準備就緒，隨時可截圖！</div>
+                
+                <div id="canvasContainer">
+                    <canvas id="screenCanvas" class="capture"></canvas>
+                </div>
+
+                <div class="toolbar" id="ocrToolbar">
+                    <p><strong>第一步：</strong>用滑鼠在上方圖片中<strong>框選</strong>數值區域。<br>
+                       <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
+                    <button class="action-btn" id="btnName">🏷️ 辨識【角色名稱】</button>
+                    <button class="action-btn" id="btnLv">⭐ 辨識【等級】</button>
+                    <button class="action-btn" id="btnExp">💯 辨識【經驗值】</button>
+                </div>
+            </div>
+
+            <div class="card" id="dataCheck">
+                <h3>2. 確認與上傳資料 (每日打卡)</h3>
+                <p>資料確認無誤後，點擊上傳即可更新雲端圖表與排行榜：</p>
+                <div class="input-group">
+                    <label for="nameInput">角色名稱: </label>
+                    <input type="text" id="nameInput" placeholder="請辨識或輸入">
+                </div>
+                <div class="input-group">
+                    <label for="lvInput">等級 (LV): </label>
+                    <input type="number" id="lvInput" placeholder="請辨識或輸入">
+                </div>
+                <div class="input-group">
+                    <label for="expInput">經驗值 (%): </label>
+                    <input type="number" id="expInput" step="0.01" placeholder="請辨識或輸入">
+                </div>
+                <button id="saveBtn">🚀 上傳至雲端表白牆</button>
+            </div>
+
+            <div class="card">
+                <h3>📊 全員成長折線圖</h3>
+                <canvas id="expChart"></canvas>
+            </div>
         </div>
 
-        <div class="toolbar" id="ocrToolbar">
-            <p><strong>第一步：</strong>用滑鼠在上方圖片中<strong>框選</strong>數值區域。<br>
-               <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
-            <button class="action-btn" onclick="recognizeSelected('name')">🏷️ 辨識為【角色名稱】</button>
-            <button class="action-btn" onclick="recognizeSelected('lv')">⭐ 辨識為【等級】</button>
-            <button class="action-btn" onclick="recognizeSelected('exp')">💯 辨識為【經驗值】</button>
+        <!-- 右邊：活動與排行榜區 -->
+        <div class="sidebar">
+            <div class="card event-sidebar">
+                <h3>📜 活動規則與獎勵</h3>
+                <div class="event-text">即日起到<span class="highlight">5/28</span> 舉辦活動
+為了各位可以體驗首戰龍王
+經驗值表白牆 
+今天報名開始上線貼入你的
+
+<span class="highlight">活動規則 :</span>
+每日上線時貼
+角色等級、經驗值
+統計到5/28日
+
+<span class="highlight">🏆 結算出來經驗值前五名可挑選：</span>
+1. 突襲卷一組 ( 7張 )
+2. 100雪
+3. 100順移之石(奶油虎)
+4. 100雪(奶油虎)
+5. 周年轉蛋隱藏獎勵(奶油虎-未知)</div>
+            </div>
+
+            <div class="card">
+                <h3>👑 經驗值前五名排行榜</h3>
+                <ul class="leaderboard-list" id="leaderboardList">
+                    <li>載入中...</li>
+                </ul>
+            </div>
         </div>
     </div>
 
-    <div class="card" id="dataCheck">
-        <h3>2. 確認與儲存資料</h3>
-        <p>辨識結果會出現在這裡，請確認無誤後儲存：</p>
-        <div class="input-group">
-            <label for="nameInput">角色名稱: </label>
-            <input type="text" id="nameInput" placeholder="等待辨識或手動輸入">
-        </div>
-        <div class="input-group">
-            <label for="lvInput">等級 (LV): </label>
-            <input type="number" id="lvInput" placeholder="等待辨識或手動輸入">
-        </div>
-        <div class="input-group">
-            <label for="expInput">經驗值 (%): </label>
-            <input type="number" id="expInput" step="0.01" placeholder="等待辨識或手動輸入">
-        </div>
-        <button id="saveBtn">💾 儲存並更新圖表</button>
-    </div>
+    <!-- Firebase SDK (使用 ES Modules) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <div class="card">
-        <h3>📊 成長圖表</h3>
-        <button id="clearBtn" style="background-color: #ff4c4c;">🗑️ 清除所有紀錄</button>
-        <canvas id="expChart"></canvas>
-    </div>
+        // --- 1. 初始化 Firebase (雲端資料庫) ---
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maplestory-event-app';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    <script>
+        let currentUser = null;
+        let allRecords = []; // 存放所有玩家的雲端紀錄
         let chartInstance = null;
-        let records = JSON.parse(localStorage.getItem('expRecords')) || [];
-        
+
+        // 登入流程
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("登入失敗:", err);
+            }
+        };
+
+        // 監聽登入狀態與抓取資料
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (!user) return;
+
+            // 讀取「公開資料庫」的內容
+            const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
+            
+            // 即時監聽資料庫變化
+            onSnapshot(publicCollection, (snapshot) => {
+                allRecords = [];
+                snapshot.forEach(doc => {
+                    allRecords.push({ id: doc.id, ...doc.data() });
+                });
+                // 資料更新時，重新繪製圖表和排行榜
+                processAndRender();
+            }, (error) => {
+                console.error("讀取資料失敗:", error);
+            });
+        });
+
+        initAuth();
+
+        // --- 2. 工具區邏輯 (擷取與辨識) ---
         const canvas = document.getElementById('screenCanvas');
         const ctx = canvas.getContext('2d');
         let baseImage = new Image(); 
@@ -104,7 +267,6 @@
                     }, 500);
                 };
             } catch (err) {
-                console.error("螢幕擷取失敗:", err);
                 statusEl.innerText = "❌ 無法取得畫面，請允許螢幕分享權限。";
             }
         });
@@ -146,7 +308,7 @@
         async function recognizeSelected(type) {
             const statusEl = document.getElementById('status');
             if (!selectionRect) {
-                alert("請先用滑鼠在圖片上畫出紅框，圈出要辨識的範圍！");
+                statusEl.innerText = "❌ 請先用滑鼠在圖片上畫出紅框！";
                 return;
             }
             statusEl.innerText = "⏳ 正在辨識框選區域，請稍候...";
@@ -169,80 +331,162 @@
                 if (type === 'name') {
                     text = text.replace(/[\r\n]+/g, '');
                     document.getElementById('nameInput').value = text;
-                } 
-                else if (type === 'lv') {
+                } else if (type === 'lv') {
                     text = text.replace(/\D/g, ''); 
                     document.getElementById('lvInput').value = text;
-                } 
-                else if (type === 'exp') {
+                } else if (type === 'exp') {
                     text = text.replace(/[^\d.]/g, ''); 
                     document.getElementById('expInput').value = text;
                 }
-                statusEl.innerText = "✅ 辨識完成！可繼續框選下一個數值，或直接儲存。";
+                statusEl.innerText = "✅ 辨識完成！可繼續框選，或直接上傳。";
             } catch (error) {
-                console.error(error);
                 statusEl.innerText = "❌ 辨識失敗，請重試或手動輸入。";
             }
         }
 
-        document.getElementById('saveBtn').addEventListener('click', function() {
-            const name = document.getElementById('nameInput').value || '未命名';
+        document.getElementById('btnName').addEventListener('click', () => recognizeSelected('name'));
+        document.getElementById('btnLv').addEventListener('click', () => recognizeSelected('lv'));
+        document.getElementById('btnExp').addEventListener('click', () => recognizeSelected('exp'));
+
+        // --- 3. 儲存至雲端資料庫 ---
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            const name = document.getElementById('nameInput').value.trim();
             const lv = parseFloat(document.getElementById('lvInput').value);
             const exp = parseFloat(document.getElementById('expInput').value);
+            const statusEl = document.getElementById('status');
 
-            if (isNaN(lv) || isNaN(exp)) {
-                alert("請填寫正確的等級與經驗值數字！");
+            if (!name || isNaN(lv) || isNaN(exp)) {
+                statusEl.innerText = "❌ 請填寫完整的名稱、等級與經驗值！";
+                return;
+            }
+            if (!currentUser) {
+                statusEl.innerText = "❌ 尚未連接雲端，請稍候再試。";
                 return;
             }
 
-            const dayNum = records.length + 1;
-            records.push({ day: `Day ${dayNum}`, name: name, lv: lv, exp: exp });
-            localStorage.setItem('expRecords', JSON.stringify(records));
+            statusEl.innerText = "⏳ 正在上傳至雲端...";
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
 
-            document.getElementById('nameInput').value = '';
-            document.getElementById('lvInput').value = '';
-            document.getElementById('expInput').value = '';
-            document.getElementById('status').innerText = '資料已儲存！';
-
-            renderChart();
-        });
-
-        document.getElementById('clearBtn').addEventListener('click', function() {
-            if(confirm("確定要刪除所有的紀錄嗎？此動作無法復原！")) {
-                records = [];
-                localStorage.removeItem('expRecords');
-                renderChart();
+            try {
+                const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
+                await addDoc(publicCollection, {
+                    name: name,
+                    lv: lv,
+                    exp: exp,
+                    timestamp: Date.now(),
+                    userId: currentUser.uid
+                });
+                
+                statusEl.innerText = "✅ 上傳成功！圖表與排行榜已更新。";
+                // 清空數字輸入，保留名字方便玩家隔天打卡
+                document.getElementById('lvInput').value = '';
+                document.getElementById('expInput').value = '';
+            } catch (err) {
+                console.error("儲存失敗", err);
+                statusEl.innerText = "❌ 上傳失敗，請重試。";
+            } finally {
+                saveBtn.disabled = false;
             }
         });
 
-        // --- 更新過的繪圖邏輯 ---
-        function renderChart() {
-            const ctx = document.getElementById('expChart').getContext('2d');
-            const labels = records.map(r => r.day);
-            const expData = records.map(r => r.exp);
-            const lvData = records.map(r => r.lv);   
-            const nameData = records.map(r => r.name);
+        // --- 4. 處理資料：排行榜與圖表 ---
+        // 根據名字產生專屬顏色，讓圖表每一條線顏色固定
+        function getColorByName(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const h = Math.abs(hash % 360);
+            return `hsl(${h}, 70%, 50%)`;
+        }
 
+        function processAndRender() {
+            // 排序資料：依據時間先後順序
+            const sortedRecords = [...allRecords].sort((a, b) => a.timestamp - b.timestamp);
+            
+            // --- 處理排行榜 (抓每個玩家的最新資料) ---
+            const latestRecordsMap = {};
+            sortedRecords.forEach(record => {
+                latestRecordsMap[record.name] = record; // 迴圈跑到最後，留下的就是該角色最新的紀錄
+            });
+
+            // 將最新紀錄轉為陣列，並依照 等級 -> 經驗值 大小排序
+            const leaderboard = Object.values(latestRecordsMap).sort((a, b) => {
+                if (b.lv !== a.lv) return b.lv - a.lv; // 等級高的在前
+                return b.exp - a.exp; // 等級一樣，看經驗值
+            });
+
+            // 更新排行榜 UI (取前 5 名)
+            const listEl = document.getElementById('leaderboardList');
+            listEl.innerHTML = '';
+            const top5 = leaderboard.slice(0, 5);
+            
+            if (top5.length === 0) {
+                listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>';
+            } else {
+                top5.forEach((player, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'leaderboard-item';
+                    li.innerHTML = `
+                        <span class="rank">${index + 1}</span>
+                        <div class="player-info">
+                            <strong>${player.name}</strong>
+                        </div>
+                        <div class="player-lv">LV ${player.lv} (${player.exp}%)</div>
+                    `;
+                    listEl.appendChild(li);
+                });
+            }
+
+            // --- 處理多人圖表 ---
+            // 將資料依照角色名稱分組
+            const playersData = {};
+            // 收集所有的時間點 (簡化：以資料庫建立順序作為點)
+            let maxPoints = 0;
+
+            sortedRecords.forEach(record => {
+                if (!playersData[record.name]) playersData[record.name] = [];
+                playersData[record.name].push(record);
+                if (playersData[record.name].length > maxPoints) {
+                    maxPoints = playersData[record.name].length;
+                }
+            });
+
+            // 建立 X 軸的標籤 (打卡次數/天數)
+            const labels = Array.from({length: maxPoints}, (_, i) => `紀錄 ${i + 1}`);
+
+            // 準備 Chart.js 要吃的 Datasets
+            const datasets = Object.keys(playersData).map(name => {
+                const records = playersData[name];
+                const color = getColorByName(name);
+                return {
+                    label: name,
+                    data: records.map(r => r.lv), // Y軸顯示等級
+                    borderColor: color,
+                    backgroundColor: color + '33', // 加上透明度
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    fill: false,
+                    tension: 0.1,
+                    // 將詳細資料藏在這裡供 Tooltip 使用
+                    customExpData: records.map(r => r.exp) 
+                };
+            });
+
+            // 繪製圖表
+            const ctx = document.getElementById('expChart').getContext('2d');
             if (chartInstance) chartInstance.destroy(); 
 
             chartInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '等級 (LV)',        
-                        data: lvData,             
-                        borderColor: '#FF9800',   
-                        backgroundColor: 'rgba(255, 152, 0, 0.2)',
-                        borderWidth: 2, pointRadius: 5, pointHoverRadius: 8, fill: true, tension: 0.1
-                    }]
-                },
+                data: { labels: labels, datasets: datasets },
                 options: {
                     responsive: true,
                     scales: { 
                         y: { 
-                            min: 1,                // 讓 Y 軸固定從等級 1 開始
-                            suggestedMax: 200,     // 預設最高顯示到 200 等 (若超過會自動擴充)
+                            min: 1, 
+                            suggestedMax: 200, 
                             title: { display: true, text: '角色等級 (LV)' } 
                         } 
                     },
@@ -250,10 +494,12 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    let index = context.dataIndex;
-                                    let currentLevel = context.parsed.y; 
-                                    let currentExp = expData[index];     
-                                    return ` ${nameData[index]} | LV: ${currentLevel} | 經驗值: ${currentExp}%`;
+                                    const datasetIndex = context.datasetIndex;
+                                    const dataIndex = context.dataIndex;
+                                    const name = context.dataset.label;
+                                    const lv = context.parsed.y;
+                                    const exp = context.chart.data.datasets[datasetIndex].customExpData[dataIndex];
+                                    return ` ${name} | LV: ${lv} | 經驗值: ${exp}%`;
                                 }
                             }
                         }
@@ -261,7 +507,6 @@
                 }
             });
         }
-        renderChart();
     </script>
 </body>
 </html>
