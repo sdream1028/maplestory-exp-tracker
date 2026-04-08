@@ -8,59 +8,110 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root { --primary-color: #4CAF50; --secondary-color: #FF9800; --bg-color: #f4f7f6; --card-bg: #ffffff; --text-color: #333; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
-        .container { display: grid; grid-template-columns: 1fr 350px; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        /* 縮小基礎字體與間距，讓畫面更緊湊 */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; font-size: 14px; }
+        .container { display: grid; grid-template-columns: 1fr 300px; gap: 15px; max-width: 1100px; margin: 0 auto; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
         
-        .card { background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        /* 頂部標題區與三槓選單按鈕 */
+        header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px; }
+        #menuBtn { position: absolute; left: 10px; font-size: 24px; background: none; border: none; cursor: pointer; color: #2c3e50; padding: 5px; }
+        #menuBtn:hover { color: var(--primary-color); }
+        h2 { margin: 5px 0; color: #2c3e50; font-size: 1.5em; }
+
+        /* 卡片與元件瘦身 */
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; }
         
-        .input-group { margin: 10px 0; display: flex; align-items: center; }
-        .input-group label { width: 120px; font-weight: bold; }
-        input[type="text"], input[type="number"] { padding: 8px; width: 150px; border: 1px solid #ccc; border-radius: 4px; }
-        button { background-color: var(--primary-color); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 15px; margin: 5px 0; transition: 0.3s;}
+        .input-group { margin: 8px 0; display: flex; align-items: center; }
+        .input-group label { width: 100px; font-weight: bold; }
+        input[type="text"], input[type="number"] { padding: 6px; width: 140px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+        button { background-color: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; margin: 3px 0; transition: 0.2s;}
         button:hover { background-color: #45a049; }
         .action-btn { background-color: #008CBA; margin-right: 5px;}
         .action-btn:hover { background-color: #007B9E; }
         button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        #status { color: #d9534f; font-weight: bold; margin-top: 10px; }
+        #status { color: #d9534f; font-weight: bold; margin-top: 8px; font-size: 13px; }
         
-        #canvasContainer { position: relative; max-width: 100%; overflow: auto; border: 2px dashed #ccc; margin-top: 10px; display: none; }
-        canvas.capture { cursor: crosshair; display: block; }
+        #canvasContainer { position: relative; max-width: 100%; overflow: auto; border: 2px dashed #ccc; margin-top: 10px; display: none; max-height: 300px; }
+        canvas.capture { cursor: crosshair; display: block; max-width: 100%; }
         .toolbar { margin-top: 10px; display: none; padding: 10px; background: #eef; border-radius: 5px; }
         
+        /* 右側活動與排行榜 */
         .event-sidebar { background: linear-gradient(135deg, #fff9e6, #fff); border: 2px solid var(--secondary-color); }
-        .event-text { line-height: 1.6; white-space: pre-wrap; font-size: 15px; }
+        .event-text { line-height: 1.5; white-space: pre-wrap; font-size: 13px; }
         .highlight { color: #d35400; font-weight: bold; }
         
         .leaderboard-list { list-style: none; padding: 0; margin: 0; }
-        .leaderboard-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; align-items: center; }
         .leaderboard-item:nth-child(1) .rank { background: #FFD700; color: #000; }
         .leaderboard-item:nth-child(2) .rank { background: #C0C0C0; color: #000; }
         .leaderboard-item:nth-child(3) .rank { background: #CD7F32; color: #fff; }
-        .rank { background: #eee; padding: 2px 8px; border-radius: 50%; font-weight: bold; margin-right: 10px; }
+        .rank { background: #eee; padding: 2px 7px; border-radius: 50%; font-weight: bold; margin-right: 8px; font-size: 12px; }
         .player-info { flex-grow: 1; }
         .player-lv { font-weight: bold; color: var(--secondary-color); font-size: 0.9em; text-align: right;}
         
         /* 試算表樣式 */
-        .table-responsive { overflow-x: auto; margin-top: 15px; }
-        .spreadsheet-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 14px; }
-        .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 8px 12px; white-space: nowrap; }
+        .table-responsive { overflow-x: auto; margin-top: 10px; }
+        .spreadsheet-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 12px; }
+        .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; }
         .spreadsheet-table th { background-color: #f2f2f2; text-align: center; font-weight: bold; color: #333; }
         .spreadsheet-table td:first-child, .spreadsheet-table td:nth-child(2) { text-align: center; font-weight: bold; background-color: #f9f9f9; }
         .spreadsheet-table tr:hover { background-color: #f1f1f1; }
+        .img-link { text-decoration: none; margin-left: 5px; font-size: 14px; cursor: pointer; }
+
+        /* 側邊選單 (Hamburger Menu) */
+        .side-menu { position: fixed; top: 0; left: -280px; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.3); transition: 0.3s; z-index: 1000; padding: 20px; display: flex; flex-direction: column; }
+        .side-menu.open { left: 0; }
+        .side-menu h3 { border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
+        .menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
+        .menu-overlay.open { display: block; }
+        
+        /* 圖片放大檢視 Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1001; }
+        .modal img { max-width: 90%; max-height: 90%; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; font-weight: bold; }
+        
+        /* 上傳圖片按鈕美化 */
+        .upload-wrapper { margin-top: 15px; }
+        .upload-wrapper input[type="file"] { display: none; }
+        .upload-btn { display: inline-block; background-color: #9C27B0; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%; text-align: center; box-sizing: border-box; }
+        .upload-btn:hover { background-color: #7B1FA2; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center; color: #2c3e50;">🐲 首戰龍王 - 找出獄友 📈</h2>
+    <header>
+        <button id="menuBtn" onclick="toggleMenu()">☰</button>
+        <h2>🐲 首戰龍王 - 找出獄友 📈</h2>
+    </header>
+
+    <!-- 左側滑動選單 -->
+    <div id="sideMenu" class="side-menu">
+        <h3>設定與上傳</h3>
+        <p style="font-size: 13px; color: #666;">除了使用畫面擷取外，你也可以直接上傳遊戲截圖檔案。</p>
+        <div class="upload-wrapper">
+            <label class="upload-btn">
+                📁 從電腦上傳圖片
+                <input type="file" id="imageUpload" accept="image/*">
+            </label>
+        </div>
+    </div>
+    <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
+
+    <!-- 圖片放大預覽 -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <img id="modalImg" src="">
+    </div>
 
     <div class="container">
+        <!-- 左邊：主要工具區 -->
         <div class="main-content">
             <div class="card">
-                <h3>1. 擷取遊戲視窗畫面</h3>
-                <button id="captureBtn">🖥️ 選擇視窗並擷取畫面</button>
-                <div id="status">準備就緒，隨時可截圖！</div>
+                <h3>1. 取得遊戲畫面</h3>
+                <button id="captureBtn">🖥️ 選擇視窗擷取畫面</button>
+                <div id="status">準備就緒，可擷取畫面或從左上角 ☰ 上傳圖片！</div>
                 
                 <div id="canvasContainer">
                     <canvas id="screenCanvas" class="capture"></canvas>
@@ -69,14 +120,14 @@
                 <div class="toolbar" id="ocrToolbar">
                     <p><strong>第一步：</strong>用滑鼠在上方圖片中<strong>框選</strong>數值區域。<br>
                        <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
-                    <button class="action-btn" id="btnName">🏷️ 辨識【角色名稱】</button>
+                    <button class="action-btn" id="btnName">🏷️ 辨識【名稱】</button>
                     <button class="action-btn" id="btnLv">⭐ 辨識【等級】</button>
-                    <button class="action-btn" id="btnExp">💯 辨識【經驗條數字】</button>
+                    <button class="action-btn" id="btnExp">💯 辨識【經驗數字】</button>
                 </div>
             </div>
 
             <div class="card" id="dataCheck">
-                <h3>2. 確認與上傳資料 (每日打卡)</h3>
+                <h3>2. 確認與上傳資料 (附帶截圖存證)</h3>
                 <div class="input-group">
                     <label for="nameInput">角色名稱: </label>
                     <input type="text" id="nameInput" placeholder="例如: 鮭魚">
@@ -87,18 +138,16 @@
                 </div>
                 <div class="input-group">
                     <label for="expInput">目前經驗值: </label>
-                    <input type="number" id="expInput" placeholder="請辨識或輸入確切數字">
+                    <input type="number" id="expInput" placeholder="請辨識或輸入數字">
                 </div>
                 <button id="saveBtn" disabled>等待資料庫連線...</button>
             </div>
 
             <div class="card" style="grid-column: 1 / -1;">
-                <h3>📅 經驗值統計表 (依照真實總經驗紀錄)</h3>
+                <h3>📅 經驗值統計表 (點擊 🖼️ 查詢截圖)</h3>
                 <div class="table-responsive">
                     <table class="spreadsheet-table" id="dataTable">
-                        <thead>
-                            <tr><th>載入中...</th></tr>
-                        </thead>
+                        <thead><tr><th>載入中...</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -110,6 +159,7 @@
             </div>
         </div>
 
+        <!-- 右邊：活動與排行榜區 -->
         <div class="sidebar">
             <div class="card event-sidebar">
                 <h3>📜 活動規則與獎勵</h3>
@@ -139,20 +189,16 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ==========================================
-        // 🔑 你的專屬 Firebase 資料庫設定 🔑
-        // ==========================================
         let firebaseConfig = {};
-        
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
-            // (已修復多餘括號與 const 宣告的問題)
             firebaseConfig = {
                 apiKey: "AIzaSyCXQE91NPd2A7kfwqezUhHyGIq_ZvLRv0w",
                 authDomain: "maplestory-tracker-5e59d.firebaseapp.com",
@@ -165,20 +211,19 @@
         }
 
         const appId = 'maplestory-event-app';
-        let app, auth, db, currentUser = null, allRecords = [], chartInstance = null;
+        let app, auth, db, currentUser = null, chartInstance = null;
+        window.allRecords = []; // 設為全域變數方便 modal 讀取圖片
+
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
 
         try {
-            if (firebaseConfig.apiKey === "請替換") throw new Error("MissingConfig");
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
         } catch (error) {
             console.error(error);
-            if(error.message === "MissingConfig") {
-                statusEl.innerText = "❌ 尚未設定雲端資料庫！請將 Firebase 鑰匙填入程式碼中。";
-            }
+            statusEl.innerText = "❌ 資料庫設定有誤。";
         }
 
         if (app) {
@@ -199,19 +244,39 @@
                 
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 onSnapshot(publicCollection, (snapshot) => {
-                    allRecords = [];
-                    snapshot.forEach(doc => { allRecords.push({ id: doc.id, ...doc.data() }); });
+                    window.allRecords = [];
+                    snapshot.forEach(doc => { window.allRecords.push({ id: doc.id, ...doc.data() }); });
                     processAndRender();
                 }, (error) => { console.error("讀取失敗:", error); });
             });
             initAuth();
         }
 
-        // --- 擷取與辨識邏輯 ---
+        // --- 介面互動邏輯 (選單與 Modal) ---
+        window.toggleMenu = function() {
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('menuOverlay').classList.toggle('open');
+        }
+        window.closeModal = function() {
+            document.getElementById('imageModal').style.display = 'none';
+            document.getElementById('modalImg').src = "";
+        }
+        window.showImage = function(id) {
+            const rec = window.allRecords.find(r => r.id === id);
+            if (rec && rec.image) {
+                document.getElementById('modalImg').src = rec.image;
+                document.getElementById('imageModal').style.display = 'flex';
+            } else {
+                alert("此筆紀錄沒有附帶截圖！");
+            }
+        }
+
+        // --- 擷取與上傳圖片邏輯 ---
         const canvas = document.getElementById('screenCanvas');
         const ctx = canvas.getContext('2d');
         let baseImage = new Image(), isDrawing = false, startX, startY, currentX, currentY, selectionRect = null; 
 
+        // 螢幕分享擷取
         document.getElementById('captureBtn').addEventListener('click', async () => {
             try {
                 statusEl.innerText = "請選擇遊戲視窗...";
@@ -225,23 +290,56 @@
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         baseImage.src = canvas.toDataURL();
                         stream.getTracks().forEach(track => track.stop());
-                        document.getElementById('canvasContainer').style.display = 'block';
-                        document.getElementById('ocrToolbar').style.display = 'block';
+                        showCanvas();
                         statusEl.innerText = "✅ 擷取成功！請用滑鼠在圖片上框選數值。";
                     }, 500);
                 };
             } catch (err) { statusEl.innerText = "❌ 無法取得畫面，請允許螢幕分享權限。"; }
         });
 
+        // 檔案上傳擷取 (新增)
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                baseImage.onload = function() {
+                    canvas.width = baseImage.width; canvas.height = baseImage.height;
+                    ctx.drawImage(baseImage, 0, 0);
+                    showCanvas();
+                    statusEl.innerText = "✅ 圖片上傳成功！請用滑鼠在圖片上框選數值。";
+                    toggleMenu(); // 上傳完自動關閉側邊欄
+                }
+                baseImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function showCanvas() {
+            document.getElementById('canvasContainer').style.display = 'block';
+            document.getElementById('ocrToolbar').style.display = 'block';
+        }
+
         canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect(); startX = e.clientX - rect.left; startY = e.clientY - rect.top;
+            const rect = canvas.getBoundingClientRect(); 
+            // 處理 canvas CSS 縮放的問題
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            startX = (e.clientX - rect.left) * scaleX; 
+            startY = (e.clientY - rect.top) * scaleY;
             isDrawing = true; selectionRect = null; 
         });
         canvas.addEventListener('mousemove', (e) => {
             if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect(); currentX = e.clientX - rect.left; currentY = e.clientY - rect.top;
+            const rect = canvas.getBoundingClientRect(); 
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            currentX = (e.clientX - rect.left) * scaleX; 
+            currentY = (e.clientY - rect.top) * scaleY;
+            
             ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(baseImage, 0, 0);
-            ctx.strokeStyle = "red"; ctx.lineWidth = 2; ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+            ctx.strokeStyle = "red"; ctx.lineWidth = Math.max(2, canvas.width/500); 
+            ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
             ctx.fillStyle = "rgba(255, 0, 0, 0.2)"; ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
         });
         canvas.addEventListener('mouseup', (e) => {
@@ -279,6 +377,28 @@
         document.getElementById('btnLv').addEventListener('click', () => recognizeSelected('lv'));
         document.getElementById('btnExp').addEventListener('click', () => recognizeSelected('exp'));
 
+        // --- 圖片壓縮邏輯 (避免塞爆資料庫) ---
+        function compressImage(imgSrc, maxWidth = 800) {
+            return new Promise((resolve) => {
+                if (!imgSrc) return resolve(null);
+                const img = new Image();
+                img.onload = () => {
+                    const tempCanvas = document.createElement('canvas');
+                    let width = img.width, height = img.height;
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                    tempCanvas.width = width; tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    resolve(tempCanvas.toDataURL('image/jpeg', 0.6)); // 壓縮成 60% 品質的 JPG
+                };
+                img.onerror = () => resolve(null);
+                img.src = imgSrc;
+            });
+        }
+
         // --- 儲存資料 ---
         saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('nameInput').value.trim();
@@ -288,14 +408,30 @@
             if (!name || isNaN(lv) || isNaN(exp)) { statusEl.innerText = "❌ 請填寫完整的名稱、等級與經驗值！"; return; }
             if (!currentUser) { statusEl.innerText = "❌ 資料庫尚未連線，無法上傳。"; return; }
 
-            statusEl.innerText = "⏳ 正在上傳至雲端..."; saveBtn.disabled = true;
+            saveBtn.disabled = true;
             try {
+                // 處理截圖壓縮
+                let proofImg = null;
+                if (baseImage.src) {
+                    statusEl.innerText = "⏳ 正在壓縮截圖並上傳至雲端...";
+                    proofImg = await compressImage(baseImage.src);
+                } else {
+                    statusEl.innerText = "⏳ 正在上傳至雲端 (無截圖)...";
+                }
+
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
-                await addDoc(publicCollection, { name: name, lv: lv, exp: exp, timestamp: Date.now(), userId: currentUser.uid });
+                await addDoc(publicCollection, { 
+                    name: name, lv: lv, exp: exp, 
+                    image: proofImg, // 將壓縮後的圖片存入資料庫
+                    timestamp: Date.now(), userId: currentUser.uid 
+                });
+                
                 statusEl.innerText = "✅ 上傳成功！圖表與排行榜已更新。";
                 document.getElementById('lvInput').value = ''; document.getElementById('expInput').value = '';
+                baseImage.src = ''; // 清空圖片避免重複上傳
+                document.getElementById('canvasContainer').style.display = 'none';
             } catch (err) {
-                console.error("儲存失敗", err); statusEl.innerText = "❌ 上傳失敗，請重試。";
+                console.error("儲存失敗", err); statusEl.innerText = "❌ 上傳失敗，檔案可能過大或連線異常。";
             } finally { saveBtn.disabled = false; }
         });
 
@@ -305,21 +441,19 @@
         }
 
         // ==========================================
-        // 📊 內建完整經驗表 (1~200等) 與資料處理邏輯
+        // 📊 內建完整經驗表與資料處理邏輯
         // ==========================================
         const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
         const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 251068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
         function processAndRender() {
-            // 1. 預先將所有人的「目前等級 + 經驗值」轉換為「真實總累積經驗值」
-            allRecords.forEach(r => {
+            window.allRecords.forEach(r => {
                 const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
                 r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
             });
 
-            const sortedRecords = [...allRecords].sort((a, b) => a.timestamp - b.timestamp);
+            const sortedRecords = [...window.allRecords].sort((a, b) => a.timestamp - b.timestamp);
             
-            // 2. 更新排行榜 (依據真實總累積經驗值排名)
             const latestRecordsMap = {};
             sortedRecords.forEach(record => { latestRecordsMap[record.name] = record; });
 
@@ -339,7 +473,6 @@
                 });
             }
 
-            // 3. 建立試算表表格 (新增 # 遞增數字欄位)
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
             const recordsByDateAndName = {}; 
             
@@ -378,15 +511,16 @@
                         let displayDate = date;
                         if (dateIndex === 0 && i === 0) displayDate += " (初始)";
                         
-                        chartLabels.push(date); // 折線圖 X 軸直接使用日期
+                        chartLabels.push(date); 
                         
                         tableHtml += `<tr><td>${recordNo}</td><td>${displayDate}</td>`;
                         
                         uniqueNames.forEach(name => {
                             let rec = recordsByDateAndName[date][name] ? recordsByDateAndName[date][name][i] : null;
                             if (rec) {
-                                // 試算表內顯示計算出的 真實數字 (不帶 %)
-                                tableHtml += `<td>${rec.trueTotalExp.toLocaleString()}</td>`;
+                                // 判斷是否有圖片，如果有則加上 🖼️ 按鈕
+                                let imgLink = rec.image ? `<a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️</a>` : '';
+                                tableHtml += `<td>${rec.trueTotalExp.toLocaleString()} ${imgLink}</td>`;
                                 chartDataByName[name].lv.push(rec.lv);
                                 chartDataByName[name].exp.push(rec.trueTotalExp);
                             } else {
@@ -403,7 +537,6 @@
                 tableEl.innerHTML = tableHtml;
             }
 
-            // 4. 更新折線圖 (X 軸變更為日期，並使用 spanGaps 支援斷層點)
             const datasets = uniqueNames.map(name => {
                 const color = getColorByName(name);
                 return {
@@ -425,7 +558,7 @@
                 type: 'line', data: { labels: chartLabels, datasets: datasets },
                 options: {
                     responsive: true, 
-                    spanGaps: true, // 允許資料有空缺時自動連線
+                    spanGaps: true, 
                     scales: { y: { min: 1, suggestedMax: 200, title: { display: true, text: '角色等級 (LV)' } } },
                     plugins: { tooltip: { callbacks: { label: function(context) {
                         const expVal = context.chart.data.datasets[context.datasetIndex].customExpData[context.dataIndex];
