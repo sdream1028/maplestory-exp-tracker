@@ -3,110 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>首戰龍王 - 經驗值表白牆</title>
-    <!-- 引入 Chart.js -->
+    <title>首戰龍王 - 找出獄友</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- 引入 Tesseract.js -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root {
-            --primary-color: #4CAF50;
-            --secondary-color: #FF9800;
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-color: #333;
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-color); 
-            margin: 0; 
-            padding: 20px; 
-        }
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 350px; /* 左邊主工具，右邊活動欄 */
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        @media (max-width: 900px) {
-            .container {
-                grid-template-columns: 1fr; /* 螢幕小的時候變為上下排列 */
-            }
-        }
-        .card { 
-            background: var(--card-bg); 
-            padding: 20px; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            margin-bottom: 20px; 
-        }
-        .card h3 {
-            margin-top: 0;
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
+        :root { --primary-color: #4CAF50; --secondary-color: #FF9800; --bg-color: #f4f7f6; --card-bg: #ffffff; --text-color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
+        .container { display: grid; grid-template-columns: 1fr 350px; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        
+        .card { background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
         .input-group { margin: 10px 0; display: flex; align-items: center; }
         .input-group label { width: 120px; font-weight: bold; }
         input[type="text"], input[type="number"] { padding: 8px; width: 150px; border: 1px solid #ccc; border-radius: 4px; }
-        
         button { background-color: var(--primary-color); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 15px; margin: 5px 0; transition: 0.3s;}
         button:hover { background-color: #45a049; }
         .action-btn { background-color: #008CBA; margin-right: 5px;}
         .action-btn:hover { background-color: #007B9E; }
         button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        
         #status { color: #d9534f; font-weight: bold; margin-top: 10px; }
         
         #canvasContainer { position: relative; max-width: 100%; overflow: auto; border: 2px dashed #ccc; margin-top: 10px; display: none; }
         canvas.capture { cursor: crosshair; display: block; }
         .toolbar { margin-top: 10px; display: none; padding: 10px; background: #eef; border-radius: 5px; }
         
-        /* 活動區塊樣式 */
-        .event-sidebar {
-            background: linear-gradient(135deg, #fff9e6, #fff);
-            border: 2px solid var(--secondary-color);
-        }
-        .event-text {
-            line-height: 1.6;
-            white-space: pre-wrap; /* 讓換行符號生效 */
-            font-size: 15px;
-        }
+        .event-sidebar { background: linear-gradient(135deg, #fff9e6, #fff); border: 2px solid var(--secondary-color); }
+        .event-text { line-height: 1.6; white-space: pre-wrap; font-size: 15px; }
         .highlight { color: #d35400; font-weight: bold; }
         
-        /* 排行榜樣式 */
-        .leaderboard-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .leaderboard-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            align-items: center;
-        }
-        .leaderboard-item:nth-child(1) .rank { background: #FFD700; color: #000; } /* 金 */
-        .leaderboard-item:nth-child(2) .rank { background: #C0C0C0; color: #000; } /* 銀 */
-        .leaderboard-item:nth-child(3) .rank { background: #CD7F32; color: #fff; } /* 銅 */
-        .rank {
-            background: #eee;
-            padding: 2px 8px;
-            border-radius: 50%;
-            font-weight: bold;
-            margin-right: 10px;
-        }
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
+        .leaderboard-item:nth-child(1) .rank { background: #FFD700; color: #000; }
+        .leaderboard-item:nth-child(2) .rank { background: #C0C0C0; color: #000; }
+        .leaderboard-item:nth-child(3) .rank { background: #CD7F32; color: #fff; }
+        .rank { background: #eee; padding: 2px 8px; border-radius: 50%; font-weight: bold; margin-right: 10px; }
         .player-info { flex-grow: 1; }
-        .player-lv { font-weight: bold; color: var(--secondary-color); }
-
+        .player-lv { font-weight: bold; color: var(--secondary-color); font-size: 0.9em; text-align: right;}
+        
+        /* 試算表樣式 */
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        .spreadsheet-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 14px; }
+        .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 8px 12px; white-space: nowrap; }
+        .spreadsheet-table th { background-color: #f2f2f2; text-align: center; font-weight: bold; color: #333; }
+        .spreadsheet-table td:first-child { text-align: center; font-weight: bold; background-color: #f9f9f9; }
+        .spreadsheet-table tr:hover { background-color: #f1f1f1; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center; color: #2c3e50;">🐲 首戰龍王 - 經驗值表白牆 📈</h2>
+    <h2 style="text-align: center; color: #2c3e50;">🐲 首戰龍王 - 找出獄友 📈</h2>
 
     <div class="container">
         <!-- 左邊：主要工具區 -->
@@ -125,30 +72,42 @@
                        <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
                     <button class="action-btn" id="btnName">🏷️ 辨識【角色名稱】</button>
                     <button class="action-btn" id="btnLv">⭐ 辨識【等級】</button>
-                    <button class="action-btn" id="btnExp">💯 辨識【經驗值】</button>
+                    <button class="action-btn" id="btnExp">💯 辨識【總經驗值數字】</button>
                 </div>
             </div>
 
             <div class="card" id="dataCheck">
                 <h3>2. 確認與上傳資料 (每日打卡)</h3>
-                <p>資料確認無誤後，點擊上傳即可更新雲端圖表與排行榜：</p>
                 <div class="input-group">
                     <label for="nameInput">角色名稱: </label>
-                    <input type="text" id="nameInput" placeholder="請辨識或輸入">
+                    <input type="text" id="nameInput" placeholder="例如: 小風 (冰雷)">
                 </div>
                 <div class="input-group">
                     <label for="lvInput">等級 (LV): </label>
                     <input type="number" id="lvInput" placeholder="請辨識或輸入">
                 </div>
                 <div class="input-group">
-                    <label for="expInput">經驗值 (%): </label>
-                    <input type="number" id="expInput" step="0.01" placeholder="請辨識或輸入">
+                    <label for="expInput">經驗值 (數值): </label>
+                    <input type="number" id="expInput" placeholder="請辨識或輸入確切數字">
                 </div>
-                <button id="saveBtn">🚀 上傳至雲端</button>
+                <button id="saveBtn" disabled>等待資料庫連線...</button>
+            </div>
+
+            <!-- 新增的試算表區塊 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>📅 經驗值統計表 (Spreadsheet)</h3>
+                <div class="table-responsive">
+                    <table class="spreadsheet-table" id="dataTable">
+                        <thead>
+                            <tr><th>載入中...</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="card">
-                <h3>📊 全員成長折線圖</h3>
+                <h3>📊 全員成長折線圖 (等級)</h3>
                 <canvas id="expChart"></canvas>
             </div>
         </div>
@@ -160,7 +119,7 @@
                 <div class="event-text">即日起到<span class="highlight">5/28</span> 舉辦活動
 為了各位可以體驗首戰龍王
 經驗值表白牆 
-今天報名開始上線貼入你的
+今天報名開始上線貼入你的等級、經驗值
 
 <span class="highlight">活動規則 :</span>
 每日上線時貼
@@ -178,86 +137,97 @@
             <div class="card">
                 <h3>👑 經驗值前五名排行榜</h3>
                 <ul class="leaderboard-list" id="leaderboardList">
-                    <li>載入中...</li>
+                    <li>連線中...</li>
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK (使用 ES Modules) -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- 1. 初始化 Firebase (雲端資料庫) ---
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'maplestory-event-app';
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // ==========================================
+        // 🔑 你的專屬 Firebase 資料庫設定 🔑
+        // ==========================================
+        let firebaseConfig = {};
+        
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } else {
+            // 👇👇👇 請把 Firebase 給你的資訊替換到這裡面 👇👇👇
+            firebaseConfig = {
+                apiKey: "請替換",
+                authDomain: "請替換",
+                projectId: "請替換",
+                storageBucket: "請替換",
+                messagingSenderId: "請替換",
+                appId: "請替換"
+            };
+            // 👆👆👆 替換上方內容 👆👆👆
+        }
 
-        let currentUser = null;
-        let allRecords = []; // 存放所有玩家的雲端紀錄
-        let chartInstance = null;
+        const appId = 'maplestory-event-app';
+        let app, auth, db, currentUser = null, allRecords = [], chartInstance = null;
+        const statusEl = document.getElementById('status');
+        const saveBtn = document.getElementById('saveBtn');
 
-        // 登入流程
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("登入失敗:", err);
+        try {
+            if (firebaseConfig.apiKey === "請替換") throw new Error("MissingConfig");
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (error) {
+            console.error(error);
+            if(error.message === "MissingConfig") {
+                statusEl.innerText = "❌ 尚未設定雲端資料庫！請將 Firebase 鑰匙填入程式碼中。";
+                document.getElementById('leaderboardList').innerHTML = '<li style="color:red;">請先完成資料庫設定</li>';
             }
-        };
+        }
 
-        // 監聽登入狀態與抓取資料
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (!user) return;
+        if (app) {
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth); 
+                    }
+                } catch (err) { console.error("登入失敗:", err); }
+            };
 
-            // 讀取「公開資料庫」的內容
-            const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
-            
-            // 即時監聽資料庫變化
-            onSnapshot(publicCollection, (snapshot) => {
-                allRecords = [];
-                snapshot.forEach(doc => {
-                    allRecords.push({ id: doc.id, ...doc.data() });
-                });
-                // 資料更新時，重新繪製圖表和排行榜
-                processAndRender();
-            }, (error) => {
-                console.error("讀取資料失敗:", error);
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (!user) return;
+                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端表白牆";
+                
+                const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
+                onSnapshot(publicCollection, (snapshot) => {
+                    allRecords = [];
+                    snapshot.forEach(doc => { allRecords.push({ id: doc.id, ...doc.data() }); });
+                    processAndRender();
+                }, (error) => { console.error("讀取失敗:", error); });
             });
-        });
+            initAuth();
+        }
 
-        initAuth();
-
-        // --- 2. 工具區邏輯 (擷取與辨識) ---
+        // --- 擷取與辨識邏輯 ---
         const canvas = document.getElementById('screenCanvas');
         const ctx = canvas.getContext('2d');
-        let baseImage = new Image(); 
-        let isDrawing = false;
-        let startX, startY, currentX, currentY;
-        let selectionRect = null; 
+        let baseImage = new Image(), isDrawing = false, startX, startY, currentX, currentY, selectionRect = null; 
 
         document.getElementById('captureBtn').addEventListener('click', async () => {
-            const statusEl = document.getElementById('status');
             try {
                 statusEl.innerText = "請選擇遊戲視窗...";
                 const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 const video = document.createElement('video');
                 video.srcObject = stream;
-                
                 video.onloadedmetadata = () => {
                     video.play();
                     setTimeout(() => {
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
+                        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         baseImage.src = canvas.toDataURL();
                         stream.getTracks().forEach(track => track.stop());
@@ -266,244 +236,170 @@
                         statusEl.innerText = "✅ 擷取成功！請用滑鼠在圖片上框選數值。";
                     }, 500);
                 };
-            } catch (err) {
-                statusEl.innerText = "❌ 無法取得畫面，請允許螢幕分享權限。";
-            }
+            } catch (err) { statusEl.innerText = "❌ 無法取得畫面，請允許螢幕分享權限。"; }
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            startX = e.clientX - rect.left;
-            startY = e.clientY - rect.top;
-            isDrawing = true;
-            selectionRect = null; 
+            const rect = canvas.getBoundingClientRect(); startX = e.clientX - rect.left; startY = e.clientY - rect.top;
+            isDrawing = true; selectionRect = null; 
         });
-
         canvas.addEventListener('mousemove', (e) => {
             if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            currentX = e.clientX - rect.left;
-            currentY = e.clientY - rect.top;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(baseImage, 0, 0);
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
-            ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
-            ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
+            const rect = canvas.getBoundingClientRect(); currentX = e.clientX - rect.left; currentY = e.clientY - rect.top;
+            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(baseImage, 0, 0);
+            ctx.strokeStyle = "red"; ctx.lineWidth = 2; ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+            ctx.fillStyle = "rgba(255, 0, 0, 0.2)"; ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
         });
-
         canvas.addEventListener('mouseup', (e) => {
-            if (!isDrawing) return;
-            isDrawing = false;
-            const width = Math.abs(currentX - startX);
-            const height = Math.abs(currentY - startY);
-            const x = Math.min(startX, currentX);
-            const y = Math.min(startY, currentY);
-            if (width > 5 && height > 5) {
-                selectionRect = { x, y, w: width, h: height };
-            }
+            if (!isDrawing) return; isDrawing = false;
+            const width = Math.abs(currentX - startX), height = Math.abs(currentY - startY);
+            const x = Math.min(startX, currentX), y = Math.min(startY, currentY);
+            if (width > 5 && height > 5) selectionRect = { x, y, w: width, h: height };
         });
 
         async function recognizeSelected(type) {
-            const statusEl = document.getElementById('status');
-            if (!selectionRect) {
-                statusEl.innerText = "❌ 請先用滑鼠在圖片上畫出紅框！";
-                return;
-            }
+            if (!selectionRect) { statusEl.innerText = "❌ 請先用滑鼠在圖片上畫出紅框！"; return; }
             statusEl.innerText = "⏳ 正在辨識框選區域，請稍候...";
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = selectionRect.w;
-            tempCanvas.height = selectionRect.h;
+            const tempCanvas = document.createElement('canvas'); tempCanvas.width = selectionRect.w; tempCanvas.height = selectionRect.h;
             const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(
-                baseImage, 
-                selectionRect.x, selectionRect.y, selectionRect.w, selectionRect.h, 
-                0, 0, selectionRect.w, selectionRect.h 
-            );
-            const dataUrl = tempCanvas.toDataURL();
-
+            tempCtx.drawImage(baseImage, selectionRect.x, selectionRect.y, selectionRect.w, selectionRect.h, 0, 0, selectionRect.w, selectionRect.h);
             try {
                 const lang = (type === 'name') ? 'eng+chi_tra' : 'eng';
-                const result = await Tesseract.recognize(dataUrl, lang);
+                const result = await Tesseract.recognize(tempCanvas.toDataURL(), lang);
                 let text = result.data.text.trim();
-
+                
                 if (type === 'name') {
-                    text = text.replace(/[\r\n]+/g, '');
-                    document.getElementById('nameInput').value = text;
+                    document.getElementById('nameInput').value = text.replace(/[\r\n]+/g, '');
                 } else if (type === 'lv') {
-                    text = text.replace(/\D/g, ''); 
-                    document.getElementById('lvInput').value = text;
+                    document.getElementById('lvInput').value = text.replace(/\D/g, ''); 
                 } else if (type === 'exp') {
-                    text = text.replace(/[^\d.]/g, ''); 
-                    document.getElementById('expInput').value = text;
+                    // ★ 核心改動：去除逗號後，只抓取第一組連續數字 (忽略後面的 % 數)
+                    text = text.replace(/,/g, ''); 
+                    const match = text.match(/\d+/);
+                    document.getElementById('expInput').value = match ? match[0] : '';
                 }
                 statusEl.innerText = "✅ 辨識完成！可繼續框選，或直接上傳。";
-            } catch (error) {
-                statusEl.innerText = "❌ 辨識失敗，請重試或手動輸入。";
-            }
+            } catch (error) { statusEl.innerText = "❌ 辨識失敗，請重試或手動輸入。"; }
         }
 
         document.getElementById('btnName').addEventListener('click', () => recognizeSelected('name'));
         document.getElementById('btnLv').addEventListener('click', () => recognizeSelected('lv'));
         document.getElementById('btnExp').addEventListener('click', () => recognizeSelected('exp'));
 
-        // --- 3. 儲存至雲端資料庫 ---
-        document.getElementById('saveBtn').addEventListener('click', async () => {
+        // --- 儲存與處理資料 ---
+        saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('nameInput').value.trim();
-            const lv = parseFloat(document.getElementById('lvInput').value);
-            const exp = parseFloat(document.getElementById('expInput').value);
-            const statusEl = document.getElementById('status');
+            const lv = parseInt(document.getElementById('lvInput').value, 10);
+            const exp = parseInt(document.getElementById('expInput').value, 10); // ★ 改為 parseInt 整數
 
-            if (!name || isNaN(lv) || isNaN(exp)) {
-                statusEl.innerText = "❌ 請填寫完整的名稱、等級與經驗值！";
-                return;
-            }
-            if (!currentUser) {
-                statusEl.innerText = "❌ 尚未連接雲端，請稍候再試。";
-                return;
-            }
+            if (!name || isNaN(lv) || isNaN(exp)) { statusEl.innerText = "❌ 請填寫完整的名稱、等級與經驗值！"; return; }
+            if (!currentUser) { statusEl.innerText = "❌ 資料庫尚未連線，無法上傳。"; return; }
 
-            statusEl.innerText = "⏳ 正在上傳至雲端...";
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.disabled = true;
-
+            statusEl.innerText = "⏳ 正在上傳至雲端..."; saveBtn.disabled = true;
             try {
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
-                await addDoc(publicCollection, {
-                    name: name,
-                    lv: lv,
-                    exp: exp,
-                    timestamp: Date.now(),
-                    userId: currentUser.uid
-                });
-                
+                await addDoc(publicCollection, { name: name, lv: lv, exp: exp, timestamp: Date.now(), userId: currentUser.uid });
                 statusEl.innerText = "✅ 上傳成功！圖表與排行榜已更新。";
-                // 清空數字輸入，保留名字方便玩家隔天打卡
-                document.getElementById('lvInput').value = '';
-                document.getElementById('expInput').value = '';
+                document.getElementById('lvInput').value = ''; document.getElementById('expInput').value = '';
             } catch (err) {
-                console.error("儲存失敗", err);
-                statusEl.innerText = "❌ 上傳失敗，請重試。";
-            } finally {
-                saveBtn.disabled = false;
-            }
+                console.error("儲存失敗", err); statusEl.innerText = "❌ 上傳失敗，請重試。";
+            } finally { saveBtn.disabled = false; }
         });
 
-        // --- 4. 處理資料：排行榜與圖表 ---
-        // 根據名字產生專屬顏色，讓圖表每一條線顏色固定
         function getColorByName(name) {
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) {
-                hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const h = Math.abs(hash % 360);
-            return `hsl(${h}, 70%, 50%)`;
+            let hash = 0; for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return `hsl(${Math.abs(hash % 360)}, 70%, 50%)`;
         }
 
+        // ★ 核心改動：處理並產生「試算表表格」與「排行榜」
         function processAndRender() {
-            // 排序資料：依據時間先後順序
             const sortedRecords = [...allRecords].sort((a, b) => a.timestamp - b.timestamp);
             
-            // --- 處理排行榜 (抓每個玩家的最新資料) ---
+            // 1. 更新排行榜 (依據最新等級與經驗值)
             const latestRecordsMap = {};
-            sortedRecords.forEach(record => {
-                latestRecordsMap[record.name] = record; // 迴圈跑到最後，留下的就是該角色最新的紀錄
-            });
+            sortedRecords.forEach(record => { latestRecordsMap[record.name] = record; });
 
-            // 將最新紀錄轉為陣列，並依照 等級 -> 經驗值 大小排序
             const leaderboard = Object.values(latestRecordsMap).sort((a, b) => {
-                if (b.lv !== a.lv) return b.lv - a.lv; // 等級高的在前
-                return b.exp - a.exp; // 等級一樣，看經驗值
+                if (b.lv !== a.lv) return b.lv - a.lv; 
+                return b.exp - a.exp; 
             });
 
-            // 更新排行榜 UI (取前 5 名)
-            const listEl = document.getElementById('leaderboardList');
-            listEl.innerHTML = '';
+            const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
             const top5 = leaderboard.slice(0, 5);
-            
-            if (top5.length === 0) {
-                listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>';
-            } else {
+            if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
+            else {
                 top5.forEach((player, index) => {
-                    const li = document.createElement('li');
-                    li.className = 'leaderboard-item';
-                    li.innerHTML = `
-                        <span class="rank">${index + 1}</span>
-                        <div class="player-info">
-                            <strong>${player.name}</strong>
-                        </div>
-                        <div class="player-lv">LV ${player.lv} (${player.exp}%)</div>
-                    `;
+                    const li = document.createElement('li'); li.className = 'leaderboard-item';
+                    // 使用 toLocaleString() 加上千分位逗號
+                    li.innerHTML = `<span class="rank">${index + 1}</span><div class="player-info"><strong>${player.name}</strong></div><div class="player-lv">LV ${player.lv}<br><span style="color:#666; font-size:0.85em;">${player.exp.toLocaleString()} EXP</span></div>`;
                     listEl.appendChild(li);
                 });
             }
 
-            // --- 處理多人圖表 ---
-            // 將資料依照角色名稱分組
-            const playersData = {};
-            // 收集所有的時間點 (簡化：以資料庫建立順序作為點)
-            let maxPoints = 0;
+            // 2. 建立類似 Excel 的試算表表格
+            const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
+            const recordsByDate = {}; // 格式: { "04/09": { "小風": 148049857, ... } }
+            
+            sortedRecords.forEach(r => {
+                const d = new Date(r.timestamp);
+                const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+                if (!recordsByDate[dateStr]) recordsByDate[dateStr] = {};
+                recordsByDate[dateStr][r.name] = r.exp; // 同一天若有多筆，會覆蓋成最新的一筆
+            });
 
+            const dates = Object.keys(recordsByDate);
+            const tableEl = document.getElementById('dataTable');
+            
+            if (dates.length === 0) {
+                tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
+            } else {
+                // 畫出表頭 (名字列)
+                let tableHtml = '<thead><tr><th>紀錄日期</th>';
+                uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
+                tableHtml += '</tr></thead><tbody>';
+
+                // 畫出資料列 (日期行)
+                dates.forEach((date, index) => {
+                    let dateLabel = date;
+                    if (index === 0) dateLabel += " (初始)"; // 幫第一天加上 (初始) 的文字
+                    
+                    tableHtml += `<tr><td>${dateLabel}</td>`;
+                    uniqueNames.forEach(name => {
+                        const expVal = recordsByDate[date][name];
+                        // 如果當天有資料就加上千分位顯示，沒有就顯示空白
+                        tableHtml += `<td>${expVal ? expVal.toLocaleString() : '-'}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                });
+                tableHtml += '</tbody>';
+                tableEl.innerHTML = tableHtml;
+            }
+
+            // 3. 更新折線圖 (維持顯示等級趨勢)
+            const playersData = {}; let maxPoints = 0;
             sortedRecords.forEach(record => {
                 if (!playersData[record.name]) playersData[record.name] = [];
                 playersData[record.name].push(record);
-                if (playersData[record.name].length > maxPoints) {
-                    maxPoints = playersData[record.name].length;
-                }
+                if (playersData[record.name].length > maxPoints) maxPoints = playersData[record.name].length;
             });
 
-            // 建立 X 軸的標籤 (打卡次數/天數)
             const labels = Array.from({length: maxPoints}, (_, i) => `紀錄 ${i + 1}`);
-
-            // 準備 Chart.js 要吃的 Datasets
             const datasets = Object.keys(playersData).map(name => {
-                const records = playersData[name];
-                const color = getColorByName(name);
+                const records = playersData[name]; const color = getColorByName(name);
                 return {
-                    label: name,
-                    data: records.map(r => r.lv), // Y軸顯示等級
-                    borderColor: color,
-                    backgroundColor: color + '33', // 加上透明度
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    fill: false,
-                    tension: 0.1,
-                    // 將詳細資料藏在這裡供 Tooltip 使用
-                    customExpData: records.map(r => r.exp) 
+                    label: name, data: records.map(r => r.lv), borderColor: color, backgroundColor: color + '33', borderWidth: 2, pointRadius: 4, fill: false, tension: 0.1, customExpData: records.map(r => r.exp) 
                 };
             });
 
-            // 繪製圖表
             const ctx = document.getElementById('expChart').getContext('2d');
             if (chartInstance) chartInstance.destroy(); 
-
             chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: { labels: labels, datasets: datasets },
+                type: 'line', data: { labels: labels, datasets: datasets },
                 options: {
-                    responsive: true,
-                    scales: { 
-                        y: { 
-                            min: 1, 
-                            suggestedMax: 200, 
-                            title: { display: true, text: '角色等級 (LV)' } 
-                        } 
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const datasetIndex = context.datasetIndex;
-                                    const dataIndex = context.dataIndex;
-                                    const name = context.dataset.label;
-                                    const lv = context.parsed.y;
-                                    const exp = context.chart.data.datasets[datasetIndex].customExpData[dataIndex];
-                                    return ` ${name} | LV: ${lv} | 經驗值: ${exp}%`;
-                                }
-                            }
-                        }
-                    }
+                    responsive: true, scales: { y: { min: 1, suggestedMax: 200, title: { display: true, text: '角色等級 (LV)' } } },
+                    plugins: { tooltip: { callbacks: { label: function(context) {
+                        return ` ${context.dataset.label} | LV: ${context.parsed.y} | EXP: ${context.chart.data.datasets[context.datasetIndex].customExpData[context.dataIndex].toLocaleString()}`;
+                    }}}}
                 }
             });
         }
