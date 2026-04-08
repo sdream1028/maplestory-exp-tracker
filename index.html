@@ -49,7 +49,6 @@
         
         .table-responsive { overflow-x: auto; margin-top: 10px; }
         .spreadsheet-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        /* 統一置中讓 LV 和 經驗值上下排版更好看 */
         .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; text-align: center; }
         .spreadsheet-table th { background-color: #f2f2f2; font-weight: bold; color: #333; }
         .spreadsheet-table td:first-child, .spreadsheet-table td:nth-child(2) { font-weight: bold; background-color: #f9f9f9; }
@@ -65,6 +64,8 @@
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1001; }
         .modal img { max-width: 90%; max-height: 90%; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         .modal-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; font-weight: bold; }
+        .card-close { position: absolute; top: 10px; right: 15px; color: #333; font-size: 24px; cursor: pointer; font-weight: bold; }
+        .card-close:hover { color: #d9534f; }
         
         .upload-wrapper { margin-top: 15px; }
         .upload-wrapper input[type="file"] { display: none; }
@@ -94,6 +95,28 @@
     <div id="imageModal" class="modal">
         <span class="modal-close" onclick="closeModal()">&times;</span>
         <img id="modalImg" src="">
+    </div>
+
+    <!-- 新增：修改紀錄的 Modal 視窗 -->
+    <div id="editModal" class="modal">
+        <div class="card" style="width: 320px; position: relative;">
+            <span class="card-close" onclick="closeEditModal()">&times;</span>
+            <h3 style="border-bottom: 2px solid var(--primary-color);">✏️ 修改紀錄</h3>
+            <input type="hidden" id="editId">
+            <div class="input-group">
+                <label>角色名稱:</label>
+                <input type="text" id="editName">
+            </div>
+            <div class="input-group">
+                <label>等級 (LV):</label>
+                <input type="number" id="editLv">
+            </div>
+            <div class="input-group">
+                <label>目前經驗值:</label>
+                <input type="number" id="editExp">
+            </div>
+            <button id="saveEditBtn" onclick="saveEdit()" style="width: 100%; margin-top: 15px;">💾 儲存修改</button>
+        </div>
     </div>
 
     <div class="container">
@@ -178,11 +201,11 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (引入 doc, updateDoc, deleteDoc) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -257,6 +280,52 @@
                 document.getElementById('imageModal').style.display = 'flex';
             } else {
                 alert("此筆紀錄沒有附帶截圖！");
+            }
+        }
+
+        // --- 修改與刪除邏輯 ---
+        window.closeEditModal = function() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+        window.editRecord = function(id) {
+            const rec = window.allRecords.find(r => r.id === id);
+            if (!rec) return;
+            document.getElementById('editId').value = rec.id;
+            document.getElementById('editName').value = rec.name;
+            document.getElementById('editLv').value = rec.lv;
+            document.getElementById('editExp').value = rec.exp;
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        window.saveEdit = async function() {
+            const id = document.getElementById('editId').value;
+            const name = document.getElementById('editName').value.trim();
+            const lv = parseInt(document.getElementById('editLv').value, 10);
+            const exp = parseInt(document.getElementById('editExp').value, 10);
+            
+            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整的名稱、等級與經驗值！"); return; }
+
+            const btn = document.getElementById('saveEditBtn');
+            btn.disabled = true; btn.innerText = "儲存中...";
+            try {
+                const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
+                await updateDoc(recordRef, { name: name, lv: lv, exp: exp });
+                window.closeEditModal();
+            } catch (err) {
+                console.error("修改失敗", err);
+                alert("修改失敗：" + err.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "💾 儲存修改";
+            }
+        }
+        window.deleteRecord = async function(id) {
+            if (confirm("確定要刪除這筆紀錄嗎？(刪除後無法復原)")) {
+                try {
+                    const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
+                    await deleteDoc(recordRef);
+                } catch (err) {
+                    console.error("刪除失敗", err);
+                    alert("刪除失敗：" + err.message);
+                }
             }
         }
 
@@ -451,7 +520,6 @@
                     const lvIndex = Math.min(Math.max(player.lv - 1, 0), 199);
                     const percentage = ((player.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
                     
-                    // 排行榜現在只會顯示「你輸入的經驗值」
                     const li = document.createElement('li'); li.className = 'leaderboard-item';
                     li.innerHTML = `<span class="rank">${index + 1}</span><div class="player-info"><strong>${player.name}</strong></div><div class="player-lv">LV ${player.lv} (${percentage}%)<br><span style="color:#666; font-size:0.85em;">EXP: ${player.exp.toLocaleString()}</span></div>`;
                     listEl.appendChild(li);
@@ -469,14 +537,25 @@
                 recordsByDateAndName[dateStr][r.name].push(r); 
             });
 
-            const dates = Object.keys(recordsByDateAndName);
+            // --- 核心改動：強制產生 4/9 到 5/27 的預設日期 ---
+            const dateSet = new Set();
+            const startDate = new Date(2026, 3, 9);  // 2026年4月9日 (程式中月份從0開始，3代表4月)
+            const endDate = new Date(2026, 4, 27);   // 2026年5月27日
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
+            }
+            // 把資料庫實際打卡日期也加進去 (防止有活動外的偷練日期)
+            Object.keys(recordsByDateAndName).forEach(d => dateSet.add(d));
+            const dates = Array.from(dateSet).sort(); // 自動照日期字串排序
+
             const tableEl = document.getElementById('dataTable');
             
             const chartLabels = [];
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], exp: [] });
             
-            if (dates.length === 0) {
+            // 改用 uniqueNames.length 判斷是否完全沒人上傳資料
+            if (uniqueNames.length === 0) {
                 tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
             } else {
                 let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
@@ -485,9 +564,10 @@
 
                 let recordNo = 1;
                 dates.forEach((date, dateIndex) => {
-                    let maxUploads = 1;
+                    let maxUploads = 1; // 預設至少印 1 行，確保空日期也會顯示
                     uniqueNames.forEach(name => {
-                        if (recordsByDateAndName[date][name]) {
+                        // 加上 recordsByDateAndName[date] 的判斷防呆
+                        if (recordsByDateAndName[date] && recordsByDateAndName[date][name]) {
                             maxUploads = Math.max(maxUploads, recordsByDateAndName[date][name].length);
                         }
                     });
@@ -500,15 +580,24 @@
                         tableHtml += `<tr><td>${recordNo}</td><td>${displayDate}</td>`;
                         
                         uniqueNames.forEach(name => {
-                            let rec = recordsByDateAndName[date][name] ? recordsByDateAndName[date][name][i] : null;
+                            // 安全地讀取該日期的紀錄
+                            let rec = (recordsByDateAndName[date] && recordsByDateAndName[date][name]) ? recordsByDateAndName[date][name][i] : null;
                             if (rec) {
-                                let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (點擊查看)</a>` : '';
+                                let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
                                 
-                                // 試算表現在只會顯示「你輸入的等級與經驗值」
-                                tableHtml += `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span> ${imgLink}</td>`;
+                                // 加入修改與刪除按鈕 (只限上傳者本人可看見)
+                                let actionLinks = '';
+                                if (currentUser && rec.userId === currentUser.uid) {
+                                    actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
+                                        <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
+                                        <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
+                                    </span>`;
+                                }
+
+                                tableHtml += `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span> ${imgLink} ${actionLinks}</td>`;
                                 
                                 chartDataByName[name].lv.push(rec.lv);
-                                chartDataByName[name].exp.push(rec.exp); // 儲存你輸入的經驗值給圖表用
+                                chartDataByName[name].exp.push(rec.exp); 
                             } else {
                                 tableHtml += `<td style="color:#ccc;">-</td>`;
                                 chartDataByName[name].lv.push(null);
@@ -548,7 +637,6 @@
                     scales: { y: { min: 1, suggestedMax: 200, title: { display: true, text: '角色等級 (LV)' } } },
                     plugins: { tooltip: { callbacks: { label: function(context) {
                         const expVal = context.chart.data.datasets[context.datasetIndex].customExpData[context.dataIndex];
-                        // 折線圖現在只會顯示「你輸入的經驗值」
                         return ` ${context.dataset.label} | LV: ${context.parsed.y} | EXP: ${expVal !== null && expVal !== undefined ? expVal.toLocaleString() : '無紀錄'}`;
                     }}}}
                 }
