@@ -18,7 +18,6 @@
         .action-btn:hover { background-color: #007B9E; }
         #status { color: #d9534f; font-weight: bold; margin-top: 10px; }
         
-        /* 畫布與擷取區域的樣式 */
         #canvasContainer { position: relative; max-width: 100%; overflow: auto; border: 2px dashed #ccc; margin-top: 10px; display: none; }
         canvas { cursor: crosshair; display: block; }
         .toolbar { margin-top: 10px; display: none; padding: 10px; background: #eef; border-radius: 5px; }
@@ -76,42 +75,29 @@
         let chartInstance = null;
         let records = JSON.parse(localStorage.getItem('expRecords')) || [];
         
-        // --- 畫布與框選相關變數 ---
         const canvas = document.getElementById('screenCanvas');
         const ctx = canvas.getContext('2d');
-        let baseImage = new Image(); // 儲存原始截圖
+        let baseImage = new Image(); 
         let isDrawing = false;
         let startX, startY, currentX, currentY;
-        let selectionRect = null; // 儲存最後框選的區域 {x, y, w, h}
+        let selectionRect = null; 
 
-        // --- 1. 螢幕擷取邏輯 ---
         document.getElementById('captureBtn').addEventListener('click', async () => {
             const statusEl = document.getElementById('status');
             try {
                 statusEl.innerText = "請選擇遊戲視窗...";
-                // 呼叫瀏覽器 API 取得畫面
                 const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 const video = document.createElement('video');
                 video.srcObject = stream;
                 
                 video.onloadedmetadata = () => {
                     video.play();
-                    // 稍微延遲一下，確保畫面有渲染出來
                     setTimeout(() => {
-                        // 設定畫布大小與視窗相同
                         canvas.width = video.videoWidth;
                         canvas.height = video.videoHeight;
-                        
-                        // 將影片當前畫面畫到畫布上
                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        
-                        // 將畫布內容存成圖片，方便後續重繪
                         baseImage.src = canvas.toDataURL();
-                        
-                        // 停止畫面分享 (因為我們只需要一張截圖)
                         stream.getTracks().forEach(track => track.stop());
-                        
-                        // 顯示畫布和工具列
                         document.getElementById('canvasContainer').style.display = 'block';
                         document.getElementById('ocrToolbar').style.display = 'block';
                         statusEl.innerText = "✅ 擷取成功！請用滑鼠在圖片上框選數值。";
@@ -123,13 +109,12 @@
             }
         });
 
-        // --- 2. 畫布框選邏輯 (滑鼠事件) ---
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
             startX = e.clientX - rect.left;
             startY = e.clientY - rect.top;
             isDrawing = true;
-            selectionRect = null; // 重置選擇
+            selectionRect = null; 
         });
 
         canvas.addEventListener('mousemove', (e) => {
@@ -137,16 +122,11 @@
             const rect = canvas.getBoundingClientRect();
             currentX = e.clientX - rect.left;
             currentY = e.clientY - rect.top;
-            
-            // 每次移動都要先清空畫布，畫上底圖，再畫紅框
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(baseImage, 0, 0);
-            
             ctx.strokeStyle = "red";
             ctx.lineWidth = 2;
             ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
-            
-            // 畫個半透明遮罩讓框選區域更明顯
             ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
             ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
         });
@@ -154,79 +134,57 @@
         canvas.addEventListener('mouseup', (e) => {
             if (!isDrawing) return;
             isDrawing = false;
-            
-            // 計算最終的 x, y, width, height (處理往左上角畫的情況)
             const width = Math.abs(currentX - startX);
             const height = Math.abs(currentY - startY);
             const x = Math.min(startX, currentX);
             const y = Math.min(startY, currentY);
-            
             if (width > 5 && height > 5) {
                 selectionRect = { x, y, w: width, h: height };
             }
         });
 
-        // --- 3. 針對框選區域進行辨識 ---
         async function recognizeSelected(type) {
             const statusEl = document.getElementById('status');
-            
             if (!selectionRect) {
                 alert("請先用滑鼠在圖片上畫出紅框，圈出要辨識的範圍！");
                 return;
             }
-
             statusEl.innerText = "⏳ 正在辨識框選區域，請稍候...";
-
-            // 建立一個暫存的小畫布，把剛剛框選的區域複製過來
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = selectionRect.w;
             tempCanvas.height = selectionRect.h;
             const tempCtx = tempCanvas.getContext('2d');
-            
-            // 從大畫布裁切出小區域畫到小畫布
             tempCtx.drawImage(
                 baseImage, 
-                selectionRect.x, selectionRect.y, selectionRect.w, selectionRect.h, // 來源裁切位置
-                0, 0, selectionRect.w, selectionRect.h // 目標繪製位置
+                selectionRect.x, selectionRect.y, selectionRect.w, selectionRect.h, 
+                0, 0, selectionRect.w, selectionRect.h 
             );
-
-            // 將小畫布轉成圖片資料交給 Tesseract
             const dataUrl = tempCanvas.toDataURL();
 
             try {
-                // 如果是辨識文字，我們可以用中文包；如果是數字，有時候純英文包辨識數字更準
                 const lang = (type === 'name') ? 'eng+chi_tra' : 'eng';
-                
                 const result = await Tesseract.recognize(dataUrl, lang);
                 let text = result.data.text.trim();
-                console.log(`辨識結果 (${type}):`, text);
 
-                // 根據不同的按鈕，清理並填入對應的欄位
                 if (type === 'name') {
-                    // 名稱：去掉換行符號
                     text = text.replace(/[\r\n]+/g, '');
                     document.getElementById('nameInput').value = text;
                 } 
                 else if (type === 'lv') {
-                    // 等級：只保留數字
                     text = text.replace(/\D/g, ''); 
                     document.getElementById('lvInput').value = text;
                 } 
                 else if (type === 'exp') {
-                    // 經驗值：只保留數字和小數點
                     text = text.replace(/[^\d.]/g, ''); 
                     document.getElementById('expInput').value = text;
                 }
-
                 statusEl.innerText = "✅ 辨識完成！可繼續框選下一個數值，或直接儲存。";
-
             } catch (error) {
                 console.error(error);
                 statusEl.innerText = "❌ 辨識失敗，請重試或手動輸入。";
             }
         }
 
-        // --- 4. 儲存資料與圖表邏輯 (與之前相同) ---
         document.getElementById('saveBtn').addEventListener('click', function() {
             const name = document.getElementById('nameInput').value || '未命名';
             const lv = parseFloat(document.getElementById('lvInput').value);
@@ -241,7 +199,6 @@
             records.push({ day: `Day ${dayNum}`, name: name, lv: lv, exp: exp });
             localStorage.setItem('expRecords', JSON.stringify(records));
 
-            // 清空輸入框
             document.getElementById('nameInput').value = '';
             document.getElementById('lvInput').value = '';
             document.getElementById('expInput').value = '';
@@ -258,11 +215,12 @@
             }
         });
 
+        // --- 更新過的繪圖邏輯 ---
         function renderChart() {
             const ctx = document.getElementById('expChart').getContext('2d');
             const labels = records.map(r => r.day);
             const expData = records.map(r => r.exp);
-            const lvData = records.map(r => r.lv);
+            const lvData = records.map(r => r.lv);   // 準備等級資料
             const nameData = records.map(r => r.name);
 
             if (chartInstance) chartInstance.destroy(); 
@@ -272,22 +230,29 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '經驗值 (%)',
-                        data: expData,
-                        borderColor: '#00cc66',
-                        backgroundColor: 'rgba(0, 204, 102, 0.2)',
+                        label: '等級 (LV)',        // 標籤改成等級
+                        data: lvData,             // Y 軸資料改成等級
+                        borderColor: '#FF9800',   // 稍微改個顏色(橘色)配合楓之谷等級的感覺
+                        backgroundColor: 'rgba(255, 152, 0, 0.2)',
                         borderWidth: 2, pointRadius: 5, pointHoverRadius: 8, fill: true, tension: 0.1
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: { y: { beginAtZero: true, max: 100 } },
+                    scales: { 
+                        y: { 
+                            // 移除 max: 100，讓圖表自動適應高等級
+                            title: { display: true, text: '角色等級 (LV)' } 
+                        } 
+                    },
                     plugins: {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     let index = context.dataIndex;
-                                    return ` ${nameData[index]} | LV: ${lvData[index]} | 經驗值: ${context.parsed.y}%`;
+                                    let currentLevel = context.parsed.y; // Y軸現在是等級
+                                    let currentExp = expData[index];     // 從 expData 陣列抓出對應的經驗值
+                                    return ` ${nameData[index]} | LV: ${currentLevel} | 經驗值: ${currentExp}%`;
                                 }
                             }
                         }
