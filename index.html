@@ -220,7 +220,7 @@
             const ctx = document.getElementById('expChart').getContext('2d');
             const labels = records.map(r => r.day);
             const expData = records.map(r => r.exp);
-            const lvData = records.map(r => r.lv);   // 準備等級資料
+            const lvData = records.map(r => r.lv);   
             const nameData = records.map(r => r.name);
 
             if (chartInstance) chartInstance.destroy(); 
@@ -230,9 +230,9 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '等級 (LV)',        // 標籤改成等級
-                        data: lvData,             // Y 軸資料改成等級
-                        borderColor: '#FF9800',   // 稍微改個顏色(橘色)配合楓之谷等級的感覺
+                        label: '等級 (LV)',        
+                        data: lvData,             
+                        borderColor: '#FF9800',   
                         backgroundColor: 'rgba(255, 152, 0, 0.2)',
                         borderWidth: 2, pointRadius: 5, pointHoverRadius: 8, fill: true, tension: 0.1
                     }]
@@ -241,7 +241,8 @@
                     responsive: true,
                     scales: { 
                         y: { 
-                            // 移除 max: 100，讓圖表自動適應高等級
+                            min: 1,                // 讓 Y 軸固定從等級 1 開始
+                            suggestedMax: 200,     // 預設最高顯示到 200 等 (若超過會自動擴充)
                             title: { display: true, text: '角色等級 (LV)' } 
                         } 
                     },
@@ -250,8 +251,8 @@
                             callbacks: {
                                 label: function(context) {
                                     let index = context.dataIndex;
-                                    let currentLevel = context.parsed.y; // Y軸現在是等級
-                                    let currentExp = expData[index];     // 從 expData 陣列抓出對應的經驗值
+                                    let currentLevel = context.parsed.y; 
+                                    let currentExp = expData[index];     
                                     return ` ${nameData[index]} | LV: ${currentLevel} | 經驗值: ${currentExp}%`;
                                 }
                             }
@@ -260,7 +261,6 @@
                 }
             });
         }
-
         renderChart();
     </script>
 </body>
