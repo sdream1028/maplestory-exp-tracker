@@ -193,7 +193,7 @@
             </div>
 
             <div class="card">
-                <h3>👑 經驗值前五名排行榜</h3>
+                <h3>👑 活動成長排行榜 (依成長量)</h3>
                 <ul class="leaderboard-list" id="leaderboardList">
                     <li>連線中...</li>
                 </ul>
@@ -499,29 +499,51 @@
         const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 251068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
         function processAndRender() {
-            // 背景運算：利用真實經驗做排序
+            // 背景運算：利用真實經驗做排序基礎
             window.allRecords.forEach(r => {
                 const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
                 r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
             });
 
+            // 先照時間順序排列，確保抓到對的「第一筆」跟「最新一筆」
             const sortedRecords = [...window.allRecords].sort((a, b) => a.timestamp - b.timestamp);
-            const latestRecordsMap = {};
-            sortedRecords.forEach(record => { latestRecordsMap[record.name] = record; });
+            
+            // --- 核心變更：計算每個人的「活動期間成長量 (Gained EXP)」 ---
+            const playerStats = {};
+            sortedRecords.forEach(r => {
+                if (!playerStats[r.name]) {
+                    playerStats[r.name] = {
+                        name: r.name,
+                        firstRecord: r, // 紀錄該玩家的第一筆(起點)
+                        latestRecord: r, // 目前迴圈掃到的最新一筆
+                        expGained: 0 // 起點的成長為 0
+                    };
+                } else {
+                    playerStats[r.name].latestRecord = r; // 更新最新紀錄
+                    // 成長量 = 最新一筆的絕對經驗 - 第一筆的絕對經驗
+                    playerStats[r.name].expGained = r.trueTotalExp - playerStats[r.name].firstRecord.trueTotalExp;
+                }
+            });
 
-            // 依照「真實累積經驗值」排名前五名
-            const leaderboard = Object.values(latestRecordsMap).sort((a, b) => b.trueTotalExp - a.trueTotalExp);
+            // 依照「活動期間增加的經驗值」進行排名！(成長最多的排第一)
+            const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
 
             const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
             const top5 = leaderboard.slice(0, 5);
             if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
             else {
                 top5.forEach((player, index) => {
-                    const lvIndex = Math.min(Math.max(player.lv - 1, 0), 199);
-                    const percentage = ((player.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
+                    const latest = player.latestRecord;
+                    const lvIndex = Math.min(Math.max(latest.lv - 1, 0), 199);
+                    const percentage = ((latest.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
                     
                     const li = document.createElement('li'); li.className = 'leaderboard-item';
-                    li.innerHTML = `<span class="rank">${index + 1}</span><div class="player-info"><strong>${player.name}</strong></div><div class="player-lv">LV ${player.lv} (${percentage}%)<br><span style="color:#666; font-size:0.85em;">EXP: ${player.exp.toLocaleString()}</span></div>`;
+                    li.innerHTML = `
+                        <span class="rank">${index + 1}</span>
+                        <div class="player-info"><strong>${player.name}</strong></div>
+                        <div class="player-lv">LV ${latest.lv} (${percentage}%)<br>
+                        <span style="color:#d35400; font-weight:bold; font-size:0.85em;">🔥 成長: +${player.expGained.toLocaleString()} EXP</span>
+                        </div>`;
                     listEl.appendChild(li);
                 });
             }
@@ -537,16 +559,14 @@
                 recordsByDateAndName[dateStr][r.name].push(r); 
             });
 
-            // --- 核心改動：強制產生 4/9 到 5/27 的預設日期 ---
             const dateSet = new Set();
-            const startDate = new Date(2026, 3, 9);  // 2026年4月9日 (程式中月份從0開始，3代表4月)
+            const startDate = new Date(2026, 3, 9);  // 2026年4月9日 
             const endDate = new Date(2026, 4, 27);   // 2026年5月27日
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                 dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
             }
-            // 把資料庫實際打卡日期也加進去 (防止有活動外的偷練日期)
             Object.keys(recordsByDateAndName).forEach(d => dateSet.add(d));
-            const dates = Array.from(dateSet).sort(); // 自動照日期字串排序
+            const dates = Array.from(dateSet).sort(); 
 
             const tableEl = document.getElementById('dataTable');
             
@@ -554,7 +574,6 @@
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], exp: [] });
             
-            // 改用 uniqueNames.length 判斷是否完全沒人上傳資料
             if (uniqueNames.length === 0) {
                 tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
             } else {
@@ -564,9 +583,8 @@
 
                 let recordNo = 1;
                 dates.forEach((date, dateIndex) => {
-                    let maxUploads = 1; // 預設至少印 1 行，確保空日期也會顯示
+                    let maxUploads = 1; 
                     uniqueNames.forEach(name => {
-                        // 加上 recordsByDateAndName[date] 的判斷防呆
                         if (recordsByDateAndName[date] && recordsByDateAndName[date][name]) {
                             maxUploads = Math.max(maxUploads, recordsByDateAndName[date][name].length);
                         }
@@ -580,12 +598,10 @@
                         tableHtml += `<tr><td>${recordNo}</td><td>${displayDate}</td>`;
                         
                         uniqueNames.forEach(name => {
-                            // 安全地讀取該日期的紀錄
                             let rec = (recordsByDateAndName[date] && recordsByDateAndName[date][name]) ? recordsByDateAndName[date][name][i] : null;
                             if (rec) {
                                 let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
                                 
-                                // 加入修改與刪除按鈕 (只限上傳者本人可看見)
                                 let actionLinks = '';
                                 if (currentUser && rec.userId === currentUser.uid) {
                                     actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
