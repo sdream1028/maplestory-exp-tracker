@@ -47,7 +47,7 @@
         .spreadsheet-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 14px; }
         .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 8px 12px; white-space: nowrap; }
         .spreadsheet-table th { background-color: #f2f2f2; text-align: center; font-weight: bold; color: #333; }
-        .spreadsheet-table td:first-child { text-align: center; font-weight: bold; background-color: #f9f9f9; }
+        .spreadsheet-table td:first-child, .spreadsheet-table td:nth-child(2) { text-align: center; font-weight: bold; background-color: #f9f9f9; }
         .spreadsheet-table tr:hover { background-color: #f1f1f1; }
     </style>
 </head>
@@ -56,7 +56,6 @@
     <h2 style="text-align: center; color: #2c3e50;">🐲 首戰龍王 - 找出獄友 📈</h2>
 
     <div class="container">
-        <!-- 左邊：主要工具區 -->
         <div class="main-content">
             <div class="card">
                 <h3>1. 擷取遊戲視窗畫面</h3>
@@ -72,7 +71,7 @@
                        <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
                     <button class="action-btn" id="btnName">🏷️ 辨識【角色名稱】</button>
                     <button class="action-btn" id="btnLv">⭐ 辨識【等級】</button>
-                    <button class="action-btn" id="btnExp">💯 辨識【總經驗值數字】</button>
+                    <button class="action-btn" id="btnExp">💯 辨識【經驗條數字】</button>
                 </div>
             </div>
 
@@ -87,15 +86,14 @@
                     <input type="number" id="lvInput" placeholder="請辨識或輸入">
                 </div>
                 <div class="input-group">
-                    <label for="expInput">經驗值 (數值): </label>
+                    <label for="expInput">目前經驗值: </label>
                     <input type="number" id="expInput" placeholder="請辨識或輸入確切數字">
                 </div>
                 <button id="saveBtn" disabled>等待資料庫連線...</button>
             </div>
 
-            <!-- 新增的試算表區塊 -->
             <div class="card" style="grid-column: 1 / -1;">
-                <h3>📅 經驗值統計表 (Spreadsheet)</h3>
+                <h3>📅 經驗值統計表 (依照真實總經驗紀錄)</h3>
                 <div class="table-responsive">
                     <table class="spreadsheet-table" id="dataTable">
                         <thead>
@@ -112,7 +110,6 @@
             </div>
         </div>
 
-        <!-- 右邊：活動與排行榜區 -->
         <div class="sidebar">
             <div class="card event-sidebar">
                 <h3>📜 活動規則與獎勵</h3>
@@ -128,7 +125,7 @@
 <span class="highlight">🏆 結算出來經驗值前四名可挑選：</span>
 1. 突襲卷一組 ( 7張 )
 2. 200雪 (嘟嘟&奶油虎)
-3. 100瞬移之石(奶油虎)
+3. 100順移之石(奶油虎)
 4. 周年轉蛋隱藏獎勵(奶油虎-未知)
 5. 160+ 額外摸彩資格(汪汪150+)，獎品未定。</div>
             </div>
@@ -142,7 +139,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -156,7 +152,7 @@
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
-            // 👇👇👇 請把 Firebase 給你的資訊替換到這裡面 👇👇👇
+            // (已修復多餘括號與 const 宣告的問題)
             firebaseConfig = {
                 apiKey: "AIzaSyCXQE91NPd2A7kfwqezUhHyGIq_ZvLRv0w",
                 authDomain: "maplestory-tracker-5e59d.firebaseapp.com",
@@ -166,7 +162,6 @@
                 appId: "1:892511796693:web:eabe9267050972e6eed15c",
                 measurementId: "G-8DS3CPCTQR"
             };
-            // 👆👆👆 替換上方內容 👆👆👆
         }
 
         const appId = 'maplestory-event-app';
@@ -183,7 +178,6 @@
             console.error(error);
             if(error.message === "MissingConfig") {
                 statusEl.innerText = "❌ 尚未設定雲端資料庫！請將 Firebase 鑰匙填入程式碼中。";
-                document.getElementById('leaderboardList').innerHTML = '<li style="color:red;">請先完成資料庫設定</li>';
             }
         }
 
@@ -201,7 +195,7 @@
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
                 if (!user) return;
-                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端";
+                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端表白牆";
                 
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 onSnapshot(publicCollection, (snapshot) => {
@@ -273,7 +267,6 @@
                 } else if (type === 'lv') {
                     document.getElementById('lvInput').value = text.replace(/\D/g, ''); 
                 } else if (type === 'exp') {
-                    // ★ 核心改動：去除逗號後，只抓取第一組連續數字 (忽略後面的 % 數)
                     text = text.replace(/,/g, ''); 
                     const match = text.match(/\d+/);
                     document.getElementById('expInput').value = match ? match[0] : '';
@@ -286,11 +279,11 @@
         document.getElementById('btnLv').addEventListener('click', () => recognizeSelected('lv'));
         document.getElementById('btnExp').addEventListener('click', () => recognizeSelected('exp'));
 
-        // --- 儲存與處理資料 ---
+        // --- 儲存資料 ---
         saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('nameInput').value.trim();
             const lv = parseInt(document.getElementById('lvInput').value, 10);
-            const exp = parseInt(document.getElementById('expInput').value, 10); // ★ 改為 parseInt 整數
+            const exp = parseInt(document.getElementById('expInput').value, 10); 
 
             if (!name || isNaN(lv) || isNaN(exp)) { statusEl.innerText = "❌ 請填寫完整的名稱、等級與經驗值！"; return; }
             if (!currentUser) { statusEl.innerText = "❌ 資料庫尚未連線，無法上傳。"; return; }
@@ -311,94 +304,132 @@
             return `hsl(${Math.abs(hash % 360)}, 70%, 50%)`;
         }
 
-        // ★ 核心改動：處理並產生「試算表表格」與「排行榜」
+        // ==========================================
+        // 📊 內建完整經驗表 (1~200等) 與資料處理邏輯
+        // ==========================================
+        const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
+        const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 251068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
+
         function processAndRender() {
+            // 1. 預先將所有人的「目前等級 + 經驗值」轉換為「真實總累積經驗值」
+            allRecords.forEach(r => {
+                const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
+                r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
+            });
+
             const sortedRecords = [...allRecords].sort((a, b) => a.timestamp - b.timestamp);
             
-            // 1. 更新排行榜 (依據最新等級與經驗值)
+            // 2. 更新排行榜 (依據真實總累積經驗值排名)
             const latestRecordsMap = {};
             sortedRecords.forEach(record => { latestRecordsMap[record.name] = record; });
 
-            const leaderboard = Object.values(latestRecordsMap).sort((a, b) => {
-                if (b.lv !== a.lv) return b.lv - a.lv; 
-                return b.exp - a.exp; 
-            });
+            const leaderboard = Object.values(latestRecordsMap).sort((a, b) => b.trueTotalExp - a.trueTotalExp);
 
             const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
             const top5 = leaderboard.slice(0, 5);
             if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
             else {
                 top5.forEach((player, index) => {
+                    const lvIndex = Math.min(Math.max(player.lv - 1, 0), 199);
+                    const percentage = ((player.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
+                    
                     const li = document.createElement('li'); li.className = 'leaderboard-item';
-                    // 使用 toLocaleString() 加上千分位逗號
-                    li.innerHTML = `<span class="rank">${index + 1}</span><div class="player-info"><strong>${player.name}</strong></div><div class="player-lv">LV ${player.lv}<br><span style="color:#666; font-size:0.85em;">${player.exp.toLocaleString()} EXP</span></div>`;
+                    li.innerHTML = `<span class="rank">${index + 1}</span><div class="player-info"><strong>${player.name}</strong></div><div class="player-lv">LV ${player.lv} (${percentage}%)<br><span style="color:#666; font-size:0.85em;">${player.trueTotalExp.toLocaleString()} 總EXP</span></div>`;
                     listEl.appendChild(li);
                 });
             }
 
-            // 2. 建立類似 Excel 的試算表表格
+            // 3. 建立試算表表格 (新增 # 遞增數字欄位)
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
-            const recordsByDate = {}; // 格式: { "04/09": { "小風": 148049857, ... } }
+            const recordsByDateAndName = {}; 
             
             sortedRecords.forEach(r => {
                 const d = new Date(r.timestamp);
                 const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-                if (!recordsByDate[dateStr]) recordsByDate[dateStr] = {};
-                recordsByDate[dateStr][r.name] = r.exp; // 同一天若有多筆，會覆蓋成最新的一筆
+                if (!recordsByDateAndName[dateStr]) recordsByDateAndName[dateStr] = {};
+                if (!recordsByDateAndName[dateStr][r.name]) recordsByDateAndName[dateStr][r.name] = [];
+                recordsByDateAndName[dateStr][r.name].push(r); 
             });
 
-            const dates = Object.keys(recordsByDate);
+            const dates = Object.keys(recordsByDateAndName);
             const tableEl = document.getElementById('dataTable');
+            
+            const chartLabels = [];
+            const chartDataByName = {};
+            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], exp: [] });
             
             if (dates.length === 0) {
                 tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
             } else {
-                // 畫出表頭 (名字列)
-                let tableHtml = '<thead><tr><th>紀錄日期</th>';
+                let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
                 uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
                 tableHtml += '</tr></thead><tbody>';
 
-                // 畫出資料列 (日期行)
-                dates.forEach((date, index) => {
-                    let dateLabel = date;
-                    if (index === 0) dateLabel += " (初始)"; // 幫第一天加上 (初始) 的文字
-                    
-                    tableHtml += `<tr><td>${dateLabel}</td>`;
+                let recordNo = 1;
+                dates.forEach((date, dateIndex) => {
+                    let maxUploads = 1;
                     uniqueNames.forEach(name => {
-                        const expVal = recordsByDate[date][name];
-                        // 如果當天有資料就加上千分位顯示，沒有就顯示空白
-                        tableHtml += `<td>${expVal ? expVal.toLocaleString() : '-'}</td>`;
+                        if (recordsByDateAndName[date][name]) {
+                            maxUploads = Math.max(maxUploads, recordsByDateAndName[date][name].length);
+                        }
                     });
-                    tableHtml += '</tr>';
+                    
+                    for (let i = 0; i < maxUploads; i++) {
+                        let displayDate = date;
+                        if (dateIndex === 0 && i === 0) displayDate += " (初始)";
+                        
+                        chartLabels.push(date); // 折線圖 X 軸直接使用日期
+                        
+                        tableHtml += `<tr><td>${recordNo}</td><td>${displayDate}</td>`;
+                        
+                        uniqueNames.forEach(name => {
+                            let rec = recordsByDateAndName[date][name] ? recordsByDateAndName[date][name][i] : null;
+                            if (rec) {
+                                // 試算表內顯示計算出的 真實數字 (不帶 %)
+                                tableHtml += `<td>${rec.trueTotalExp.toLocaleString()}</td>`;
+                                chartDataByName[name].lv.push(rec.lv);
+                                chartDataByName[name].exp.push(rec.trueTotalExp);
+                            } else {
+                                tableHtml += `<td style="color:#ccc;">-</td>`;
+                                chartDataByName[name].lv.push(null);
+                                chartDataByName[name].exp.push(null);
+                            }
+                        });
+                        tableHtml += '</tr>';
+                        recordNo++;
+                    }
                 });
                 tableHtml += '</tbody>';
                 tableEl.innerHTML = tableHtml;
             }
 
-            // 3. 更新折線圖 (維持顯示等級趨勢)
-            const playersData = {}; let maxPoints = 0;
-            sortedRecords.forEach(record => {
-                if (!playersData[record.name]) playersData[record.name] = [];
-                playersData[record.name].push(record);
-                if (playersData[record.name].length > maxPoints) maxPoints = playersData[record.name].length;
-            });
-
-            const labels = Array.from({length: maxPoints}, (_, i) => `紀錄 ${i + 1}`);
-            const datasets = Object.keys(playersData).map(name => {
-                const records = playersData[name]; const color = getColorByName(name);
+            // 4. 更新折線圖 (X 軸變更為日期，並使用 spanGaps 支援斷層點)
+            const datasets = uniqueNames.map(name => {
+                const color = getColorByName(name);
                 return {
-                    label: name, data: records.map(r => r.lv), borderColor: color, backgroundColor: color + '33', borderWidth: 2, pointRadius: 4, fill: false, tension: 0.1, customExpData: records.map(r => r.exp) 
+                    label: name, 
+                    data: chartDataByName[name].lv, 
+                    borderColor: color, 
+                    backgroundColor: color + '33', 
+                    borderWidth: 2, 
+                    pointRadius: 4, 
+                    fill: false, 
+                    tension: 0.1, 
+                    customExpData: chartDataByName[name].exp 
                 };
             });
 
             const ctx = document.getElementById('expChart').getContext('2d');
             if (chartInstance) chartInstance.destroy(); 
             chartInstance = new Chart(ctx, {
-                type: 'line', data: { labels: labels, datasets: datasets },
+                type: 'line', data: { labels: chartLabels, datasets: datasets },
                 options: {
-                    responsive: true, scales: { y: { min: 1, suggestedMax: 200, title: { display: true, text: '角色等級 (LV)' } } },
+                    responsive: true, 
+                    spanGaps: true, // 允許資料有空缺時自動連線
+                    scales: { y: { min: 1, suggestedMax: 200, title: { display: true, text: '角色等級 (LV)' } } },
                     plugins: { tooltip: { callbacks: { label: function(context) {
-                        return ` ${context.dataset.label} | LV: ${context.parsed.y} | EXP: ${context.chart.data.datasets[context.datasetIndex].customExpData[context.dataIndex].toLocaleString()}`;
+                        const expVal = context.chart.data.datasets[context.datasetIndex].customExpData[context.dataIndex];
+                        return ` ${context.dataset.label} | LV: ${context.parsed.y} | 總EXP: ${expVal ? expVal.toLocaleString() : '無紀錄'}`;
                     }}}}
                 }
             });
