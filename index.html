@@ -201,7 +201,7 @@
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
                 if (!user) return;
-                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端表白牆";
+                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端";
                 
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 onSnapshot(publicCollection, (snapshot) => {
