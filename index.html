@@ -8,18 +8,15 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root { --primary-color: #4CAF50; --secondary-color: #FF9800; --bg-color: #f4f7f6; --card-bg: #ffffff; --text-color: #333; }
-        /* 縮小基礎字體與間距，讓畫面更緊湊 */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; font-size: 14px; }
         .container { display: grid; grid-template-columns: 1fr 300px; gap: 15px; max-width: 1100px; margin: 0 auto; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
         
-        /* 頂部標題區與三槓選單按鈕 */
         header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px; }
         #menuBtn { position: absolute; left: 10px; font-size: 24px; background: none; border: none; cursor: pointer; color: #2c3e50; padding: 5px; }
         #menuBtn:hover { color: var(--primary-color); }
         h2 { margin: 5px 0; color: #2c3e50; font-size: 1.5em; }
 
-        /* 卡片與元件瘦身 */
         .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; }
         
@@ -37,7 +34,6 @@
         canvas.capture { cursor: crosshair; display: block; max-width: 100%; }
         .toolbar { margin-top: 10px; display: none; padding: 10px; background: #eef; border-radius: 5px; }
         
-        /* 右側活動與排行榜 */
         .event-sidebar { background: linear-gradient(135deg, #fff9e6, #fff); border: 2px solid var(--secondary-color); }
         .event-text { line-height: 1.5; white-space: pre-wrap; font-size: 13px; }
         .highlight { color: #d35400; font-weight: bold; }
@@ -51,28 +47,25 @@
         .player-info { flex-grow: 1; }
         .player-lv { font-weight: bold; color: var(--secondary-color); font-size: 0.9em; text-align: right;}
         
-        /* 試算表樣式 */
         .table-responsive { overflow-x: auto; margin-top: 10px; }
-        .spreadsheet-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 12px; }
-        .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; }
-        .spreadsheet-table th { background-color: #f2f2f2; text-align: center; font-weight: bold; color: #333; }
-        .spreadsheet-table td:first-child, .spreadsheet-table td:nth-child(2) { text-align: center; font-weight: bold; background-color: #f9f9f9; }
+        .spreadsheet-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        /* 統一置中讓 LV 和 經驗值上下排版更好看 */
+        .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; text-align: center; }
+        .spreadsheet-table th { background-color: #f2f2f2; font-weight: bold; color: #333; }
+        .spreadsheet-table td:first-child, .spreadsheet-table td:nth-child(2) { font-weight: bold; background-color: #f9f9f9; }
         .spreadsheet-table tr:hover { background-color: #f1f1f1; }
         .img-link { text-decoration: none; margin-left: 5px; font-size: 14px; cursor: pointer; }
 
-        /* 側邊選單 (Hamburger Menu) */
         .side-menu { position: fixed; top: 0; left: -280px; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.3); transition: 0.3s; z-index: 1000; padding: 20px; display: flex; flex-direction: column; }
         .side-menu.open { left: 0; }
         .side-menu h3 { border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
         .menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
         .menu-overlay.open { display: block; }
         
-        /* 圖片放大檢視 Modal */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1001; }
         .modal img { max-width: 90%; max-height: 90%; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         .modal-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; font-weight: bold; }
         
-        /* 上傳圖片按鈕美化 */
         .upload-wrapper { margin-top: 15px; }
         .upload-wrapper input[type="file"] { display: none; }
         .upload-btn { display: inline-block; background-color: #9C27B0; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%; text-align: center; box-sizing: border-box; }
@@ -86,7 +79,6 @@
         <h2>🐲 首戰龍王 - 找出獄友 📈</h2>
     </header>
 
-    <!-- 左側滑動選單 -->
     <div id="sideMenu" class="side-menu">
         <h3>設定與上傳</h3>
         <p style="font-size: 13px; color: #666;">除了使用畫面擷取外，你也可以直接上傳遊戲截圖檔案。</p>
@@ -99,14 +91,12 @@
     </div>
     <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
 
-    <!-- 圖片放大預覽 -->
     <div id="imageModal" class="modal">
         <span class="modal-close" onclick="closeModal()">&times;</span>
         <img id="modalImg" src="">
     </div>
 
     <div class="container">
-        <!-- 左邊：主要工具區 -->
         <div class="main-content">
             <div class="card">
                 <h3>1. 取得遊戲畫面</h3>
@@ -159,7 +149,6 @@
             </div>
         </div>
 
-        <!-- 右邊：活動與排行榜區 -->
         <div class="sidebar">
             <div class="card event-sidebar">
                 <h3>📜 活動規則與獎勵</h3>
@@ -212,7 +201,7 @@
 
         const appId = 'maplestory-event-app';
         let app, auth, db, currentUser = null, chartInstance = null;
-        window.allRecords = []; // 設為全域變數方便 modal 讀取圖片
+        window.allRecords = []; 
 
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
@@ -276,7 +265,6 @@
         const ctx = canvas.getContext('2d');
         let baseImage = new Image(), isDrawing = false, startX, startY, currentX, currentY, selectionRect = null; 
 
-        // 螢幕分享擷取
         document.getElementById('captureBtn').addEventListener('click', async () => {
             try {
                 statusEl.innerText = "請選擇遊戲視窗...";
@@ -297,7 +285,6 @@
             } catch (err) { statusEl.innerText = "❌ 無法取得畫面，請允許螢幕分享權限。"; }
         });
 
-        // 檔案上傳擷取 (新增)
         document.getElementById('imageUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -308,7 +295,7 @@
                     ctx.drawImage(baseImage, 0, 0);
                     showCanvas();
                     statusEl.innerText = "✅ 圖片上傳成功！請用滑鼠在圖片上框選數值。";
-                    toggleMenu(); // 上傳完自動關閉側邊欄
+                    toggleMenu(); 
                 }
                 baseImage.src = event.target.result;
             };
@@ -322,7 +309,6 @@
 
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect(); 
-            // 處理 canvas CSS 縮放的問題
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             startX = (e.clientX - rect.left) * scaleX; 
@@ -377,7 +363,6 @@
         document.getElementById('btnLv').addEventListener('click', () => recognizeSelected('lv'));
         document.getElementById('btnExp').addEventListener('click', () => recognizeSelected('exp'));
 
-        // --- 圖片壓縮邏輯 (避免塞爆資料庫) ---
         function compressImage(imgSrc, maxWidth = 800) {
             return new Promise((resolve) => {
                 if (!imgSrc) return resolve(null);
@@ -392,14 +377,13 @@
                     tempCanvas.width = width; tempCanvas.height = height;
                     const tempCtx = tempCanvas.getContext('2d');
                     tempCtx.drawImage(img, 0, 0, width, height);
-                    resolve(tempCanvas.toDataURL('image/jpeg', 0.6)); // 壓縮成 60% 品質的 JPG
+                    resolve(tempCanvas.toDataURL('image/jpeg', 0.6)); 
                 };
                 img.onerror = () => resolve(null);
                 img.src = imgSrc;
             });
         }
 
-        // --- 儲存資料 ---
         saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('nameInput').value.trim();
             const lv = parseInt(document.getElementById('lvInput').value, 10);
@@ -410,7 +394,6 @@
 
             saveBtn.disabled = true;
             try {
-                // 處理截圖壓縮
                 let proofImg = null;
                 if (baseImage.src) {
                     statusEl.innerText = "⏳ 正在壓縮截圖並上傳至雲端...";
@@ -422,13 +405,13 @@
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 await addDoc(publicCollection, { 
                     name: name, lv: lv, exp: exp, 
-                    image: proofImg, // 將壓縮後的圖片存入資料庫
+                    image: proofImg, 
                     timestamp: Date.now(), userId: currentUser.uid 
                 });
                 
                 statusEl.innerText = "✅ 上傳成功！圖表與排行榜已更新。";
                 document.getElementById('lvInput').value = ''; document.getElementById('expInput').value = '';
-                baseImage.src = ''; // 清空圖片避免重複上傳
+                baseImage.src = ''; 
                 document.getElementById('canvasContainer').style.display = 'none';
             } catch (err) {
                 console.error("儲存失敗", err); statusEl.innerText = "❌ 上傳失敗，檔案可能過大或連線異常。";
@@ -447,16 +430,17 @@
         const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 251068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
         function processAndRender() {
+            // 背景運算：利用真實經驗做排序
             window.allRecords.forEach(r => {
                 const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
                 r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
             });
 
             const sortedRecords = [...window.allRecords].sort((a, b) => a.timestamp - b.timestamp);
-            
             const latestRecordsMap = {};
             sortedRecords.forEach(record => { latestRecordsMap[record.name] = record; });
 
+            // 依照「真實累積經驗值」排名前五名
             const leaderboard = Object.values(latestRecordsMap).sort((a, b) => b.trueTotalExp - a.trueTotalExp);
 
             const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
@@ -467,8 +451,9 @@
                     const lvIndex = Math.min(Math.max(player.lv - 1, 0), 199);
                     const percentage = ((player.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
                     
+                    // 排行榜現在只會顯示「你輸入的經驗值」
                     const li = document.createElement('li'); li.className = 'leaderboard-item';
-                    li.innerHTML = `<span class="rank">${index + 1}</span><div class="player-info"><strong>${player.name}</strong></div><div class="player-lv">LV ${player.lv} (${percentage}%)<br><span style="color:#666; font-size:0.85em;">${player.trueTotalExp.toLocaleString()} 總EXP</span></div>`;
+                    li.innerHTML = `<span class="rank">${index + 1}</span><div class="player-info"><strong>${player.name}</strong></div><div class="player-lv">LV ${player.lv} (${percentage}%)<br><span style="color:#666; font-size:0.85em;">EXP: ${player.exp.toLocaleString()}</span></div>`;
                     listEl.appendChild(li);
                 });
             }
@@ -512,17 +497,18 @@
                         if (dateIndex === 0 && i === 0) displayDate += " (初始)";
                         
                         chartLabels.push(date); 
-                        
                         tableHtml += `<tr><td>${recordNo}</td><td>${displayDate}</td>`;
                         
                         uniqueNames.forEach(name => {
                             let rec = recordsByDateAndName[date][name] ? recordsByDateAndName[date][name][i] : null;
                             if (rec) {
-                                // 判斷是否有圖片，如果有則加上 🖼️ 按鈕
-                                let imgLink = rec.image ? `<a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️</a>` : '';
-                                tableHtml += `<td>${rec.trueTotalExp.toLocaleString()} ${imgLink}</td>`;
+                                let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (點擊查看)</a>` : '';
+                                
+                                // 試算表現在只會顯示「你輸入的等級與經驗值」
+                                tableHtml += `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span> ${imgLink}</td>`;
+                                
                                 chartDataByName[name].lv.push(rec.lv);
-                                chartDataByName[name].exp.push(rec.trueTotalExp);
+                                chartDataByName[name].exp.push(rec.exp); // 儲存你輸入的經驗值給圖表用
                             } else {
                                 tableHtml += `<td style="color:#ccc;">-</td>`;
                                 chartDataByName[name].lv.push(null);
@@ -562,7 +548,8 @@
                     scales: { y: { min: 1, suggestedMax: 200, title: { display: true, text: '角色等級 (LV)' } } },
                     plugins: { tooltip: { callbacks: { label: function(context) {
                         const expVal = context.chart.data.datasets[context.datasetIndex].customExpData[context.dataIndex];
-                        return ` ${context.dataset.label} | LV: ${context.parsed.y} | 總EXP: ${expVal ? expVal.toLocaleString() : '無紀錄'}`;
+                        // 折線圖現在只會顯示「你輸入的經驗值」
+                        return ` ${context.dataset.label} | LV: ${context.parsed.y} | EXP: ${expVal !== null && expVal !== undefined ? expVal.toLocaleString() : '無紀錄'}`;
                     }}}}
                 }
             });
