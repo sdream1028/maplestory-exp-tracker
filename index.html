@@ -125,7 +125,7 @@
 <span class="highlight">🏆 結算出來經驗值前四名可挑選：</span>
 1. 突襲卷一組 ( 7張 )
 2. 200雪 (嘟嘟&奶油虎)
-3. 100順移之石(奶油虎)
+3. 100瞬移之石(奶油虎)
 4. 周年轉蛋隱藏獎勵(奶油虎-未知)
 5. 160+ 額外摸彩資格(汪汪150+)，獎品未定。</div>
             </div>
@@ -195,7 +195,7 @@
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
                 if (!user) return;
-                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端表白牆";
+                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端";
                 
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 onSnapshot(publicCollection, (snapshot) => {
