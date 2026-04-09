@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>首戰龍王 - 找出獄友</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -15,7 +16,8 @@
         header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px; }
         #menuBtn { position: absolute; left: 10px; font-size: 24px; background: none; border: none; cursor: pointer; color: #2c3e50; padding: 5px; }
         #menuBtn:hover { color: var(--primary-color); }
-        h2 { margin: 5px 0; color: #2c3e50; font-size: 1.5em; }
+        /* 隱藏的管理員開關游標提示 */
+        h2 { margin: 5px 0; color: #2c3e50; font-size: 1.5em; cursor: help; user-select: none; }
 
         .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; }
@@ -77,7 +79,8 @@
 
     <header>
         <button id="menuBtn" onclick="toggleMenu()">☰</button>
-        <h2>🐲 首戰龍王 - 找出獄友 📈</h2>
+        <!-- 🌟 加入了連按兩下的管理員開關 -->
+        <h2 ondblclick="enableAdmin()" title="連按兩下開啟管理員模式">🐲 首戰龍王 - 找出獄友 📈</h2>
     </header>
 
     <div id="sideMenu" class="side-menu">
@@ -90,7 +93,6 @@
             </label>
         </div>
         
-        <!-- 新增：工具使用說明區塊 -->
         <div style="margin-top: 25px; font-size: 13px; color: #444; line-height: 1.6; overflow-y: auto;">
             <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 10px; color: #2c3e50;">📖 使用說明</h3>
             <ol style="padding-left: 20px; margin-top: 0;">
@@ -211,7 +213,7 @@
         </div>
     </div>
 
-    <!-- Firebase SDK (引入 doc, updateDoc, deleteDoc) -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -238,6 +240,21 @@
 
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
+
+        // 🌟 新增：全域管理員變數
+        window.isAdmin = false;
+        window.enableAdmin = function() {
+            if (window.isAdmin) return;
+            const pwd = prompt("請輸入管理員密碼以開啟全域修改權限：");
+            // 💡 密碼設定為「龍王」，你可以隨時在這裡改成自己想要的密碼
+            if (pwd === "龍王") {
+                window.isAdmin = true;
+                alert("👑 管理員模式已開啟！你現在可以修改或刪除任何人的紀錄。");
+                processAndRender(); // 重新渲染表格以顯示按鈕
+            } else if (pwd !== null) {
+                alert("❌ 密碼錯誤");
+            }
+        }
 
         try {
             app = initializeApp(firebaseConfig);
@@ -494,9 +511,6 @@
             } finally { saveBtn.disabled = false; }
         });
 
-        // ==========================================
-        // 🎨 高對比度色彩庫
-        // ==========================================
         const distinctColors = [
             '#e6194B', '#3cb44b', '#f58231', '#4363d8', '#ffe119',
             '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
@@ -507,9 +521,6 @@
             return distinctColors[index % distinctColors.length];
         }
 
-        // ==========================================
-        // 📊 內建完整經驗表與資料處理邏輯
-        // ==========================================
         const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
         const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 251068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
@@ -613,7 +624,8 @@
                                 let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
                                 
                                 let actionLinks = '';
-                                if (currentUser && rec.userId === currentUser.uid) {
+                                // 🌟 新增條件：如果是管理員模式 (window.isAdmin)，就強制顯示按鈕
+                                if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
                                     actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
                                         <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
                                         <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
@@ -622,11 +634,10 @@
 
                                 tableHtml += `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span> ${imgLink} ${actionLinks}</td>`;
                                 
-                                // 計算畫在圖表上的「累積成長量」：這筆紀錄的真實經驗 - 該玩家第一筆的真實經驗
                                 const currentExpGained = rec.trueTotalExp - playerStats[name].firstRecord.trueTotalExp;
                                 
-                                chartDataByName[name].lv.push(rec.lv); // 留存等級資料給 tooltip 使用
-                                chartDataByName[name].expGained.push(currentExpGained); // ★ 圖表 Y 軸改畫這個！
+                                chartDataByName[name].lv.push(rec.lv); 
+                                chartDataByName[name].expGained.push(currentExpGained); 
                             } else {
                                 tableHtml += `<td style="color:#ccc;">-</td>`;
                                 chartDataByName[name].lv.push(null);
@@ -645,14 +656,14 @@
                 const color = getColorByIndex(index);
                 return {
                     label: name, 
-                    data: chartDataByName[name].expGained, // ★ Y 軸資料來源變更為 expGained
+                    data: chartDataByName[name].expGained, 
                     borderColor: color, 
-                    backgroundColor: color + '33', // 加上 33 讓背景有 20% 透明度
+                    backgroundColor: color + '33', 
                     borderWidth: 2, 
                     pointRadius: 4, 
                     fill: false, 
                     tension: 0.1, 
-                    customLvData: chartDataByName[name].lv // 把等級藏在 custom 裡面給提示框用
+                    customLvData: chartDataByName[name].lv 
                 };
             });
 
@@ -665,10 +676,9 @@
                     spanGaps: true, 
                     scales: { 
                         y: { 
-                            min: 0, // 成長量從 0 開始
+                            min: 0, 
                             title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
                             ticks: {
-                                // 將 Y 軸的數字除以 100萬，並加上 M 單位
                                 callback: function(value) {
                                     return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
                                 }
