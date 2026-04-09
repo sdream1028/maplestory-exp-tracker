@@ -97,7 +97,6 @@
         <img id="modalImg" src="">
     </div>
 
-    <!-- 新增：修改紀錄的 Modal 視窗 -->
     <div id="editModal" class="modal">
         <div class="card" style="width: 320px; position: relative;">
             <span class="card-close" onclick="closeEditModal()">&times;</span>
@@ -167,7 +166,7 @@
             </div>
 
             <div class="card">
-                <h3>📊 全員成長折線圖 (等級)</h3>
+                <h3>📊 全員成長折線圖 (累積成長量)</h3>
                 <canvas id="expChart"></canvas>
             </div>
         </div>
@@ -264,7 +263,6 @@
             initAuth();
         }
 
-        // --- 介面互動邏輯 (選單與 Modal) ---
         window.toggleMenu = function() {
             document.getElementById('sideMenu').classList.toggle('open');
             document.getElementById('menuOverlay').classList.toggle('open');
@@ -283,7 +281,6 @@
             }
         }
 
-        // --- 修改與刪除邏輯 ---
         window.closeEditModal = function() {
             document.getElementById('editModal').style.display = 'none';
         }
@@ -329,7 +326,6 @@
             }
         }
 
-        // --- 擷取與上傳圖片邏輯 ---
         const canvas = document.getElementById('screenCanvas');
         const ctx = canvas.getContext('2d');
         let baseImage = new Image(), isDrawing = false, startX, startY, currentX, currentY, selectionRect = null; 
@@ -499,33 +495,28 @@
         const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 251068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
         function processAndRender() {
-            // 背景運算：利用真實經驗做排序基礎
             window.allRecords.forEach(r => {
                 const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
                 r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
             });
 
-            // 先照時間順序排列，確保抓到對的「第一筆」跟「最新一筆」
             const sortedRecords = [...window.allRecords].sort((a, b) => a.timestamp - b.timestamp);
             
-            // --- 核心變更：計算每個人的「活動期間成長量 (Gained EXP)」 ---
             const playerStats = {};
             sortedRecords.forEach(r => {
                 if (!playerStats[r.name]) {
                     playerStats[r.name] = {
                         name: r.name,
-                        firstRecord: r, // 紀錄該玩家的第一筆(起點)
-                        latestRecord: r, // 目前迴圈掃到的最新一筆
-                        expGained: 0 // 起點的成長為 0
+                        firstRecord: r, 
+                        latestRecord: r, 
+                        expGained: 0 
                     };
                 } else {
-                    playerStats[r.name].latestRecord = r; // 更新最新紀錄
-                    // 成長量 = 最新一筆的絕對經驗 - 第一筆的絕對經驗
+                    playerStats[r.name].latestRecord = r; 
                     playerStats[r.name].expGained = r.trueTotalExp - playerStats[r.name].firstRecord.trueTotalExp;
                 }
             });
 
-            // 依照「活動期間增加的經驗值」進行排名！(成長最多的排第一)
             const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
 
             const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
@@ -560,8 +551,8 @@
             });
 
             const dateSet = new Set();
-            const startDate = new Date(2026, 3, 9);  // 2026年4月9日 
-            const endDate = new Date(2026, 4, 27);   // 2026年5月27日
+            const startDate = new Date(2026, 3, 9);  
+            const endDate = new Date(2026, 4, 27);   
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                 dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
             }
@@ -572,7 +563,7 @@
             
             const chartLabels = [];
             const chartDataByName = {};
-            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], exp: [] });
+            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
             
             if (uniqueNames.length === 0) {
                 tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
@@ -612,12 +603,15 @@
 
                                 tableHtml += `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span> ${imgLink} ${actionLinks}</td>`;
                                 
-                                chartDataByName[name].lv.push(rec.lv);
-                                chartDataByName[name].exp.push(rec.exp); 
+                                // 計算畫在圖表上的「累積成長量」：這筆紀錄的真實經驗 - 該玩家第一筆的真實經驗
+                                const currentExpGained = rec.trueTotalExp - playerStats[name].firstRecord.trueTotalExp;
+                                
+                                chartDataByName[name].lv.push(rec.lv); // 留存等級資料給 tooltip 使用
+                                chartDataByName[name].expGained.push(currentExpGained); // ★ 圖表 Y 軸改畫這個！
                             } else {
                                 tableHtml += `<td style="color:#ccc;">-</td>`;
                                 chartDataByName[name].lv.push(null);
-                                chartDataByName[name].exp.push(null);
+                                chartDataByName[name].expGained.push(null);
                             }
                         });
                         tableHtml += '</tr>';
@@ -632,14 +626,14 @@
                 const color = getColorByName(name);
                 return {
                     label: name, 
-                    data: chartDataByName[name].lv, 
+                    data: chartDataByName[name].expGained, // ★ Y 軸資料來源變更為 expGained
                     borderColor: color, 
                     backgroundColor: color + '33', 
                     borderWidth: 2, 
                     pointRadius: 4, 
                     fill: false, 
                     tension: 0.1, 
-                    customExpData: chartDataByName[name].exp 
+                    customLvData: chartDataByName[name].lv // 把等級藏在 custom 裡面給提示框用
                 };
             });
 
@@ -650,10 +644,16 @@
                 options: {
                     responsive: true, 
                     spanGaps: true, 
-                    scales: { y: { min: 1, suggestedMax: 200, title: { display: true, text: '角色等級 (LV)' } } },
+                    scales: { 
+                        y: { 
+                            min: 0, // 成長量從 0 開始
+                            title: { display: true, text: '總成長經驗值 (+EXP)' } // ★ Y 軸標題變更
+                        } 
+                    },
                     plugins: { tooltip: { callbacks: { label: function(context) {
-                        const expVal = context.chart.data.datasets[context.datasetIndex].customExpData[context.dataIndex];
-                        return ` ${context.dataset.label} | LV: ${context.parsed.y} | EXP: ${expVal !== null && expVal !== undefined ? expVal.toLocaleString() : '無紀錄'}`;
+                        const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
+                        const expGainedVal = context.parsed.y;
+                        return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
                     }}}}
                 }
             });
