@@ -13,7 +13,7 @@
         .container { display: grid; grid-template-columns: 1fr 300px; gap: 15px; max-width: 1100px; margin: 0 auto; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
         
-        /* 🌟 新增這行：防止表格無限變寬撐爆整個網頁 */
+        /* 🌟 防止表格無限變寬撐爆整個網頁 */
         .main-content { min-width: 0; }
         
         header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px; }
@@ -173,7 +173,13 @@
 
             <div class="card" style="grid-column: 1 / -1;">
                 <h3>📅 經驗值統計表 (點擊 🖼️ 查詢截圖)</h3>
-                <div class="table-responsive">
+                
+                <!-- 🌟 新增：上方連動捲軸 -->
+                <div id="topScrollWrapper" style="overflow-x: auto; overflow-y: hidden; margin-bottom: 5px;">
+                    <div id="topScrollContent" style="height: 1px;"></div>
+                </div>
+                
+                <div class="table-responsive" id="tableResponsive">
                     <table class="spreadsheet-table" id="dataTable">
                         <thead><tr><th>載入中...</th></tr></thead>
                         <tbody></tbody>
@@ -249,7 +255,7 @@
         window.enableAdmin = function() {
             if (window.isAdmin) return;
             const pwd = prompt("請輸入管理員密碼以開啟全域修改權限：");
-            // 💡 密碼設定為「龍王」，你可以隨時在這裡改成自己想要的密碼
+            // 💡 密碼設定為「龍王」
             if (pwd === "龍王") {
                 window.isAdmin = true;
                 alert("👑 管理員模式已開啟！你現在可以修改或刪除任何人的紀錄。");
@@ -490,18 +496,17 @@
 
             saveBtn.disabled = true;
             try {
-                // 1. 判斷這筆是要新增，還是覆蓋今日紀錄 (保護初始起點不被覆蓋)
                 const userRecords = window.allRecords.filter(r => r.userId === currentUser.uid).sort((a, b) => a.timestamp - b.timestamp);
                 const isFirstEver = userRecords.length === 0;
                 const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
                 
                 let existingDailyId = null;
                 if (!isFirstEver) {
-                    for (let i = 1; i < userRecords.length; i++) { // 從索引 1 開始，刻意跳過基準起點！
+                    for (let i = 1; i < userRecords.length; i++) { 
                         const rDate = new Date(userRecords[i].timestamp);
                         const rDateStr = `${String(rDate.getMonth()+1).padStart(2,'0')}/${String(rDate.getDate()).padStart(2,'0')}`;
                         if (rDateStr === todayStr) {
-                            existingDailyId = userRecords[i].id; // 找到今日的紀錄 ID
+                            existingDailyId = userRecords[i].id; 
                         }
                     }
                 }
@@ -515,11 +520,9 @@
                 }
 
                 if (existingDailyId) {
-                    // 覆蓋當天紀錄
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', existingDailyId);
                     await updateDoc(docRef, { name: name, lv: lv, exp: exp, image: proofImg, timestamp: Date.now() });
                 } else {
-                    // 寫入全新紀錄
                     const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                     await addDoc(publicCollection, { 
                         name: name, lv: lv, exp: exp, 
@@ -594,16 +597,14 @@
                 });
             }
 
-            // --- 全新核心邏輯：分離「初始起點」與「每日最後一筆紀錄」 ---
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
             const displayData = { baseline: {}, daily: {} };
 
             uniqueNames.forEach(name => {
                 const userRecs = sortedRecords.filter(r => r.name === name);
                 if (userRecs.length > 0) {
-                    displayData.baseline[name] = userRecs[0]; // 第一筆固定鎖定為初始起點！
+                    displayData.baseline[name] = userRecs[0]; 
                     
-                    // 其餘紀錄分類到每日日期，同日會自動覆蓋，只保留當日最新一筆
                     for (let i = 1; i < userRecs.length; i++) {
                         const rec = userRecs[i];
                         const d = new Date(rec.timestamp);
@@ -614,19 +615,23 @@
                 }
             });
 
+            // 🌟 自動根據今天日期計算顯示區間，不印出未來空日期
             const dateSet = new Set();
-            const startDate = new Date(2026, 3, 9);  
-            const endDate = new Date(2026, 4, 27);   
-            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const startDate = new Date(2026, 3, 9);  // 2026-04-09
+            const eventEndDate = new Date(2026, 4, 27); // 2026-05-27
+            
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            const displayEndDate = today < eventEndDate ? today : eventEndDate;
+
+            for (let d = new Date(startDate); d <= displayEndDate; d.setDate(d.getDate() + 1)) {
                 dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
             }
             Object.keys(displayData.daily).forEach(d => dateSet.add(d));
             const dates = Array.from(dateSet).sort(); 
 
-            // --- 繪製表格 ---
             const tableEl = document.getElementById('dataTable');
             
-            // 獨立的單格渲染函數 (避免程式碼重複)
             function renderCell(rec) {
                 if (!rec) return `<td style="color:#ccc;">-</td>`;
                 let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
@@ -647,19 +652,19 @@
                 uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
                 tableHtml += '</tr></thead><tbody>';
 
-                // 第 1 列：強制顯示「🚀 初始起點」，讀取鎖定的 Baseline
                 tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 初始起點</td>`;
                 uniqueNames.forEach(name => {
                     tableHtml += renderCell(displayData.baseline[name]);
                 });
                 tableHtml += `</tr>`;
 
-                // 第 2 列起：每日最後一筆紀錄，保證每個日期只有 1 列
                 let recordNo = 2;
                 dates.forEach(date => {
                     tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
                     uniqueNames.forEach(name => {
-                        tableHtml += renderCell(displayData.daily[date]?.[name]);
+                        // 🌟 使用更安全的寫法讀取資料，避免較舊瀏覽器產生語法錯誤當機
+                        const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                        tableHtml += renderCell(rec);
                     });
                     tableHtml += `</tr>`;
                     recordNo++;
@@ -668,27 +673,25 @@
                 tableEl.innerHTML = tableHtml;
             }
 
-            // --- 準備折線圖資料 ---
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
             
-            // 寫入起點圖表資料
             uniqueNames.forEach(name => {
                 const rec = displayData.baseline[name];
                 if (rec) {
                     chartDataByName[name].lv.push(rec.lv);
-                    chartDataByName[name].expGained.push(0); // 基準起點成長量固定為 0
+                    chartDataByName[name].expGained.push(0); 
                 } else {
                     chartDataByName[name].lv.push(null);
                     chartDataByName[name].expGained.push(null);
                 }
             });
 
-            // 寫入每日圖表資料
             dates.forEach(date => {
                 uniqueNames.forEach(name => {
-                    const rec = displayData.daily[date]?.[name];
+                    // 🌟 使用更安全的寫法讀取資料
+                    const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
                     if (rec) {
                         chartDataByName[name].lv.push(rec.lv);
                         chartDataByName[name].expGained.push(rec.trueTotalExp - displayData.baseline[name].trueTotalExp);
@@ -740,24 +743,22 @@
                 }
             });
 
-            // 🌟 新增邏輯：更新上方捲軸的寬度，並綁定連動事件
+            // 🌟 處理上方連動捲軸功能
             setTimeout(() => {
                 const tableScroll = document.getElementById('tableResponsive');
                 const topScrollWrapper = document.getElementById('topScrollWrapper');
                 const topScrollContent = document.getElementById('topScrollContent');
                 const tableEl = document.getElementById('dataTable');
                 
-                if (tableEl && topScrollContent) {
+                if (tableEl && topScrollContent && tableScroll && topScrollWrapper) {
                     topScrollContent.style.width = tableEl.scrollWidth + 'px';
                     
-                    // 連動雙向滑動
                     topScrollWrapper.onscroll = () => { tableScroll.scrollLeft = topScrollWrapper.scrollLeft; };
                     tableScroll.onscroll = () => { topScrollWrapper.scrollLeft = tableScroll.scrollLeft; };
                 }
             }, 100);
         }
 
-        // 🌟 新增邏輯：當視窗大小改變時，自動調整上方捲軸的寬度
         window.addEventListener('resize', () => {
             const tableEl = document.getElementById('dataTable');
             const topScrollContent = document.getElementById('topScrollContent');
