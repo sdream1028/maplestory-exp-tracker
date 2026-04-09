@@ -199,7 +199,7 @@
 2. 200雪 (嘟嘟&奶油虎)
 3. 100瞬移之石(奶油虎)
 4. 周年轉蛋隱藏獎勵(奶油虎-未知)
-5. 160+ 額外摸彩資格(汪汪150+)，獎品未定。</div>
+160+ 額外摸彩資格(汪汪150+)，獎品未定。</div>
             </div>
 
             <div class="card">
@@ -262,7 +262,7 @@
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
                 if (!user) return;
-                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端";
+                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至資料庫";
                 
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 onSnapshot(publicCollection, (snapshot) => {
