@@ -589,12 +589,18 @@
                     const lvIndex = Math.min(Math.max(latest.lv - 1, 0), 199);
                     const percentage = ((latest.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
                     
+                    // 🌟 新增：將成長量轉換為百萬 (M) 單位，小數點最多顯示 2 位
+                    const expGainedM = (player.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
+                    
                     const li = document.createElement('li'); li.className = 'leaderboard-item';
                     li.innerHTML = `
                         <span class="rank">${index + 1}</span>
                         <div class="player-info"><strong>${player.name}</strong></div>
                         <div class="player-lv">LV ${latest.lv} (${percentage}%)<br>
-                        <span style="color:#d35400; font-weight:bold; font-size:0.85em;">🔥 成長: +${player.expGained.toLocaleString()} EXP</span>
+                        <!-- 🌟 新增：title 屬性達成滑鼠懸停顯示詳細數字，cursor:help 改變游標圖示 -->
+                        <span title="詳細成長量: +${player.expGained.toLocaleString()} EXP" style="color:#d35400; font-weight:bold; font-size:0.85em; cursor:help;">
+                            🔥 成長: +${expGainedM} M EXP
+                        </span>
                         </div>`;
                     listEl.appendChild(li);
                 });
@@ -655,7 +661,7 @@
                 uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
                 tableHtml += '</tr></thead><tbody>';
 
-                tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
+                tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 初始起點</td>`;
                 uniqueNames.forEach(name => {
                     tableHtml += renderCell(displayData.baseline[name]);
                 });
