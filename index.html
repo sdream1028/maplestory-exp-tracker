@@ -647,7 +647,13 @@
                     scales: { 
                         y: { 
                             min: 0, // 成長量從 0 開始
-                            title: { display: true, text: '總成長經驗值 (+EXP)' } // ★ Y 軸標題變更
+                            title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
+                            ticks: {
+                                // 將 Y 軸的數字除以 100萬，並加上 M 單位
+                                callback: function(value) {
+                                    return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                }
+                            }
                         } 
                     },
                     plugins: { tooltip: { callbacks: { label: function(context) {
