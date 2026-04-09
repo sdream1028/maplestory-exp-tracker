@@ -80,6 +80,43 @@
 </head>
 <body>
 
+ <!-- 🌟 新增：防護機制 - 停用右鍵與 F12 開發者工具 -->
+    <script>
+        // 1. 停用滑鼠右鍵選單
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // 2. 停用特定開發者快捷鍵
+        document.addEventListener('keydown', function(e) {
+            // 阻擋 F12
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            // 阻擋 Ctrl + Shift + I (開啟開發者工具)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                e.preventDefault();
+                return false;
+            }
+            // 阻擋 Ctrl + Shift + J (開啟主控台)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                e.preventDefault();
+                return false;
+            }
+            // 阻擋 Ctrl + Shift + C (檢查元素)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) {
+                e.preventDefault();
+                return false;
+            }
+            // 阻擋 Ctrl + U (檢視網頁原始碼)
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+
     <header>
         <button id="menuBtn" onclick="toggleMenu()">☰</button>
         <!-- 🌟 加入了連按兩下的管理員開關 -->
