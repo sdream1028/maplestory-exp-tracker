@@ -199,7 +199,7 @@
 2. 200雪 (嘟嘟&奶油虎)
 3. 100瞬移之石(奶油虎)
 4. 周年轉蛋隱藏獎勵(奶油虎-未知)
-160+ 額外摸彩資格(汪汪150+)，獎品未定。</div>
+5. 160+ 額外摸彩資格(汪汪150+)，獎品未定。</div>
             </div>
 
             <div class="card">
@@ -262,7 +262,7 @@
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
                 if (!user) return;
-                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至資料庫";
+                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至雲端";
                 
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 onSnapshot(publicCollection, (snapshot) => {
@@ -633,13 +633,13 @@
                 tableEl.innerHTML = tableHtml;
             }
 
-            const datasets = uniqueNames.map(name => {
-                const color = getColorByName(name);
+            const datasets = uniqueNames.map((name, index) => {
+                const color = getColorByIndex(index);
                 return {
                     label: name, 
                     data: chartDataByName[name].expGained, // ★ Y 軸資料來源變更為 expGained
                     borderColor: color, 
-                    backgroundColor: color + '33', 
+                    backgroundColor: color + '33', // 加上 33 讓背景有 20% 透明度
                     borderWidth: 2, 
                     pointRadius: 4, 
                     fill: false, 
