@@ -421,6 +421,16 @@
             document.getElementById('editName').value = rec.name;
             document.getElementById('editLv').value = rec.lv;
             document.getElementById('editExp').value = rec.exp;
+            
+            // 🌟 處理截圖上傳狀態提示，清空先前的選擇
+            document.getElementById('editImageUpload').value = '';
+            const statusLabel = document.getElementById('editImageStatus');
+            if (rec.image) {
+                statusLabel.innerText = "🖼️ 此紀錄已有截圖，上傳新檔案將會覆蓋。";
+            } else {
+                statusLabel.innerText = "❌ 此紀錄目前無截圖，可上傳補交。";
+            }
+            
             document.getElementById('editModal').style.display = 'flex';
         }
         window.saveEdit = async function() {
@@ -435,7 +445,28 @@
             btn.disabled = true; btn.innerText = "儲存中...";
             try {
                 const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
-                await updateDoc(recordRef, { name: name, lv: lv, exp: exp });
+                let updateData = { name: name, lv: lv, exp: exp };
+
+                // 🌟 檢查是否有上傳新圖片，有的話就進行壓縮
+                const fileInput = document.getElementById('editImageUpload');
+                if (fileInput.files && fileInput.files[0]) {
+                    btn.innerText = "壓縮圖片中...";
+                    const file = fileInput.files[0];
+                    const base64Str = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    
+                    // 呼叫底下的壓縮函式
+                    const compressedImg = await compressImage(base64Str);
+                    if (compressedImg) {
+                        updateData.image = compressedImg; // 將新圖片加入更新名單
+                    }
+                }
+
+                btn.innerText = "更新資料庫...";
+                await updateDoc(recordRef, updateData);
                 window.closeEditModal();
             } catch (err) {
                 console.error("修改失敗", err);
@@ -945,8 +976,16 @@
 
             const tableEl = document.getElementById('dataTable');
             
-            function renderCell(rec, dailyGain = null) {
-                if (!rec) return `<td style="color:#ccc;">-</td>`;
+            // 🌟 接收 date 與 name 參數，用於補登功能
+            function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
+                if (!rec) {
+                    let missingLink = '';
+                    // 🌟 如果是管理員，在空白格子印出「➕補登」按鈕
+                    if (window.isAdmin && cellDate && cellName) {
+                        missingLink = `<br><a title="補登此日紀錄" style="cursor:pointer; text-decoration:none; font-size: 12px; color: #007B9E; font-weight: bold; background: #e0f7fa; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;" onclick="addMissingRecord('${cellName}', '${cellDate}')">➕ 補登</a>`;
+                    }
+                    return `<td style="color:#ccc; vertical-align: middle;">-${missingLink}</td>`;
+                }
                 let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
                 let actionLinks = '';
                 if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
@@ -976,7 +1015,7 @@
 
                 tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
                 uniqueNames.forEach(name => {
-                    tableHtml += renderCell(displayData.baseline[name], null);
+                    tableHtml += renderCell(displayData.baseline[name], null, null, null);
                 });
                 tableHtml += `</tr>`;
 
@@ -996,7 +1035,7 @@
                             dailyGain = rec.trueTotalExp - previousExp[name];
                             previousExp[name] = rec.trueTotalExp; 
                         }
-                        tableHtml += renderCell(rec, dailyGain);
+                        tableHtml += renderCell(rec, dailyGain, date, name);
                     });
                     tableHtml += `</tr>`;
                     recordNo++;
