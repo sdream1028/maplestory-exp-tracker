@@ -329,7 +329,6 @@
         }
 
         const appId = 'maplestory-event-app';
-        // 🌟 新增 dailyChartInstance
         let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null;
         window.allRecords = []; 
         window.allVotes = []; 
@@ -1084,18 +1083,18 @@
                 const color = getColorByIndex(index);
                 return {
                     label: name, 
-                    data: chartDataByName[name].dailyExpGained, 
+                    data: chartDataByName[name].dailyExpGained.slice(1), 
                     backgroundColor: color + '99', // 稍微透明一點比較好看
                     borderColor: color, 
                     borderWidth: 1, 
-                    customLvData: chartDataByName[name].lv 
+                    customLvData: chartDataByName[name].lv.slice(1) 
                 };
             });
 
             const ctxDaily = document.getElementById('dailyExpChart').getContext('2d');
             if (dailyChartInstance) dailyChartInstance.destroy(); 
             dailyChartInstance = new Chart(ctxDaily, {
-                type: 'bar', data: { labels: chartLabels, datasets: dailyDatasets },
+                type: 'bar', data: { labels: dates, datasets: dailyDatasets },
                 options: {
                     responsive: true, 
                     scales: { 
