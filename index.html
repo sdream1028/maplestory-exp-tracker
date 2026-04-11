@@ -205,7 +205,8 @@
             <!-- 🌟 新增：每日盲選對賭大廳區塊 -->
             <div class="card" style="border: 2px solid #FF9800; background: #fffcf5;">
                 <h3 style="color: #d35400; border-bottom: 2px solid #ffe0b2;">🤝 每日盲選對賭大廳 (23:59 結算開牌)</h3>
-                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">請選擇你與對手的「押注選手」。押注陣容在今天內對其他人是<strong>🔒蓋牌隱藏</strong>的，每天晚上 23:59 後將會自動公開對決名單！</p>
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">請選擇你與對手押注的選手，並輸入您預測他們「今日會增長多少經驗」。<br>押注陣容與預測經驗在今天內對其他人是<strong>🔒蓋牌隱藏</strong>的，每天晚上 23:59 後將會自動公開！<br>
+                <span style="color:#d9534f; font-weight:bold;">【全新加碼規則】</span>雙方約定金額放入「獎金池」，結算後輸的一方需自掏腰包將獎金池內的 <strong style="font-size:14px;">5%</strong> 贊助到活動總獎品加碼中！</p>
                 
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
                     <div class="input-group" style="margin:0;">
@@ -214,9 +215,10 @@
                     </div>
                     <div class="input-group" style="margin:0;">
                         <label style="width: auto; margin-right: 5px; margin-left: 10px; color: #4CAF50;">你的押注:</label>
-                        <select id="wagerMyTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; max-width: 90px;">
+                        <select id="wagerMyTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; width: 90px;">
                             <option value="">載入中...</option>
                         </select>
+                        <input type="number" id="wagerMyPredictedExp" placeholder="預估經驗" style="width: 70px; margin-left: 5px;">
                     </div>
                     <div class="input-group" style="margin:0;">
                         <label style="width: auto; margin-right: 5px; margin-left: 10px;">對手名稱:</label>
@@ -224,12 +226,13 @@
                     </div>
                     <div class="input-group" style="margin:0;">
                         <label style="width: auto; margin-right: 5px; margin-left: 10px; color: #d9534f;">對手押注:</label>
-                        <select id="wagerOpponentTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; max-width: 90px;">
+                        <select id="wagerOpponentTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; width: 90px;">
                             <option value="">載入中...</option>
                         </select>
+                        <input type="number" id="wagerOpponentPredictedExp" placeholder="預估經驗" style="width: 70px; margin-left: 5px;">
                     </div>
                     <div class="input-group" style="margin:0;">
-                        <label style="width: auto; margin-right: 5px; margin-left: 10px;">賭注:</label>
+                        <label style="width: auto; margin-right: 5px; margin-left: 10px;">約定獎金池:</label>
                         <input type="number" id="wagerAmount" placeholder="數量" style="width: 60px;">
                         <select id="wagerCurrency" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; margin-left: 5px;">
                             <option value="飄雪結晶">❄️</option>
@@ -247,7 +250,7 @@
                                 <th>發起人</th>
                                 <th>對決陣容 (你的 🆚 對手的)</th>
                                 <th>對賭對象</th>
-                                <th>賭注內容</th>
+                                <th>獎金池 (輸家加碼 5%)</th>
                                 <th>狀態</th>
                             </tr>
                         </thead>
@@ -478,18 +481,28 @@
             }
         }
 
-        // 🌟 新增：雙盲選對決邏輯
+        // 🌟 新增：雙盲選對決邏輯 (包含雙方的預測經驗)
         window.submitWager = async function() {
             if (!currentUser) return alert("資料庫連線中，請稍後再試。");
             const voterName = document.getElementById('wagerVoter').value.trim();
             const myTarget = document.getElementById('wagerMyTarget').value;
+            const myPredictedExp = parseInt(document.getElementById('wagerMyPredictedExp').value, 10);
+            
             const opponentName = document.getElementById('wagerOpponent').value.trim();
             const opponentTarget = document.getElementById('wagerOpponentTarget').value;
+            const opponentPredictedExp = parseInt(document.getElementById('wagerOpponentPredictedExp').value, 10);
+            
             const amount = parseInt(document.getElementById('wagerAmount').value, 10);
             const currency = document.getElementById('wagerCurrency').value;
 
-            if (!voterName || !myTarget || !opponentName || !opponentTarget || isNaN(amount) || amount <= 0) {
-                return alert("❌ 請填寫完整的對決資訊，且賭注必須大於 0！");
+            if (!voterName || !myTarget || !opponentName || !opponentTarget) {
+                return alert("❌ 請選擇完整的對手名稱與雙方的押注選手！");
+            }
+            if (isNaN(myPredictedExp) || myPredictedExp < 0 || isNaN(opponentPredictedExp) || opponentPredictedExp < 0) {
+                return alert("❌ 請填寫您與對手的「預測經驗」，且必須為大於等於 0 的數字！");
+            }
+            if (isNaN(amount) || amount <= 0) {
+                return alert("❌ 約定獎金池金額必須大於 0！");
             }
             if (myTarget === opponentTarget) {
                 return alert("❌ 你們不能押注同一個選手啦！請重新選擇。");
@@ -503,15 +516,19 @@
                 const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
                 const wagerRef = collection(db, 'artifacts', appId, 'public', 'data', 'wagers');
                 await addDoc(wagerRef, {
-                    voterName, myTarget, opponentName, opponentTarget, amount, currency,
+                    voterName, myTarget, myPredictedExp, 
+                    opponentName, opponentTarget, opponentPredictedExp, 
+                    amount, currency,
                     timestamp: Date.now(),
                     dateString: todayStr,
                     userId: currentUser.uid,
-                    type: 'versus' // 標記為新版對決模式
+                    type: 'versus'
                 });
                 alert("✅ 對賭發起成功！在午夜 12 點前，其他人只會看到 🔒蓋牌 喔！");
                 document.getElementById('wagerMyTarget').value = '';
                 document.getElementById('wagerOpponentTarget').value = '';
+                document.getElementById('wagerMyPredictedExp').value = '';
+                document.getElementById('wagerOpponentPredictedExp').value = '';
                 document.getElementById('wagerAmount').value = '';
             } catch(err) {
                 console.error(err);
@@ -869,12 +886,12 @@
                         let isHidden = isToday && !(currentUser && w.userId === currentUser.uid) && !window.isAdmin;
 
                         if (w.type === 'versus' || w.myTarget) {
-                            // 新版：雙盲選對決
-                            let p1 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.myTarget}</span>`;
-                            let p2 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.opponentTarget}</span>`;
-                            matchDisplay = `${p1} <span style="font-size:10px;color:#999;margin:0 4px;">VS</span> ${p2}`;
+                            // 新版：雙盲選對決，加入雙方預測經驗值的呈現
+                            let p1 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.myTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 +${w.myPredictedExp ? w.myPredictedExp.toLocaleString() : '0'})</span>`;
+                            let p2 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.opponentTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 +${w.opponentPredictedExp ? w.opponentPredictedExp.toLocaleString() : '0'})</span>`;
+                            matchDisplay = `${p1} <br><span style="font-size:10px;color:#999;margin:0 4px;">VS</span><br> ${p2}`;
                         } else if (w.predictedExp !== undefined) {
-                            // 舊版相容：預測數字
+                            // 舊版相容：單純預測數字
                             let pExp = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 結算後公開</span>' : `+${w.predictedExp.toLocaleString()}`;
                             matchDisplay = `<span style="color:var(--secondary-color); font-weight:bold;">${w.targetPlayer}</span> <span style="font-size:10px;color:#999;">預測</span> <strong style="color:#007B9E;">${pExp}</strong> <span style="font-size:9px;color:#ccc;">(舊制)</span>`;
                         } else {
@@ -882,7 +899,6 @@
                             matchDisplay = `<span style="color:var(--secondary-color); font-weight:bold;">${w.targetPlayer || '-'}</span> <span style="font-size:9px;color:#ccc;">(舊制)</span>`;
                         }
 
-                        // 🌟 新增：計算 5% 輸家需投入公積金的加碼金額 (無條件捨去，最低為 1)
                         const penaltyAmount = Math.max(1, Math.floor(w.amount * 0.05));
 
                         wagerListEl.innerHTML += `
