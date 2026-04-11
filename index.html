@@ -660,15 +660,28 @@
             if (leaderboard.length === 0) {
                 bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
             } else {
+                // 🌟 新增：找出最高與最低勝率，用於動態分配精準的賠率區間
+                let winRates = leaderboard.map(p => (p.expGained / totalMarketExp) * 100);
+                let maxWinRate = Math.max(...winRates);
+                let minWinRate = Math.min(...winRates);
+                if (maxWinRate === minWinRate) { minWinRate = 0; maxWinRate = 100; } // 避免除以零的防呆
+
                 leaderboard.forEach((player, index) => {
                     let rawWinRate = (player.expGained / totalMarketExp) * 100;
                     if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
 
-                    let baseOdds = 5.0 - (rawWinRate / 100) * 4.0;
+                    // 🌟 修正賠率計算邏輯 (勝率越高 -> 賠率越低)
+                    // 1. 將勝率換算為 0~1 的等級分 (1 代表當前最高勝率者)
+                    let normalized = (rawWinRate - minWinRate) / (maxWinRate - minWinRate);
                     
-                    // 🌟 防呆：確保 name 存在再進行字元計算，避免 undefined 錯誤
+                    // 2. 基礎賠率反轉映射：最高勝率 = 1.10 賠率，最低勝率 = 5.00 賠率
+                    let baseOdds = 5.0 - (normalized * 3.9); 
+                    
+                    // 3. 加上微小的每日隨機波動 (縮小為 ±0.15，避免蓋過真實排名差距)
                     let charCode = player.name ? player.name.charCodeAt(0) : 0;
-                    let fluctuation = Math.sin(todaySeed + charCode) * 0.5;
+                    let fluctuation = Math.sin(todaySeed + charCode) * 0.15;
+                    
+                    // 4. 確保最終賠率落在 1.01 ~ 5.00 之間
                     let finalOdds = Math.max(1.01, Math.min(5.00, baseOdds + fluctuation)).toFixed(2);
 
                     const playerVotes = window.allVotes.filter(v => v.targetPlayer === player.name);
