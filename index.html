@@ -151,7 +151,7 @@
         </div>
     </div>
 
-    <!-- 🌟 新增：補登紀錄專用視窗 -->
+    <!-- 補登紀錄專用視窗 -->
     <div id="addMissingModal" class="modal">
         <div class="card" style="width: 320px; position: relative;">
             <span class="card-close" onclick="document.getElementById('addMissingModal').style.display='none'">&times;</span>
@@ -239,9 +239,15 @@
                 <canvas id="expChart"></canvas>
             </div>
 
-            <!-- 🌟 每日盲選對賭大廳區塊 --測試中-- -->
+            <!-- 🌟 單日專用排行榜長條圖 -->
+            <div class="card">
+                <h3 id="dailyChartTitle" style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
+                <canvas id="dailyExpChart"></canvas>
+            </div>
+
+            <!-- 🌟 每日盲選對賭大廳區塊 -->
             <div class="card" style="border: 2px solid #FF9800; background: #fffcf5;">
-                <h3 style="color: #d35400; border-bottom: 2px solid #ffe0b2;">🤝 每日盲選對賭大廳 --測試中-- (23:59 結算開牌)</h3>
+                <h3 style="color: #d35400; border-bottom: 2px solid #ffe0b2;">🤝 每日盲選對賭大廳 (23:59 結算開牌)</h3>
                 <p style="font-size: 13px; color: #666; margin-bottom: 10px;">請選擇你與對手押注的選手，並輸入您預測他們「今日會增長多少 % 數」。<br>押注陣容與預測 % 數在今天內對其他人是<strong>🔒蓋牌隱藏</strong>的，每天晚上 23:59 後將會自動公開！<br>
                 <span style="color:#d9534f; font-weight:bold;">【全新加碼規則】</span>雙方約定金額放入「獎金池」，結算後輸的一方需自掏腰包將獎金池內的 <strong style="font-size:14px;">5%</strong> 贊助到活動總獎品加碼中！</p>
                 
@@ -329,7 +335,7 @@
 
             <!-- 🌟 預測勝率與投注區塊 -->
             <div class="card" style="background: linear-gradient(135deg, #fff, #f3f0ff); border: 2px solid #9C27B0;">
-                <h3 style="color: #6A1B9A; border-bottom: 2px solid #e1bee7;">🎰 勝率預測與投注榜 --測試中-- (前四名)</h3>
+                <h3 style="color: #6A1B9A; border-bottom: 2px solid #e1bee7;">🎰 勝率預測與投注榜 (前四名)</h3>
                 <p style="font-size: 12px; color: #666; margin-bottom: 10px;">輸入名稱投下神聖的一票，每人<strong>每天</strong>限投一票(同日會覆蓋舊票)。根據每日曲線斜率計算勝率，賠率每日浮動(1.0~5.0)。</p>
                 <ul class="leaderboard-list" id="bettingList">
                     <li>載入中...</li>
@@ -360,7 +366,7 @@
         }
 
         const appId = 'maplestory-event-app';
-        let app, auth, db, currentUser = null, chartInstance = null;
+        let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null; // 🌟 加回 dailyChartInstance
         window.allRecords = []; 
         window.allVotes = []; 
         window.allWagers = []; 
@@ -524,7 +530,6 @@
             }
         }
 
-        // 🌟 新增：開啟補登視窗
         window.addMissingRecord = function(name, dateStr) {
             document.getElementById('addMissingName').value = name;
             document.getElementById('addMissingDate').value = dateStr;
@@ -534,7 +539,6 @@
             document.getElementById('addMissingModal').style.display = 'flex';
         }
 
-        // 🌟 新增：儲存補登資料
         window.saveMissingRecord = async function() {
             const name = document.getElementById('addMissingName').value.trim();
             const dateStr = document.getElementById('addMissingDate').value;
@@ -547,7 +551,6 @@
             btn.disabled = true; btn.innerText = "儲存中...";
 
             try {
-                // 將日期格式解析出來，產生偽造的時間戳 (設定為當年該日期的中午12點)
                 const [month, day] = dateStr.split('/');
                 const currentYear = new Date().getFullYear();
                 const targetDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 12, 0, 0);
@@ -1075,11 +1078,9 @@
 
             const tableEl = document.getElementById('dataTable');
             
-            // 🌟 接收 date 與 name 參數，用於補登功能
             function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
                 if (!rec) {
                     let missingLink = '';
-                    // 🌟 如果是管理員，在空白格子印出「➕補登」按鈕
                     if (window.isAdmin && cellDate && cellName) {
                         missingLink = `<br><a title="補登此日紀錄" style="cursor:pointer; text-decoration:none; font-size: 12px; color: #007B9E; font-weight: bold; background: #e0f7fa; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;" onclick="addMissingRecord('${cellName}', '${cellDate}')">➕ 補登</a>`;
                     }
@@ -1094,7 +1095,6 @@
                     </span>`;
                 }
                 
-                // 🌟 新增：如果當日有增長，以橘紅色顯示 +X.XX M
                 let gainHtml = '';
                 if (dailyGain !== null) {
                     let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
@@ -1118,7 +1118,6 @@
                 });
                 tableHtml += `</tr>`;
 
-                // 🌟 追蹤每個玩家「上一次」看到的經驗值，以便精準計算相減差距
                 let previousExp = {};
                 uniqueNames.forEach(name => {
                     previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
@@ -1143,19 +1142,24 @@
                 tableEl.innerHTML = tableHtml;
             }
 
+            // 🌟 準備繪圖與長條圖資料
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
-            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
+            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
             
-            // 寫入起點圖表資料
+            let lastExpForChart = {};
             uniqueNames.forEach(name => {
                 const rec = displayData.baseline[name];
                 if (rec) {
                     chartDataByName[name].lv.push(rec.lv);
                     chartDataByName[name].expGained.push(0); 
+                    chartDataByName[name].dailyExpGained.push(0); 
+                    lastExpForChart[name] = rec.trueTotalExp;
                 } else {
                     chartDataByName[name].lv.push(null);
-                    chartDataByName[name].expGained.push(null);
+                    chartDataByName[name].expGained.push(null); 
+                    chartDataByName[name].dailyExpGained.push(0); 
+                    lastExpForChart[name] = 0;
                 }
             });
 
@@ -1165,14 +1169,20 @@
                     if (rec) {
                         chartDataByName[name].lv.push(rec.lv);
                         chartDataByName[name].expGained.push(rec.trueTotalExp - displayData.baseline[name].trueTotalExp);
+                        
+                        let dailyDiff = rec.trueTotalExp - lastExpForChart[name];
+                        chartDataByName[name].dailyExpGained.push(dailyDiff);
+                        
+                        lastExpForChart[name] = rec.trueTotalExp; 
                     } else {
                         chartDataByName[name].lv.push(null);
-                        chartDataByName[name].expGained.push(null); // 保持為空，折線會自動跨過
+                        chartDataByName[name].expGained.push(null); 
+                        chartDataByName[name].dailyExpGained.push(0); 
                     }
                 });
             });
 
-            // 繪製：1. 全員成長曲線圖 (累積)
+            // 繪製全員成長曲線圖
             const datasets = uniqueNames.map((name, index) => {
                 const color = getColorByIndex(index);
                 return {
@@ -1214,7 +1224,78 @@
                 }
             });
 
-            // 處理雙向捲軸
+            // 🌟 繪製「單日增加量」長條圖 (只顯示當天，並依增加量排序)
+            const dNow = new Date();
+            const todayTargetStr = `${String(dNow.getMonth()+1).padStart(2,'0')}/${String(dNow.getDate()).padStart(2,'0')}`;
+            let targetIndexInDates = dates.indexOf(todayTargetStr);
+            let displayDateStr = todayTargetStr;
+
+            if (targetIndexInDates === -1) {
+                targetIndexInDates = dates.length - 1;
+                displayDateStr = dates[targetIndexInDates] || '';
+            }
+            const dataIndex = targetIndexInDates + 1; 
+
+            let dailyList = [];
+            uniqueNames.forEach((name, index) => {
+                let gain = chartDataByName[name].dailyExpGained[dataIndex] || 0;
+                let lv = chartDataByName[name].lv[dataIndex];
+                dailyList.push({
+                    name: name,
+                    gain: gain,
+                    lv: lv,
+                    bgColor: getColorByIndex(index) + 'CC', 
+                    borderColor: getColorByIndex(index)
+                });
+            });
+
+            dailyList.sort((a, b) => b.gain - a.gain);
+
+            document.getElementById('dailyChartTitle').innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`;
+
+            const ctxDaily = document.getElementById('dailyExpChart').getContext('2d');
+            if (dailyChartInstance) dailyChartInstance.destroy(); 
+            dailyChartInstance = new Chart(ctxDaily, {
+                type: 'bar', 
+                data: { 
+                    labels: dailyList.map(item => item.name), 
+                    datasets: [{
+                        label: '單日增加 (EXP)',
+                        data: dailyList.map(item => item.gain),
+                        backgroundColor: dailyList.map(item => item.bgColor),
+                        borderColor: dailyList.map(item => item.borderColor),
+                        borderWidth: 1,
+                        customLvData: dailyList.map(item => item.lv)
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { 
+                            callbacks: { 
+                                label: function(context) {
+                                    const lvVal = context.dataset.customLvData[context.dataIndex];
+                                    const gainVal = context.parsed.y;
+                                    return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`;
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            min: 0, 
+                            title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                }
+                            }
+                        } 
+                    }
+                }
+            });
+
             setTimeout(() => {
                 const tableScroll = document.getElementById('tableResponsive');
                 const topScrollWrapper = document.getElementById('topScrollWrapper');
