@@ -201,6 +201,56 @@
                 <h3>📊 全員成長曲線圖 (累積成長量)</h3>
                 <canvas id="expChart"></canvas>
             </div>
+
+            <!-- 🌟 新增：每日對賭大廳區塊 -->
+            <div class="card" style="border: 2px solid #FF9800; background: #fffcf5;">
+                <h3 style="color: #d35400; border-bottom: 2px solid #ffe0b2;">🤝 每日對賭大廳 (23:59 結算)</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">在上方「勝率預測榜」看完賠率後，可以在這裡正式發起對賭。每天晚上 23:59 將以當日最後的成長量為基準進行結算！</p>
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                    <div class="input-group" style="margin:0;">
+                        <label style="width: auto; margin-right: 5px;">你的名稱:</label>
+                        <input type="text" id="wagerVoter" placeholder="例如: 鮭魚" style="width: 100px;">
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label style="width: auto; margin-right: 5px; margin-left: 10px;">押注選手:</label>
+                        <select id="wagerTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px;">
+                            <option value="">載入中...</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label style="width: auto; margin-right: 5px; margin-left: 10px;">對賭對象:</label>
+                        <input type="text" id="wagerOpponent" placeholder="輸入想挑戰的人" style="width: 120px;">
+                    </div>
+                    <div class="input-group" style="margin:0;">
+                        <label style="width: auto; margin-right: 5px; margin-left: 10px;">賭注:</label>
+                        <input type="number" id="wagerAmount" placeholder="數量" style="width: 80px;">
+                        <select id="wagerCurrency" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; margin-left: 5px;">
+                            <option value="飄雪結晶">❄️ 飄雪結晶</option>
+                            <option value="楓幣">💰 楓幣</option>
+                        </select>
+                    </div>
+                    <button id="wagerSubmitBtn" onclick="submitWager()" style="background-color: #FF9800; margin-left: auto;">🤝 發起對賭</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="spreadsheet-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>發起時間</th>
+                                <th>發起人</th>
+                                <th>押注選手</th>
+                                <th>對賭對象</th>
+                                <th>賭注內容</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wagerList">
+                            <tr><td colspan="6" style="text-align:center;">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <div class="sidebar">
@@ -267,6 +317,7 @@
         let app, auth, db, currentUser = null, chartInstance = null;
         window.allRecords = []; 
         window.allVotes = []; 
+        window.allWagers = []; // 🌟 新增對賭陣列
 
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
@@ -322,6 +373,14 @@
                     snapshot.forEach(doc => { window.allVotes.push({ id: doc.id, ...doc.data() }); });
                     processAndRender();
                 }, (error) => { console.error("投票讀取失敗:", error); });
+
+                // 🌟 新增：監聽對賭紀錄
+                const wagersCollection = collection(db, 'artifacts', appId, 'public', 'data', 'wagers');
+                onSnapshot(wagersCollection, (snapshot) => {
+                    window.allWagers = [];
+                    snapshot.forEach(doc => { window.allWagers.push({ id: doc.id, ...doc.data() }); });
+                    processAndRender();
+                }, (error) => { console.error("對賭讀取失敗:", error); });
             });
             initAuth();
         }
@@ -406,6 +465,58 @@
             } catch(err) {
                 console.error("投票失敗", err);
                 alert("❌ 投票失敗：" + err.message);
+            }
+        }
+
+        // 🌟 新增：發起對賭功能
+        window.submitWager = async function() {
+            if (!currentUser) return alert("資料庫連線中，請稍後再試。");
+            const voterName = document.getElementById('wagerVoter').value.trim();
+            const targetPlayer = document.getElementById('wagerTarget').value;
+            const opponentName = document.getElementById('wagerOpponent').value.trim();
+            const amount = parseInt(document.getElementById('wagerAmount').value, 10);
+            const currency = document.getElementById('wagerCurrency').value;
+
+            if (!voterName || !targetPlayer || !opponentName || isNaN(amount) || amount <= 0) {
+                return alert("❌ 請填寫完整的對賭資訊，且賭注必須大於 0！");
+            }
+
+            const btn = document.getElementById('wagerSubmitBtn');
+            btn.disabled = true;
+            btn.innerText = "發送中...";
+
+            try {
+                const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
+                const wagerRef = collection(db, 'artifacts', appId, 'public', 'data', 'wagers');
+                await addDoc(wagerRef, {
+                    voterName, targetPlayer, opponentName, amount, currency,
+                    timestamp: Date.now(),
+                    dateString: todayStr,
+                    userId: currentUser.uid
+                });
+                alert("✅ 對賭發起成功！");
+                document.getElementById('wagerTarget').value = '';
+                document.getElementById('wagerOpponent').value = '';
+                document.getElementById('wagerAmount').value = '';
+            } catch(err) {
+                console.error(err);
+                alert("❌ 發送失敗: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🤝 發起對賭";
+            }
+        }
+        
+        // 🌟 新增：刪除對賭功能
+        window.deleteWager = async function(id) {
+            if(confirm("確定要刪除這筆對賭紀錄嗎？")) {
+                 try {
+                    const wagerRef = doc(db, 'artifacts', appId, 'public', 'data', 'wagers', id);
+                    await deleteDoc(wagerRef);
+                } catch (err) {
+                    console.error("刪除失敗", err);
+                    alert("刪除失敗：" + err.message);
+                }
             }
         }
 
@@ -596,10 +707,7 @@
             return distinctColors[index % distinctColors.length];
         }
 
-        // 🌟 被我不小心弄丟的經驗累積表，現在完整補回來了！
         const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
-        
-        const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 251068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
         function processAndRender() {
             window.allRecords.forEach(r => {
@@ -660,28 +768,20 @@
             if (leaderboard.length === 0) {
                 bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
             } else {
-                // 🌟 新增：找出最高與最低勝率，用於動態分配精準的賠率區間
                 let winRates = leaderboard.map(p => (p.expGained / totalMarketExp) * 100);
                 let maxWinRate = Math.max(...winRates);
                 let minWinRate = Math.min(...winRates);
-                if (maxWinRate === minWinRate) { minWinRate = 0; maxWinRate = 100; } // 避免除以零的防呆
+                if (maxWinRate === minWinRate) { minWinRate = 0; maxWinRate = 100; } 
 
                 leaderboard.forEach((player, index) => {
                     let rawWinRate = (player.expGained / totalMarketExp) * 100;
                     if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
 
-                    // 🌟 修正賠率計算邏輯 (勝率越高 -> 賠率越低)
-                    // 1. 將勝率換算為 0~1 的等級分 (1 代表當前最高勝率者)
                     let normalized = (rawWinRate - minWinRate) / (maxWinRate - minWinRate);
-                    
-                    // 2. 基礎賠率反轉映射：最高勝率 = 1.10 賠率，最低勝率 = 5.00 賠率
                     let baseOdds = 5.0 - (normalized * 3.9); 
                     
-                    // 3. 加上微小的每日隨機波動 (縮小為 ±0.15，避免蓋過真實排名差距)
                     let charCode = player.name ? player.name.charCodeAt(0) : 0;
                     let fluctuation = Math.sin(todaySeed + charCode) * 0.15;
-                    
-                    // 4. 確保最終賠率落在 1.01 ~ 5.00 之間
                     let finalOdds = Math.max(1.01, Math.min(5.00, baseOdds + fluctuation)).toFixed(2);
 
                     const playerVotes = window.allVotes.filter(v => v.targetPlayer === player.name);
@@ -714,6 +814,50 @@
             }
 
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
+            
+            // 🌟 更新對賭區塊的「押注選手」下拉選單
+            const selectTarget = document.getElementById('wagerTarget');
+            if (selectTarget && selectTarget.options.length <= 1 && uniqueNames.length > 0) {
+                selectTarget.innerHTML = '<option value="">請選擇押注選手...</option>';
+                uniqueNames.forEach(n => {
+                    selectTarget.innerHTML += `<option value="${n}">${n}</option>`;
+                });
+            }
+
+            // 🌟 渲染對賭清單
+            const wagerListEl = document.getElementById('wagerList');
+            if (wagerListEl) {
+                wagerListEl.innerHTML = '';
+                const sortedWagers = [...window.allWagers].sort((a, b) => b.timestamp - a.timestamp);
+                const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
+
+                if (sortedWagers.length === 0) {
+                    wagerListEl.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">目前尚無人發起對賭。</td></tr>';
+                } else {
+                    sortedWagers.forEach(w => {
+                        const isToday = w.dateString === todayStr;
+                        const statusHtml = isToday ? `<span style="color:#28a745;font-weight:bold;">🔥 進行中</span>` : `<span style="color:#6c757d;">🔒 已結算</span>`;
+                        const timeStr = new Date(w.timestamp).toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
+                        
+                        let actionLinks = '';
+                        if ((currentUser && w.userId === currentUser.uid) || window.isAdmin) {
+                            actionLinks = `<a title="刪除此紀錄" style="cursor:pointer; text-decoration:none; margin-left:8px;" onclick="deleteWager('${w.id}')">🗑️</a>`;
+                        }
+
+                        wagerListEl.innerHTML += `
+                            <tr>
+                                <td style="color:#666; font-size:11px;">${w.dateString} ${timeStr}</td>
+                                <td><strong>${w.voterName}</strong></td>
+                                <td style="color:var(--secondary-color); font-weight:bold;">${w.targetPlayer}</td>
+                                <td><strong>${w.opponentName}</strong></td>
+                                <td style="color:#d35400; font-weight:bold;">${w.amount.toLocaleString()} ${w.currency}</td>
+                                <td>${statusHtml}${actionLinks}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+
             const displayData = { baseline: {}, daily: {} };
 
             uniqueNames.forEach(name => {
