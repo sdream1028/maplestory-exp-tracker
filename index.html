@@ -202,10 +202,16 @@
                 <canvas id="expChart"></canvas>
             </div>
 
-            <!-- 🌟 新增：每日盲選對賭大廳區塊 -->
+            <!-- 🌟 新增：每日經驗增長長條圖區塊 -->
+            <div class="card">
+                <h3 style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
+                <canvas id="dailyExpChart"></canvas>
+            </div>
+
+            <!-- 🌟 每日盲選對賭大廳區塊 -->
             <div class="card" style="border: 2px solid #FF9800; background: #fffcf5;">
                 <h3 style="color: #d35400; border-bottom: 2px solid #ffe0b2;">🤝 每日盲選對賭大廳 (23:59 結算開牌)</h3>
-                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">請選擇你與對手押注的選手，並輸入您預測他們「今日會增長多少經驗」。<br>押注陣容與預測經驗在今天內對其他人是<strong>🔒蓋牌隱藏</strong>的，每天晚上 23:59 後將會自動公開！<br>
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">請選擇你與對手押注的選手，並輸入您預測他們「今日會增長多少 % 數」。<br>押注陣容與預測 % 數在今天內對其他人是<strong>🔒蓋牌隱藏</strong>的，每天晚上 23:59 後將會自動公開！<br>
                 <span style="color:#d9534f; font-weight:bold;">【全新加碼規則】</span>雙方約定金額放入「獎金池」，結算後輸的一方需自掏腰包將獎金池內的 <strong style="font-size:14px;">5%</strong> 贊助到活動總獎品加碼中！</p>
                 
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
@@ -218,7 +224,7 @@
                         <select id="wagerMyTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; width: 90px;">
                             <option value="">載入中...</option>
                         </select>
-                        <input type="number" id="wagerMyPredictedExp" placeholder="預估經驗" style="width: 70px; margin-left: 5px;">
+                        <input type="number" step="0.01" id="wagerMyPredictedPct" placeholder="預估 %" style="width: 70px; margin-left: 5px;">
                     </div>
                     <div class="input-group" style="margin:0;">
                         <label style="width: auto; margin-right: 5px; margin-left: 10px;">對手名稱:</label>
@@ -229,7 +235,7 @@
                         <select id="wagerOpponentTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; width: 90px;">
                             <option value="">載入中...</option>
                         </select>
-                        <input type="number" id="wagerOpponentPredictedExp" placeholder="預估經驗" style="width: 70px; margin-left: 5px;">
+                        <input type="number" step="0.01" id="wagerOpponentPredictedPct" placeholder="預估 %" style="width: 70px; margin-left: 5px;">
                     </div>
                     <div class="input-group" style="margin:0;">
                         <label style="width: auto; margin-right: 5px; margin-left: 10px;">約定獎金池:</label>
@@ -323,7 +329,8 @@
         }
 
         const appId = 'maplestory-event-app';
-        let app, auth, db, currentUser = null, chartInstance = null;
+        // 🌟 新增 dailyChartInstance
+        let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null;
         window.allRecords = []; 
         window.allVotes = []; 
         window.allWagers = []; 
@@ -481,16 +488,15 @@
             }
         }
 
-        // 🌟 新增：雙盲選對決邏輯 (包含雙方的預測經驗)
         window.submitWager = async function() {
             if (!currentUser) return alert("資料庫連線中，請稍後再試。");
             const voterName = document.getElementById('wagerVoter').value.trim();
             const myTarget = document.getElementById('wagerMyTarget').value;
-            const myPredictedExp = parseInt(document.getElementById('wagerMyPredictedExp').value, 10);
+            const myPredictedPct = parseFloat(document.getElementById('wagerMyPredictedPct').value);
             
             const opponentName = document.getElementById('wagerOpponent').value.trim();
             const opponentTarget = document.getElementById('wagerOpponentTarget').value;
-            const opponentPredictedExp = parseInt(document.getElementById('wagerOpponentPredictedExp').value, 10);
+            const opponentPredictedPct = parseFloat(document.getElementById('wagerOpponentPredictedPct').value);
             
             const amount = parseInt(document.getElementById('wagerAmount').value, 10);
             const currency = document.getElementById('wagerCurrency').value;
@@ -498,8 +504,8 @@
             if (!voterName || !myTarget || !opponentName || !opponentTarget) {
                 return alert("❌ 請選擇完整的對手名稱與雙方的押注選手！");
             }
-            if (isNaN(myPredictedExp) || myPredictedExp < 0 || isNaN(opponentPredictedExp) || opponentPredictedExp < 0) {
-                return alert("❌ 請填寫您與對手的「預測經驗」，且必須為大於等於 0 的數字！");
+            if (isNaN(myPredictedPct) || myPredictedPct < 0 || isNaN(opponentPredictedPct) || opponentPredictedPct < 0) {
+                return alert("❌ 請填寫您與對手的「預測 % 數」，且必須為大於等於 0 的數字！");
             }
             if (isNaN(amount) || amount <= 0) {
                 return alert("❌ 約定獎金池金額必須大於 0！");
@@ -516,8 +522,8 @@
                 const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
                 const wagerRef = collection(db, 'artifacts', appId, 'public', 'data', 'wagers');
                 await addDoc(wagerRef, {
-                    voterName, myTarget, myPredictedExp, 
-                    opponentName, opponentTarget, opponentPredictedExp, 
+                    voterName, myTarget, myPredictedPct, 
+                    opponentName, opponentTarget, opponentPredictedPct, 
                     amount, currency,
                     timestamp: Date.now(),
                     dateString: todayStr,
@@ -527,8 +533,8 @@
                 alert("✅ 對賭發起成功！在午夜 12 點前，其他人只會看到 🔒蓋牌 喔！");
                 document.getElementById('wagerMyTarget').value = '';
                 document.getElementById('wagerOpponentTarget').value = '';
-                document.getElementById('wagerMyPredictedExp').value = '';
-                document.getElementById('wagerOpponentPredictedExp').value = '';
+                document.getElementById('wagerMyPredictedPct').value = '';
+                document.getElementById('wagerOpponentPredictedPct').value = '';
                 document.getElementById('wagerAmount').value = '';
             } catch(err) {
                 console.error(err);
@@ -850,7 +856,6 @@
 
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
             
-            // 🌟 將選項更新到雙盲選的兩個欄位
             const selectMyTarget = document.getElementById('wagerMyTarget');
             const selectOpponentTarget = document.getElementById('wagerOpponentTarget');
             if (selectMyTarget && selectOpponentTarget && selectMyTarget.options.length <= 1 && uniqueNames.length > 0) {
@@ -881,21 +886,20 @@
                             actionLinks = `<a title="刪除此紀錄" style="cursor:pointer; text-decoration:none; margin-left:8px;" onclick="deleteWager('${w.id}')">🗑️</a>`;
                         }
 
-                        // 🌟 盲盒機制邏輯：判斷是否該隱藏押注資訊
                         let matchDisplay = '';
                         let isHidden = isToday && !(currentUser && w.userId === currentUser.uid) && !window.isAdmin;
 
                         if (w.type === 'versus' || w.myTarget) {
-                            // 新版：雙盲選對決，加入雙方預測經驗值的呈現
-                            let p1 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.myTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 +${w.myPredictedExp ? w.myPredictedExp.toLocaleString() : '0'})</span>`;
-                            let p2 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.opponentTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 +${w.opponentPredictedExp ? w.opponentPredictedExp.toLocaleString() : '0'})</span>`;
+                            let myPredVal = w.myPredictedPct !== undefined ? `+${w.myPredictedPct}%` : `+${w.myPredictedExp ? w.myPredictedExp.toLocaleString() : '0'}`;
+                            let oppPredVal = w.opponentPredictedPct !== undefined ? `+${w.opponentPredictedPct}%` : `+${w.opponentPredictedExp ? w.opponentPredictedExp.toLocaleString() : '0'}`;
+                            
+                            let p1 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.myTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 ${myPredVal})</span>`;
+                            let p2 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.opponentTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 ${oppPredVal})</span>`;
                             matchDisplay = `${p1} <br><span style="font-size:10px;color:#999;margin:0 4px;">VS</span><br> ${p2}`;
                         } else if (w.predictedExp !== undefined) {
-                            // 舊版相容：單純預測數字
                             let pExp = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 結算後公開</span>' : `+${w.predictedExp.toLocaleString()}`;
                             matchDisplay = `<span style="color:var(--secondary-color); font-weight:bold;">${w.targetPlayer}</span> <span style="font-size:10px;color:#999;">預測</span> <strong style="color:#007B9E;">${pExp}</strong> <span style="font-size:9px;color:#ccc;">(舊制)</span>`;
                         } else {
-                            // 最舊版相容
                             matchDisplay = `<span style="color:var(--secondary-color); font-weight:bold;">${w.targetPlayer || '-'}</span> <span style="font-size:9px;color:#ccc;">(舊制)</span>`;
                         }
 
@@ -988,19 +992,29 @@
                 tableEl.innerHTML = tableHtml;
             }
 
+            // 🌟 準備繪製圖表所需的資料
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
-            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
+            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
             
+            // 寫入起點圖表資料
             uniqueNames.forEach(name => {
                 const rec = displayData.baseline[name];
                 if (rec) {
                     chartDataByName[name].lv.push(rec.lv);
                     chartDataByName[name].expGained.push(0); 
+                    chartDataByName[name].dailyExpGained.push(0); // 🌟 新增：起點單日成長量為0
                 } else {
                     chartDataByName[name].lv.push(null);
                     chartDataByName[name].expGained.push(null);
+                    chartDataByName[name].dailyExpGained.push(null); // 🌟 新增：無資料
                 }
+            });
+
+            // 🌟 追蹤每個玩家「上一次」看到的經驗值，以便精準計算每日相減差距
+            let lastSeenExp = {};
+            uniqueNames.forEach(name => {
+                lastSeenExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
             });
 
             dates.forEach(date => {
@@ -1009,13 +1023,21 @@
                     if (rec) {
                         chartDataByName[name].lv.push(rec.lv);
                         chartDataByName[name].expGained.push(rec.trueTotalExp - displayData.baseline[name].trueTotalExp);
+                        
+                        // 🌟 新增：精準計算單日差距 (今天總經驗 - 紀錄中最近一次的總經驗)
+                        let dailyDiff = rec.trueTotalExp - lastSeenExp[name];
+                        chartDataByName[name].dailyExpGained.push(dailyDiff);
+                        
+                        lastSeenExp[name] = rec.trueTotalExp; // 更新上一次看到的紀錄
                     } else {
                         chartDataByName[name].lv.push(null);
-                        chartDataByName[name].expGained.push(null);
+                        chartDataByName[name].expGained.push(null); // 保持為空，折線會自動跨過
+                        chartDataByName[name].dailyExpGained.push(0); // 🌟 新增：如果當天沒打卡，增長就是0
                     }
                 });
             });
 
+            // 繪製：1. 全員成長曲線圖 (累積)
             const datasets = uniqueNames.map((name, index) => {
                 const color = getColorByIndex(index);
                 return {
@@ -1052,11 +1074,50 @@
                     plugins: { tooltip: { callbacks: { label: function(context) {
                         const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
                         const expGainedVal = context.parsed.y;
-                        return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
+                        return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 總成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
                     }}}}
                 }
             });
 
+            // 🌟 繪製：2. 每日經驗增長長條圖 (單日增加量)
+            const dailyDatasets = uniqueNames.map((name, index) => {
+                const color = getColorByIndex(index);
+                return {
+                    label: name, 
+                    data: chartDataByName[name].dailyExpGained, 
+                    backgroundColor: color + '99', // 稍微透明一點比較好看
+                    borderColor: color, 
+                    borderWidth: 1, 
+                    customLvData: chartDataByName[name].lv 
+                };
+            });
+
+            const ctxDaily = document.getElementById('dailyExpChart').getContext('2d');
+            if (dailyChartInstance) dailyChartInstance.destroy(); 
+            dailyChartInstance = new Chart(ctxDaily, {
+                type: 'bar', data: { labels: chartLabels, datasets: dailyDatasets },
+                options: {
+                    responsive: true, 
+                    scales: { 
+                        y: { 
+                            min: 0, 
+                            title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                }
+                            }
+                        } 
+                    },
+                    plugins: { tooltip: { callbacks: { label: function(context) {
+                        const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
+                        const dailyGainVal = context.parsed.y;
+                        return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 今日增加: +${dailyGainVal !== null ? dailyGainVal.toLocaleString() : '0'} EXP`;
+                    }}}}
+                }
+            });
+
+            // 處理雙向捲軸
             setTimeout(() => {
                 const tableScroll = document.getElementById('tableResponsive');
                 const topScrollWrapper = document.getElementById('topScrollWrapper');
