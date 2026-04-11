@@ -124,6 +124,7 @@
         <img id="modalImg" src="">
     </div>
 
+    <!-- 一般修改紀錄視窗 -->
     <div id="editModal" class="modal">
         <div class="card" style="width: 320px; position: relative;">
             <span class="card-close" onclick="closeEditModal()">&times;</span>
@@ -141,7 +142,43 @@
                 <label>目前經驗值:</label>
                 <input type="number" id="editExp">
             </div>
+            <div class="input-group" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
+                <label style="width: 100%; margin-bottom: 5px;">補傳/修改截圖 (選填):</label>
+                <input type="file" id="editImageUpload" accept="image/*" style="font-size: 12px; width: 100%;">
+                <small id="editImageStatus" style="color: #888; margin-top: 5px;"></small>
+            </div>
             <button id="saveEditBtn" onclick="saveEdit()" style="width: 100%; margin-top: 15px;">💾 儲存修改</button>
+        </div>
+    </div>
+
+    <!-- 🌟 新增：補登紀錄專用視窗 -->
+    <div id="addMissingModal" class="modal">
+        <div class="card" style="width: 320px; position: relative;">
+            <span class="card-close" onclick="document.getElementById('addMissingModal').style.display='none'">&times;</span>
+            <h3 style="border-bottom: 2px solid #008CBA; color: #008CBA;">➕ 補登遺漏紀錄</h3>
+            
+            <div class="input-group">
+                <label>補登日期:</label>
+                <input type="text" id="addMissingDate" readonly style="background:#eee; border:none; outline:none; font-weight:bold; color:#007B9E;">
+            </div>
+            <div class="input-group">
+                <label>角色名稱:</label>
+                <input type="text" id="addMissingName" placeholder="例如: 鮭魚">
+            </div>
+            <div class="input-group">
+                <label>等級 (LV):</label>
+                <input type="number" id="addMissingLv" placeholder="請輸入等級">
+            </div>
+            <div class="input-group">
+                <label>目前經驗值:</label>
+                <input type="number" id="addMissingExp" placeholder="請輸入經驗數字">
+            </div>
+            <div class="input-group" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
+                <label style="width: 100%; margin-bottom: 5px;">上傳截圖 (選填):</label>
+                <input type="file" id="addMissingImageUpload" accept="image/*" style="font-size: 12px; width: 100%;">
+            </div>
+            
+            <button id="saveMissingBtn" onclick="saveMissingRecord()" style="width: 100%; margin-top: 15px; background-color: #008CBA;">💾 儲存補登紀錄</button>
         </div>
     </div>
 
@@ -337,7 +374,7 @@
             const pwd = prompt("請輸入管理員密碼以開啟全域修改權限：");
             if (pwd === "龍王") {
                 window.isAdmin = true;
-                alert("👑 管理員模式已開啟！你現在可以修改或刪除任何人的紀錄。");
+                alert("👑 管理員模式已開啟！你現在可以修改、刪除紀錄，也能替遺漏者進行補登。");
                 processAndRender(); 
             } else if (pwd !== null) {
                 alert("❌ 密碼錯誤");
@@ -414,6 +451,7 @@
         window.closeEditModal = function() {
             document.getElementById('editModal').style.display = 'none';
         }
+        
         window.editRecord = function(id) {
             const rec = window.allRecords.find(r => r.id === id);
             if (!rec) return;
@@ -422,7 +460,6 @@
             document.getElementById('editLv').value = rec.lv;
             document.getElementById('editExp').value = rec.exp;
             
-            // 🌟 處理截圖上傳狀態提示，清空先前的選擇
             document.getElementById('editImageUpload').value = '';
             const statusLabel = document.getElementById('editImageStatus');
             if (rec.image) {
@@ -433,6 +470,7 @@
             
             document.getElementById('editModal').style.display = 'flex';
         }
+        
         window.saveEdit = async function() {
             const id = document.getElementById('editId').value;
             const name = document.getElementById('editName').value.trim();
@@ -447,7 +485,6 @@
                 const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
                 let updateData = { name: name, lv: lv, exp: exp };
 
-                // 🌟 檢查是否有上傳新圖片，有的話就進行壓縮
                 const fileInput = document.getElementById('editImageUpload');
                 if (fileInput.files && fileInput.files[0]) {
                     btn.innerText = "壓縮圖片中...";
@@ -458,10 +495,9 @@
                         reader.readAsDataURL(file);
                     });
                     
-                    // 呼叫底下的壓縮函式
                     const compressedImg = await compressImage(base64Str);
                     if (compressedImg) {
-                        updateData.image = compressedImg; // 將新圖片加入更新名單
+                        updateData.image = compressedImg; 
                     }
                 }
 
@@ -475,6 +511,7 @@
                 btn.disabled = false; btn.innerText = "💾 儲存修改";
             }
         }
+        
         window.deleteRecord = async function(id) {
             if (confirm("確定要刪除這筆紀錄嗎？(刪除後無法復原)")) {
                 try {
@@ -484,6 +521,68 @@
                     console.error("刪除失敗", err);
                     alert("刪除失敗：" + err.message);
                 }
+            }
+        }
+
+        // 🌟 新增：開啟補登視窗
+        window.addMissingRecord = function(name, dateStr) {
+            document.getElementById('addMissingName').value = name;
+            document.getElementById('addMissingDate').value = dateStr;
+            document.getElementById('addMissingLv').value = '';
+            document.getElementById('addMissingExp').value = '';
+            document.getElementById('addMissingImageUpload').value = '';
+            document.getElementById('addMissingModal').style.display = 'flex';
+        }
+
+        // 🌟 新增：儲存補登資料
+        window.saveMissingRecord = async function() {
+            const name = document.getElementById('addMissingName').value.trim();
+            const dateStr = document.getElementById('addMissingDate').value;
+            const lv = parseInt(document.getElementById('addMissingLv').value, 10);
+            const exp = parseInt(document.getElementById('addMissingExp').value, 10);
+
+            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整的名稱、等級與經驗值！"); return; }
+
+            const btn = document.getElementById('saveMissingBtn');
+            btn.disabled = true; btn.innerText = "儲存中...";
+
+            try {
+                // 將日期格式解析出來，產生偽造的時間戳 (設定為當年該日期的中午12點)
+                const [month, day] = dateStr.split('/');
+                const currentYear = new Date().getFullYear();
+                const targetDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 12, 0, 0);
+
+                let proofImg = null;
+                const fileInput = document.getElementById('addMissingImageUpload');
+                if (fileInput.files && fileInput.files[0]) {
+                    btn.innerText = "壓縮圖片中...";
+                    const file = fileInput.files[0];
+                    const base64Str = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    proofImg = await compressImage(base64Str);
+                }
+
+                btn.innerText = "新增至資料庫...";
+                const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
+                await addDoc(publicCollection, { 
+                    name: name, 
+                    lv: lv, 
+                    exp: exp, 
+                    image: proofImg, 
+                    timestamp: targetDate.getTime(), 
+                    userId: currentUser ? currentUser.uid : 'admin_retroactive'
+                });
+
+                document.getElementById('addMissingModal').style.display = 'none';
+                alert("✅ 補登成功！");
+            } catch (err) {
+                console.error("補登失敗", err);
+                alert("補登失敗：" + err.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "💾 儲存補登紀錄";
             }
         }
 
