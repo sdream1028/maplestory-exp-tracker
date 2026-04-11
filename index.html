@@ -1078,44 +1078,6 @@
                 }
             });
 
-            // 🌟 繪製：2. 每日經驗增長長條圖 (單日增加量)
-            const dailyDatasets = uniqueNames.map((name, index) => {
-                const color = getColorByIndex(index);
-                return {
-                    label: name, 
-                    data: chartDataByName[name].dailyExpGained.slice(1), 
-                    backgroundColor: color + '99', // 稍微透明一點比較好看
-                    borderColor: color, 
-                    borderWidth: 1, 
-                    customLvData: chartDataByName[name].lv.slice(1) 
-                };
-            });
-
-            const ctxDaily = document.getElementById('dailyExpChart').getContext('2d');
-            if (dailyChartInstance) dailyChartInstance.destroy(); 
-            dailyChartInstance = new Chart(ctxDaily, {
-                type: 'bar', data: { labels: dates, datasets: dailyDatasets },
-                options: {
-                    responsive: true, 
-                    scales: { 
-                        y: { 
-                            min: 0, 
-                            title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
-                            ticks: {
-                                callback: function(value) {
-                                    return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
-                                }
-                            }
-                        } 
-                    },
-                    plugins: { tooltip: { callbacks: { label: function(context) {
-                        const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
-                        const dailyGainVal = context.parsed.y;
-                        return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 今日增加: +${dailyGainVal !== null ? dailyGainVal.toLocaleString() : '0'} EXP`;
-                    }}}}
-                }
-            });
-
             // 處理雙向捲軸
             setTimeout(() => {
                 const tableScroll = document.getElementById('tableResponsive');
