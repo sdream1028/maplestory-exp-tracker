@@ -951,7 +951,7 @@
 
             const tableEl = document.getElementById('dataTable');
             
-            function renderCell(rec) {
+            function renderCell(rec, dailyGain = null) {
                 if (!rec) return `<td style="color:#ccc;">-</td>`;
                 let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
                 let actionLinks = '';
@@ -961,7 +961,16 @@
                         <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
                     </span>`;
                 }
-                return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span> ${imgLink} ${actionLinks}</td>`;
+                
+                // 🌟 新增：如果當日有增長，以橘紅色顯示 +X.XX M
+                let gainHtml = '';
+                if (dailyGain !== null) {
+                    let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
+                    let gainColor = dailyGain > 0 ? '#d35400' : '#888';
+                    gainHtml = `<br><span style="color:${gainColor}; font-weight:bold; font-size:0.85em;">+${gainM} M</span>`;
+                }
+                
+                return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
             }
 
             if (uniqueNames.length === 0) {
@@ -973,16 +982,27 @@
 
                 tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
                 uniqueNames.forEach(name => {
-                    tableHtml += renderCell(displayData.baseline[name]);
+                    tableHtml += renderCell(displayData.baseline[name], null);
                 });
                 tableHtml += `</tr>`;
+
+                // 🌟 追蹤每個玩家「上一次」看到的經驗值，以便精準計算相減差距
+                let previousExp = {};
+                uniqueNames.forEach(name => {
+                    previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
+                });
 
                 let recordNo = 2;
                 dates.forEach(date => {
                     tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
                     uniqueNames.forEach(name => {
                         const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
-                        tableHtml += renderCell(rec);
+                        let dailyGain = null;
+                        if (rec) {
+                            dailyGain = rec.trueTotalExp - previousExp[name];
+                            previousExp[name] = rec.trueTotalExp; 
+                        }
+                        tableHtml += renderCell(rec, dailyGain);
                     });
                     tableHtml += `</tr>`;
                     recordNo++;
@@ -991,7 +1011,6 @@
                 tableEl.innerHTML = tableHtml;
             }
 
-            // 🌟 準備繪製圖表所需的資料
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
