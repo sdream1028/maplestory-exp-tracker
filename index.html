@@ -202,12 +202,6 @@
                 <canvas id="expChart"></canvas>
             </div>
 
-            <!-- 🌟 新增：每日經驗增長長條圖區塊 -->
-            <div class="card">
-                <h3 style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
-                <canvas id="dailyExpChart"></canvas>
-            </div>
-
             <!-- 🌟 每日盲選對賭大廳區塊 -->
             <div class="card" style="border: 2px solid #FF9800; background: #fffcf5;">
                 <h3 style="color: #d35400; border-bottom: 2px solid #ffe0b2;">🤝 每日盲選對賭大廳 (23:59 結算開牌)</h3>
@@ -329,7 +323,7 @@
         }
 
         const appId = 'maplestory-event-app';
-        let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null;
+        let app, auth, db, currentUser = null, chartInstance = null;
         window.allRecords = []; 
         window.allVotes = []; 
         window.allWagers = []; 
@@ -1013,7 +1007,7 @@
 
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
-            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
+            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
             
             // 寫入起點圖表資料
             uniqueNames.forEach(name => {
@@ -1021,18 +1015,10 @@
                 if (rec) {
                     chartDataByName[name].lv.push(rec.lv);
                     chartDataByName[name].expGained.push(0); 
-                    chartDataByName[name].dailyExpGained.push(0); // 🌟 新增：起點單日成長量為0
                 } else {
                     chartDataByName[name].lv.push(null);
                     chartDataByName[name].expGained.push(null);
-                    chartDataByName[name].dailyExpGained.push(null); // 🌟 新增：無資料
                 }
-            });
-
-            // 🌟 追蹤每個玩家「上一次」看到的經驗值，以便精準計算每日相減差距
-            let lastSeenExp = {};
-            uniqueNames.forEach(name => {
-                lastSeenExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
             });
 
             dates.forEach(date => {
@@ -1041,16 +1027,9 @@
                     if (rec) {
                         chartDataByName[name].lv.push(rec.lv);
                         chartDataByName[name].expGained.push(rec.trueTotalExp - displayData.baseline[name].trueTotalExp);
-                        
-                        // 🌟 新增：精準計算單日差距 (今天總經驗 - 紀錄中最近一次的總經驗)
-                        let dailyDiff = rec.trueTotalExp - lastSeenExp[name];
-                        chartDataByName[name].dailyExpGained.push(dailyDiff);
-                        
-                        lastSeenExp[name] = rec.trueTotalExp; // 更新上一次看到的紀錄
                     } else {
                         chartDataByName[name].lv.push(null);
                         chartDataByName[name].expGained.push(null); // 保持為空，折線會自動跨過
-                        chartDataByName[name].dailyExpGained.push(0); // 🌟 新增：如果當天沒打卡，增長就是0
                     }
                 });
             });
