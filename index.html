@@ -239,10 +239,35 @@
                 <canvas id="expChart"></canvas>
             </div>
 
-            <!-- 🌟 單日專用排行榜長條圖 -->
-            <div class="card">
-                <h3 id="dailyChartTitle" style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
-                <canvas id="dailyExpChart"></canvas>
+            <!-- 🌟 全新：分組加碼獎池排行榜 -->
+            <div class="card" style="border: 2px solid #4CAF50; background: #f9fff9;">
+                <h3 style="color: #2e7d32; border-bottom: 2px solid #c8e6c9;">🏆 分組加碼獎池排行榜 (依 04/09 初始等級)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px;">
+                    
+                    <!-- 新秀組 -->
+                    <div style="background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <h4 style="margin-top: 0; color: #d35400; text-align: center; border-bottom: 1px dashed #eee; padding-bottom: 8px;">🔥 新秀組 (LV 140~154)</h4>
+                        <ul class="leaderboard-list" id="group1List">
+                            <li>載入中...</li>
+                        </ul>
+                    </div>
+
+                    <!-- 菁英組 -->
+                    <div style="background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <h4 style="margin-top: 0; color: #2980b9; text-align: center; border-bottom: 1px dashed #eee; padding-bottom: 8px;">⚡ 菁英組 (LV 155+)</h4>
+                        <ul class="leaderboard-list" id="group2List">
+                            <li>載入中...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Nani 專屬挑戰 -->
+                    <div style="background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <h4 style="margin-top: 0; color: #8e44ad; text-align: center; border-bottom: 1px dashed #eee; padding-bottom: 8px;">🎯 Nani 專屬挑戰 (目標 LV 150)</h4>
+                        <div id="naniChallenge" style="text-align: center; padding: 15px 10px;">
+                            載入中...
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 🌟 每日盲選對賭大廳區塊 -->
@@ -327,7 +352,7 @@
             </div>
 
             <div class="card">
-                <h3>👑 活動成長排行榜</h3>
+                <h3>👑 總活動成長榜 (無分組)</h3>
                 <ul class="leaderboard-list" id="leaderboardList">
                     <li>連線中...</li>
                 </ul>
@@ -366,7 +391,7 @@
         }
 
         const appId = 'maplestory-event-app';
-        let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null; // 🌟 加回 dailyChartInstance
+        let app, auth, db, currentUser = null, chartInstance = null;
         window.allRecords = []; 
         window.allVotes = []; 
         window.allWagers = []; 
@@ -899,6 +924,7 @@
 
             const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
 
+            // 🌟 處理總榜
             const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
             const top5 = leaderboard.slice(0, 5);
             if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
@@ -921,6 +947,51 @@
                     listEl.appendChild(li);
                 });
             }
+
+            const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
+            const displayData = { baseline: {}, daily: {} };
+
+            uniqueNames.forEach(name => {
+                const userRecs = sortedRecords.filter(r => r.name === name);
+                if (userRecs.length > 0) {
+                    displayData.baseline[name] = userRecs[0]; 
+                    
+                    for (let i = 1; i < userRecs.length; i++) {
+                        const rec = userRecs[i];
+                        const d = new Date(rec.timestamp);
+                        const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+                        if (!displayData.daily[dateStr]) displayData.daily[dateStr] = {};
+                        displayData.daily[dateStr][name] = rec;
+                    }
+                }
+            });
+
+            // 🌟 處理 Nani 專屬挑戰
+            const naniChallengeEl = document.getElementById('naniChallenge');
+            if (naniChallengeEl) {
+                naniChallengeEl.innerHTML = '<div style="color:#999;">尚未加入紀錄</div>';
+                let naniData = null;
+
+                leaderboard.forEach(player => {
+                    if (player.name.toLowerCase() === 'nani') {
+                        naniData = player;
+                    }
+                });
+
+                if (naniData) {
+                    const latest = naniData.latestRecord;
+                    const isAchieved = latest.lv >= 150;
+                    const statusColor = isAchieved ? '#27ae60' : '#e67e22';
+                    const statusText = isAchieved ? '✅ 挑戰成功 (LV 150+)' : '🏃‍♂️ 努力衝刺中...';
+                    naniChallengeEl.innerHTML = `
+                        <div style="font-size: 32px; margin: 5px 0;">${isAchieved ? '🎉' : '🔥'}</div>
+                        <div style="font-size: 15px;"><strong>目前等級: LV ${latest.lv}</strong></div>
+                        <div style="color: ${statusColor}; font-weight: bold; margin-top: 8px;">${statusText}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">累積: +${(naniData.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2})} M</div>
+                    `;
+                }
+            }
+
 
             const bettingListEl = document.getElementById('bettingList');
             bettingListEl.innerHTML = '';
@@ -979,8 +1050,6 @@
                     bettingListEl.appendChild(li);
                 });
             }
-
-            const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
             
             const selectMyTarget = document.getElementById('wagerMyTarget');
             const selectOpponentTarget = document.getElementById('wagerOpponentTarget');
@@ -1044,23 +1113,6 @@
                     });
                 }
             }
-
-            const displayData = { baseline: {}, daily: {} };
-
-            uniqueNames.forEach(name => {
-                const userRecs = sortedRecords.filter(r => r.name === name);
-                if (userRecs.length > 0) {
-                    displayData.baseline[name] = userRecs[0]; 
-                    
-                    for (let i = 1; i < userRecs.length; i++) {
-                        const rec = userRecs[i];
-                        const d = new Date(rec.timestamp);
-                        const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-                        if (!displayData.daily[dateStr]) displayData.daily[dateStr] = {};
-                        displayData.daily[dateStr][name] = rec;
-                    }
-                }
-            });
 
             const dateSet = new Set();
             const startDate = new Date(2026, 3, 9);  
@@ -1142,7 +1194,6 @@
                 tableEl.innerHTML = tableHtml;
             }
 
-            // 🌟 準備繪圖與長條圖資料
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
@@ -1182,7 +1233,6 @@
                 });
             });
 
-            // 繪製全員成長曲線圖
             const datasets = uniqueNames.map((name, index) => {
                 const color = getColorByIndex(index);
                 return {
@@ -1221,78 +1271,6 @@
                         const expGainedVal = context.parsed.y;
                         return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 總成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
                     }}}}
-                }
-            });
-
-            // 🌟 繪製「單日增加量」長條圖 (只顯示當天，並依增加量排序)
-            const dNow = new Date();
-            const todayTargetStr = `${String(dNow.getMonth()+1).padStart(2,'0')}/${String(dNow.getDate()).padStart(2,'0')}`;
-            let targetIndexInDates = dates.indexOf(todayTargetStr);
-            let displayDateStr = todayTargetStr;
-
-            if (targetIndexInDates === -1) {
-                targetIndexInDates = dates.length - 1;
-                displayDateStr = dates[targetIndexInDates] || '';
-            }
-            const dataIndex = targetIndexInDates + 1; 
-
-            let dailyList = [];
-            uniqueNames.forEach((name, index) => {
-                let gain = chartDataByName[name].dailyExpGained[dataIndex] || 0;
-                let lv = chartDataByName[name].lv[dataIndex];
-                dailyList.push({
-                    name: name,
-                    gain: gain,
-                    lv: lv,
-                    bgColor: getColorByIndex(index) + 'CC', 
-                    borderColor: getColorByIndex(index)
-                });
-            });
-
-            dailyList.sort((a, b) => b.gain - a.gain);
-
-            document.getElementById('dailyChartTitle').innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`;
-
-            const ctxDaily = document.getElementById('dailyExpChart').getContext('2d');
-            if (dailyChartInstance) dailyChartInstance.destroy(); 
-            dailyChartInstance = new Chart(ctxDaily, {
-                type: 'bar', 
-                data: { 
-                    labels: dailyList.map(item => item.name), 
-                    datasets: [{
-                        label: '單日增加 (EXP)',
-                        data: dailyList.map(item => item.gain),
-                        backgroundColor: dailyList.map(item => item.bgColor),
-                        borderColor: dailyList.map(item => item.borderColor),
-                        borderWidth: 1,
-                        customLvData: dailyList.map(item => item.lv)
-                    }]
-                },
-                options: {
-                    responsive: true, 
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { 
-                            callbacks: { 
-                                label: function(context) {
-                                    const lvVal = context.dataset.customLvData[context.dataIndex];
-                                    const gainVal = context.parsed.y;
-                                    return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`;
-                                }
-                            }
-                        }
-                    },
-                    scales: { 
-                        y: { 
-                            min: 0, 
-                            title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
-                            ticks: {
-                                callback: function(value) {
-                                    return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
-                                }
-                            }
-                        } 
-                    }
                 }
             });
 
