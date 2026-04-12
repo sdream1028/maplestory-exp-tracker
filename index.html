@@ -238,65 +238,6 @@
                 <h3>📊 全員成長曲線圖 (累積成長量)</h3>
                 <canvas id="expChart"></canvas>
             </div>
-
-            <!-- 🌟 每日盲選對賭大廳區塊 -->
-            <div class="card" style="border: 2px solid #FF9800; background: #fffcf5;">
-                <h3 style="color: #d35400; border-bottom: 2px solid #ffe0b2;">🤝 每日盲選對賭大廳 (23:59 結算開牌)</h3>
-                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">請選擇你與對手押注的選手，並輸入您預測他們「今日會增長多少 % 數」。<br>押注陣容與預測 % 數在今天內對其他人是<strong>🔒蓋牌隱藏</strong>的，每天晚上 23:59 後將會自動公開！<br>
-                <span style="color:#d9534f; font-weight:bold;">【全新加碼規則】</span>雙方約定金額放入「獎金池」，結算後輸的一方需自掏腰包將獎金池內的 <strong style="font-size:14px;">5%</strong> 贊助到活動總獎品加碼中！</p>
-                
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                    <div class="input-group" style="margin:0;">
-                        <label style="width: auto; margin-right: 5px;">你的名稱:</label>
-                        <input type="text" id="wagerVoter" placeholder="例如: 鮭魚" style="width: 80px;">
-                    </div>
-                    <div class="input-group" style="margin:0;">
-                        <label style="width: auto; margin-right: 5px; margin-left: 10px; color: #4CAF50;">你的押注:</label>
-                        <select id="wagerMyTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; width: 90px;">
-                            <option value="">載入中...</option>
-                        </select>
-                        <input type="number" step="0.01" id="wagerMyPredictedPct" placeholder="預估 %" style="width: 70px; margin-left: 5px;">
-                    </div>
-                    <div class="input-group" style="margin:0;">
-                        <label style="width: auto; margin-right: 5px; margin-left: 10px;">對手名稱:</label>
-                        <input type="text" id="wagerOpponent" placeholder="想挑戰的人" style="width: 80px;">
-                    </div>
-                    <div class="input-group" style="margin:0;">
-                        <label style="width: auto; margin-right: 5px; margin-left: 10px; color: #d9534f;">對手押注:</label>
-                        <select id="wagerOpponentTarget" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; width: 90px;">
-                            <option value="">載入中...</option>
-                        </select>
-                        <input type="number" step="0.01" id="wagerOpponentPredictedPct" placeholder="預估 %" style="width: 70px; margin-left: 5px;">
-                    </div>
-                    <div class="input-group" style="margin:0;">
-                        <label style="width: auto; margin-right: 5px; margin-left: 10px;">約定獎金池:</label>
-                        <input type="number" id="wagerAmount" placeholder="數量" style="width: 60px;">
-                        <select id="wagerCurrency" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; margin-left: 5px;">
-                            <option value="飄雪結晶">❄️</option>
-                            <option value="楓幣">💰</option>
-                        </select>
-                    </div>
-                    <button id="wagerSubmitBtn" onclick="submitWager()" style="background-color: #FF9800; margin-left: auto;">🤝 發起對決</button>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="spreadsheet-table" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>發起時間</th>
-                                <th>發起人</th>
-                                <th>對決陣容 (你的 🆚 對手的)</th>
-                                <th>對賭對象</th>
-                                <th>獎金池 (輸家加碼 5%)</th>
-                                <th>狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody id="wagerList">
-                            <tr><td colspan="6" style="text-align:center;">載入中...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         <div class="sidebar">
@@ -335,10 +276,10 @@
                 </ul>
             </div>
 
-            <!-- 🌟 預測勝率與投注區塊 -->
+            <!-- 🌟 預估勝率區塊 (簡化版) -->
             <div class="card" style="background: linear-gradient(135deg, #fff, #f3f0ff); border: 2px solid #9C27B0;">
-                <h3 style="color: #6A1B9A; border-bottom: 2px solid #e1bee7;">🎰 勝率預測與投注榜 (前四名)</h3>
-                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">輸入名稱投下神聖的一票，每人<strong>每天</strong>限投一票(同日會覆蓋舊票)。根據每日曲線斜率計算勝率，賠率每日浮動(1.0~5.0)。</p>
+                <h3 style="color: #6A1B9A; border-bottom: 2px solid #e1bee7;">📊 預估勝率榜</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">根據目前累積成長斜率計算出的預估勝率。</p>
                 <ul class="leaderboard-list" id="bettingList">
                     <li>載入中...</li>
                 </ul>
@@ -350,7 +291,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -370,8 +311,6 @@
         const appId = 'maplestory-event-app';
         let app, auth, db, currentUser = null, chartInstance = null;
         window.allRecords = []; 
-        window.allVotes = []; 
-        window.allWagers = []; 
 
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
@@ -420,20 +359,6 @@
                     snapshot.forEach(doc => { window.allRecords.push({ id: doc.id, ...doc.data() }); });
                     processAndRender();
                 }, (error) => { console.error("紀錄讀取失敗:", error); });
-
-                const votesCollection = collection(db, 'artifacts', appId, 'public', 'data', 'votes');
-                onSnapshot(votesCollection, (snapshot) => {
-                    window.allVotes = [];
-                    snapshot.forEach(doc => { window.allVotes.push({ id: doc.id, ...doc.data() }); });
-                    processAndRender();
-                }, (error) => { console.error("投票讀取失敗:", error); });
-
-                const wagersCollection = collection(db, 'artifacts', appId, 'public', 'data', 'wagers');
-                onSnapshot(wagersCollection, (snapshot) => {
-                    window.allWagers = [];
-                    snapshot.forEach(doc => { window.allWagers.push({ id: doc.id, ...doc.data() }); });
-                    processAndRender();
-                }, (error) => { console.error("對賭讀取失敗:", error); });
             });
             initAuth();
         }
@@ -588,100 +513,6 @@
                 alert("補登失敗：" + err.message);
             } finally {
                 btn.disabled = false; btn.innerText = "💾 儲存補登紀錄";
-            }
-        }
-
-        window.voteForPlayer = async function(targetPlayerName) {
-            if (!currentUser) return alert("資料庫連線中，請稍後再試。");
-            
-            const voterName = prompt(`您即將把票投給【${targetPlayerName}】\n\n請輸入您的「投票人名稱」 (每人每天限投一票，同日重複投票將覆蓋舊票)：`);
-            if (!voterName || !voterName.trim()) return;
-
-            try {
-                const d = new Date();
-                const todayId = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-                const voteDocId = currentUser.uid + '_' + todayId;
-                const voteRef = doc(db, 'artifacts', appId, 'public', 'data', 'votes', voteDocId);
-                
-                await setDoc(voteRef, {
-                    voterName: voterName.trim(),
-                    targetPlayer: targetPlayerName,
-                    timestamp: Date.now(),
-                    dateString: String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0')
-                });
-                alert(`✅ 投注成功！您今日的票已經投給了 ${targetPlayerName}`);
-            } catch(err) {
-                console.error("投票失敗", err);
-                alert("❌ 投票失敗：" + err.message);
-            }
-        }
-
-        window.submitWager = async function() {
-            if (!currentUser) return alert("資料庫連線中，請稍後再試。");
-            const voterName = document.getElementById('wagerVoter').value.trim();
-            const myTarget = document.getElementById('wagerMyTarget').value;
-            const myPredictedPct = parseFloat(document.getElementById('wagerMyPredictedPct').value);
-            
-            const opponentName = document.getElementById('wagerOpponent').value.trim();
-            const opponentTarget = document.getElementById('wagerOpponentTarget').value;
-            const opponentPredictedPct = parseFloat(document.getElementById('wagerOpponentPredictedPct').value);
-            
-            const amount = parseInt(document.getElementById('wagerAmount').value, 10);
-            const currency = document.getElementById('wagerCurrency').value;
-
-            if (!voterName || !myTarget || !opponentName || !opponentTarget) {
-                return alert("❌ 請選擇完整的對手名稱與雙方的押注選手！");
-            }
-            if (isNaN(myPredictedPct) || myPredictedPct < 0 || isNaN(opponentPredictedPct) || opponentPredictedPct < 0) {
-                return alert("❌ 請填寫您與對手的「預測 % 數」，且必須為大於等於 0 的數字！");
-            }
-            if (isNaN(amount) || amount <= 0) {
-                return alert("❌ 約定獎金池金額必須大於 0！");
-            }
-            if (myTarget === opponentTarget) {
-                return alert("❌ 你們不能押注同一個選手啦！請重新選擇。");
-            }
-
-            const btn = document.getElementById('wagerSubmitBtn');
-            btn.disabled = true;
-            btn.innerText = "發送中...";
-
-            try {
-                const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
-                const wagerRef = collection(db, 'artifacts', appId, 'public', 'data', 'wagers');
-                await addDoc(wagerRef, {
-                    voterName, myTarget, myPredictedPct, 
-                    opponentName, opponentTarget, opponentPredictedPct, 
-                    amount, currency,
-                    timestamp: Date.now(),
-                    dateString: todayStr,
-                    userId: currentUser.uid,
-                    type: 'versus'
-                });
-                alert("✅ 對賭發起成功！在午夜 12 點前，其他人只會看到 🔒蓋牌 喔！");
-                document.getElementById('wagerMyTarget').value = '';
-                document.getElementById('wagerOpponentTarget').value = '';
-                document.getElementById('wagerMyPredictedPct').value = '';
-                document.getElementById('wagerOpponentPredictedPct').value = '';
-                document.getElementById('wagerAmount').value = '';
-            } catch(err) {
-                console.error(err);
-                alert("❌ 發送失敗: " + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "🤝 發起對決";
-            }
-        }
-        
-        window.deleteWager = async function(id) {
-            if(confirm("確定要刪除這筆紀錄嗎？")) {
-                 try {
-                    const wagerRef = doc(db, 'artifacts', appId, 'public', 'data', 'wagers', id);
-                    await deleteDoc(wagerRef);
-                } catch (err) {
-                    console.error("刪除失敗", err);
-                    alert("刪除失敗：" + err.message);
-                }
             }
         }
 
@@ -969,7 +800,7 @@
                 }
             }
 
-
+            // 🌟 處理預測勝率榜 (簡化版)
             const bettingListEl = document.getElementById('bettingList');
             bettingListEl.innerHTML = '';
             
@@ -999,20 +830,100 @@
                 });
             }
 
-            const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
-            const displayData = { baseline: {}, daily: {} };
+            const dateSet = new Set();
+            const startDate = new Date(2026, 3, 9);  
+            const eventEndDate = new Date(2026, 4, 27); 
+            
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            const displayEndDate = today < eventEndDate ? today : eventEndDate;
 
+            for (let d = new Date(startDate); d <= displayEndDate; d.setDate(d.getDate() + 1)) {
+                dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
+            }
+            Object.keys(displayData.daily).forEach(d => dateSet.add(d));
+            const dates = Array.from(dateSet).sort(); 
+
+            const tableEl = document.getElementById('dataTable');
+            
+            function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
+                if (!rec) {
+                    let missingLink = '';
+                    if (window.isAdmin && cellDate && cellName) {
+                        missingLink = `<br><a title="補登此日紀錄" style="cursor:pointer; text-decoration:none; font-size: 12px; color: #007B9E; font-weight: bold; background: #e0f7fa; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;" onclick="addMissingRecord('${cellName}', '${cellDate}')">➕ 補登</a>`;
+                    }
+                    return `<td style="color:#ccc; vertical-align: middle;">-${missingLink}</td>`;
+                }
+                let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
+                let actionLinks = '';
+                if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
+                    actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
+                        <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
+                        <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
+                    </span>`;
+                }
+                
+                let gainHtml = '';
+                if (dailyGain !== null) {
+                    let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
+                    let gainColor = dailyGain > 0 ? '#d35400' : '#888';
+                    gainHtml = `<br><span style="color:${gainColor}; font-weight:bold; font-size:0.85em;">+${gainM} M</span>`;
+                }
+                
+                return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
+            }
+
+            if (uniqueNames.length === 0) {
+                tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
+            } else {
+                let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
+                uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
+                tableHtml += '</tr></thead><tbody>';
+
+                tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
+                uniqueNames.forEach(name => {
+                    tableHtml += renderCell(displayData.baseline[name], null, null, null);
+                });
+                tableHtml += `</tr>`;
+
+                let previousExp = {};
+                uniqueNames.forEach(name => {
+                    previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
+                });
+
+                let recordNo = 2;
+                dates.forEach(date => {
+                    tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
+                    uniqueNames.forEach(name => {
+                        const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                        let dailyGain = null;
+                        if (rec) {
+                            dailyGain = rec.trueTotalExp - previousExp[name];
+                            previousExp[name] = rec.trueTotalExp; 
+                        }
+                        tableHtml += renderCell(rec, dailyGain, date, name);
+                    });
+                    tableHtml += `</tr>`;
+                    recordNo++;
+                });
+                tableHtml += '</tbody>';
+                tableEl.innerHTML = tableHtml;
+            }
+
+            const chartLabels = ['起點', ...dates];
+            const chartDataByName = {};
+            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
+            
+            let lastExpForChart = {};
             uniqueNames.forEach(name => {
                 const rec = displayData.baseline[name];
                 if (rec) {
                     chartDataByName[name].lv.push(rec.lv);
                     chartDataByName[name].expGained.push(0); 
-                    chartDataByName[name].dailyExpGained.push(0); 
                     lastExpForChart[name] = rec.trueTotalExp;
                 } else {
                     chartDataByName[name].lv.push(null);
                     chartDataByName[name].expGained.push(null); 
-                    chartDataByName[name].dailyExpGained.push(0); 
                     lastExpForChart[name] = 0;
                 }
             });
@@ -1024,14 +935,10 @@
                         chartDataByName[name].lv.push(rec.lv);
                         chartDataByName[name].expGained.push(rec.trueTotalExp - displayData.baseline[name].trueTotalExp);
                         
-                        let dailyDiff = rec.trueTotalExp - lastExpForChart[name];
-                        chartDataByName[name].dailyExpGained.push(dailyDiff);
-                        
                         lastExpForChart[name] = rec.trueTotalExp; 
                     } else {
                         chartDataByName[name].lv.push(null);
                         chartDataByName[name].expGained.push(null); 
-                        chartDataByName[name].dailyExpGained.push(0); 
                     }
                 });
             });
