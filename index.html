@@ -245,6 +245,12 @@
                 <h3>📊 全員成長曲線圖 (累積成長量)</h3>
                 <canvas id="expChart"></canvas>
             </div>
+
+            <!-- 🌟 單日經驗增長長條圖 (重新加回！) -->
+            <div class="card">
+                <h3 id="dailyChartTitle" style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
+                <canvas id="dailyExpChart"></canvas>
+            </div>
         </div>
 
         <div class="sidebar">
@@ -316,8 +322,7 @@
         }
 
         const appId = 'maplestory-event-app';
-        // 🌟 移除多餘的圖表變數與投票對賭陣列
-        let app, auth, db, currentUser = null, chartInstance = null; 
+        let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null; 
         window.allRecords = []; 
 
         const statusEl = document.getElementById('status');
@@ -361,7 +366,6 @@
                 if (!user) return;
                 saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至資料庫";
                 
-                // 🌟 只保留經驗值紀錄的監聽
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 onSnapshot(publicCollection, (snapshot) => {
                     window.allRecords = [];
@@ -765,7 +769,6 @@
                 });
             }
 
-            // 🌟 重新把被誤刪的 displayData 宣告加回來！
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
             const displayData = { baseline: {}, daily: {} };
 
@@ -818,11 +821,9 @@
                             displayHTML = '<div style="font-size: 18px; margin: 5px 0;">🌱</div>';
                         } else {
                             let firesArray = [];
-                            // 把小火焰每 5 個切成一段
                             for (let i = 0; i < levelsGained; i += 5) {
                                 firesArray.push('🔥'.repeat(Math.min(5, levelsGained - i)));
                             }
-                            // 用換行符號組合起來，並加上一些字距讓它更好看
                             displayHTML = `<div style="font-size: 18px; margin: 5px 0; line-height: 1.5; padding: 0 10px; letter-spacing: 3px;">${firesArray.join('<br>')}</div>`;
                         }
                         
@@ -869,7 +870,6 @@
                 });
             }
 
-            // 🌟 日期處理
             const dateSet = new Set();
             const startDate = new Date(2026, 3, 9);  
             const eventEndDate = new Date(2026, 4, 27); 
@@ -884,7 +884,6 @@
             Object.keys(displayData.daily).forEach(d => dateSet.add(d));
             const dates = Array.from(dateSet).sort(); 
 
-            // 🌟 繪製統計表
             const tableEl = document.getElementById('dataTable');
             
             function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
@@ -954,8 +953,9 @@
             // 🌟 準備繪製圖表所需的資料
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
-            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
+            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
             
+            // 🌟 紀錄上一次已知的經驗值和等級，以便圖表拉平
             let lastExpForChart = {};
             let lastLvForChart = {};
 
@@ -964,16 +964,19 @@
                 if (rec) {
                     chartDataByName[name].lv.push(rec.lv);
                     chartDataByName[name].expGained.push(0); 
+                    chartDataByName[name].dailyExpGained.push(0); 
                     lastExpForChart[name] = rec.trueTotalExp;
                     lastLvForChart[name] = rec.lv;
                 } else {
                     chartDataByName[name].lv.push(null);
                     chartDataByName[name].expGained.push(null); 
+                    chartDataByName[name].dailyExpGained.push(0); 
                     lastExpForChart[name] = 0;
                     lastLvForChart[name] = null;
                 }
             });
 
+            // 🌟 取得今天的日期字串，用來判斷是否為當日
             const dToday = new Date();
             const todayStr = `${String(dToday.getMonth()+1).padStart(2,'0')}/${String(dToday.getDate()).padStart(2,'0')}`;
 
@@ -985,26 +988,32 @@
                         chartDataByName[name].lv.push(rec.lv);
                         chartDataByName[name].expGained.push(gainedExp);
                         
+                        let dailyDiff = rec.trueTotalExp - lastExpForChart[name];
+                        chartDataByName[name].dailyExpGained.push(dailyDiff);
+                        
                         lastExpForChart[name] = rec.trueTotalExp; 
                         lastLvForChart[name] = rec.lv;
                     } else {
-                        // 如果是今天沒打卡，就讓線條斷在昨天；如果是過期沒打卡，就畫水平線
+                        // 🌟 如果是「今天」沒打卡，就保持空白讓線條停在昨天；如果是「過期」沒打卡，才拿上次的經驗畫水平線
                         if (date === todayStr) {
                             chartDataByName[name].lv.push(null);
                             chartDataByName[name].expGained.push(null); 
+                            chartDataByName[name].dailyExpGained.push(0); 
                         } else if (lastExpForChart[name] !== 0 && displayData.baseline[name]) {
                             const gainedExp = lastExpForChart[name] - displayData.baseline[name].trueTotalExp;
                             chartDataByName[name].lv.push(lastLvForChart[name]);
                             chartDataByName[name].expGained.push(gainedExp);
+                            chartDataByName[name].dailyExpGained.push(0); 
                         } else {
                             chartDataByName[name].lv.push(null);
                             chartDataByName[name].expGained.push(null); 
+                            chartDataByName[name].dailyExpGained.push(0); 
                         }
                     }
                 });
             });
 
-            // 繪製全員成長曲線圖
+            // 繪製：1. 全員成長曲線圖 (累積)
             const datasets = uniqueNames.map((name, index) => {
                 const color = getColorByIndex(index);
                 return {
@@ -1045,6 +1054,83 @@
                     }}}}
                 }
             });
+
+            // 🌟 繪製：2. 每日經驗增長長條圖 (單日增加量)
+            let targetIndexInDates = dates.indexOf(todayStr);
+            let displayDateStr = todayStr;
+
+            // 如果今天沒人打卡，往前找最後一天有資料的日期
+            if (targetIndexInDates === -1) {
+                targetIndexInDates = dates.length - 1;
+                displayDateStr = dates[targetIndexInDates] || '';
+            }
+            const dataIndex = targetIndexInDates + 1; // +1 因為 chartLabels 第一個是 '起點'
+
+            let dailyList = [];
+            uniqueNames.forEach((name, index) => {
+                let gain = chartDataByName[name].dailyExpGained[dataIndex] || 0;
+                let lv = chartDataByName[name].lv[dataIndex] || lastLvForChart[name];
+                dailyList.push({
+                    name: name,
+                    gain: gain,
+                    lv: lv,
+                    bgColor: getColorByIndex(index) + 'CC',
+                    borderColor: getColorByIndex(index)
+                });
+            });
+
+            // 依增長量由高到低排序
+            dailyList.sort((a, b) => b.gain - a.gain);
+
+            const dailyChartTitle = document.getElementById('dailyChartTitle');
+            if (dailyChartTitle) {
+                dailyChartTitle.innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`;
+            }
+
+            const ctxDaily = document.getElementById('dailyExpChart');
+            if (ctxDaily) {
+                if (dailyChartInstance) dailyChartInstance.destroy();
+                dailyChartInstance = new Chart(ctxDaily.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: dailyList.map(item => item.name),
+                        datasets: [{
+                            label: '單日增加 (EXP)',
+                            data: dailyList.map(item => item.gain),
+                            backgroundColor: dailyList.map(item => item.bgColor),
+                            borderColor: dailyList.map(item => item.borderColor),
+                            borderWidth: 1,
+                            customLvData: dailyList.map(item => item.lv)
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const lvVal = context.dataset.customLvData[context.dataIndex];
+                                        const gainVal = context.parsed.y;
+                                        return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 今日增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
+                                ticks: {
+                                    callback: function(value) {
+                                        return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
 
             setTimeout(() => {
                 const tableScroll = document.getElementById('tableResponsive');
