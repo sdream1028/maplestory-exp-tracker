@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
     <title>首戰龍王 - 找出獄友</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js](https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js)"></script>
     <style>
         :root { --primary-color: #4CAF50; --secondary-color: #FF9800; --bg-color: #f4f7f6; --card-bg: #ffffff; --text-color: #333; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; font-size: 14px; }
@@ -52,12 +52,14 @@
         .player-info { flex-grow: 1; }
         .player-lv { font-weight: bold; color: var(--secondary-color); font-size: 0.9em; text-align: right;}
         
-        .table-responsive { overflow-x: auto; margin-top: 10px; }
-        .spreadsheet-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .spreadsheet-table th, .spreadsheet-table td { border: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; text-align: center; }
-        .spreadsheet-table th { background-color: #f2f2f2; font-weight: bold; color: #333; }
+        /* 🌟 表格滾動與固定標題列優化 */
+        .table-responsive { overflow-x: auto; overflow-y: auto; max-height: 480px; margin-top: 10px; }
+        .spreadsheet-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border-left: 1px solid #ddd; border-top: 1px solid #ddd; }
+        .spreadsheet-table th, .spreadsheet-table td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; text-align: center; background-color: #fff; }
+        .spreadsheet-table th { background-color: #f2f2f2; font-weight: bold; color: #333; position: sticky; top: 0; z-index: 10; }
         .spreadsheet-table td:first-child, .spreadsheet-table td:nth-child(2) { font-weight: bold; background-color: #f9f9f9; }
-        .spreadsheet-table tr:hover { background-color: #f1f1f1; }
+        .spreadsheet-table tr:hover td { background-color: #f1f1f1; }
+
         .img-link { text-decoration: none; margin-left: 5px; font-size: 14px; cursor: pointer; }
 
         .side-menu { position: fixed; top: 0; left: -280px; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.3); transition: 0.3s; z-index: 1000; padding: 20px; display: flex; flex-direction: column; }
@@ -233,6 +235,7 @@
                     <div id="topScrollContent" style="height: 1px;"></div>
                 </div>
                 
+                <!-- 🌟 表格容器，具備高度限制與垂直捲軸 -->
                 <div class="table-responsive" id="tableResponsive">
                     <table class="spreadsheet-table" id="dataTable">
                         <thead><tr><th>載入中...</th></tr></thead>
@@ -246,7 +249,7 @@
                 <canvas id="expChart"></canvas>
             </div>
 
-            <!-- 🌟 單日經驗增長長條圖 (重新加回！) -->
+            <!-- 🌟 單日經驗增長長條圖 -->
             <div class="card">
                 <h3 id="dailyChartTitle" style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
                 <canvas id="dailyExpChart"></canvas>
@@ -302,9 +305,9 @@
 
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js)";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js)";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js)";
 
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -769,6 +772,7 @@
                 });
             }
 
+            // 🌟 重新把被誤刪的 displayData 宣告加回來！
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
             const displayData = { baseline: {}, daily: {} };
 
@@ -870,6 +874,7 @@
                 });
             }
 
+            // 🌟 日期處理
             const dateSet = new Set();
             const startDate = new Date(2026, 3, 9);  
             const eventEndDate = new Date(2026, 4, 27); 
@@ -884,6 +889,7 @@
             Object.keys(displayData.daily).forEach(d => dateSet.add(d));
             const dates = Array.from(dateSet).sort(); 
 
+            // 🌟 繪製統計表
             const tableEl = document.getElementById('dataTable');
             
             function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
@@ -955,7 +961,6 @@
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
             
-            // 🌟 紀錄上一次已知的經驗值和等級，以便圖表拉平
             let lastExpForChart = {};
             let lastLvForChart = {};
 
@@ -976,7 +981,6 @@
                 }
             });
 
-            // 🌟 取得今天的日期字串，用來判斷是否為當日
             const dToday = new Date();
             const todayStr = `${String(dToday.getMonth()+1).padStart(2,'0')}/${String(dToday.getDate()).padStart(2,'0')}`;
 
@@ -994,7 +998,7 @@
                         lastExpForChart[name] = rec.trueTotalExp; 
                         lastLvForChart[name] = rec.lv;
                     } else {
-                        // 🌟 如果是「今天」沒打卡，就保持空白讓線條停在昨天；如果是「過期」沒打卡，才拿上次的經驗畫水平線
+                        // 如果是今天沒打卡，就讓線條斷在昨天；如果是過期沒打卡，就畫水平線
                         if (date === todayStr) {
                             chartDataByName[name].lv.push(null);
                             chartDataByName[name].expGained.push(null); 
@@ -1024,7 +1028,7 @@
                     borderWidth: 2, 
                     pointRadius: 4, 
                     fill: false, 
-                    tension: 0.2, 
+                    tension: 0.3, 
                     customLvData: chartDataByName[name].lv 
                 };
             });
