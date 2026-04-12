@@ -976,206 +976,32 @@
             let totalMarketExp = leaderboard.reduce((sum, p) => sum + p.expGained, 0);
             if (totalMarketExp === 0) totalMarketExp = 1;
             
-            const todaySeed = new Date().getDate(); 
-
             if (leaderboard.length === 0) {
                 bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
             } else {
-                let winRates = leaderboard.map(p => (p.expGained / totalMarketExp) * 100);
-                let maxWinRate = Math.max(...winRates);
-                let minWinRate = Math.min(...winRates);
-                if (maxWinRate === minWinRate) { minWinRate = 0; maxWinRate = 100; } 
-
                 leaderboard.forEach((player, index) => {
                     let rawWinRate = (player.expGained / totalMarketExp) * 100;
                     if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
 
-                    let normalized = (rawWinRate - minWinRate) / (maxWinRate - minWinRate);
-                    let baseOdds = 5.0 - (normalized * 3.9); 
-                    
-                    let charCode = player.name ? player.name.charCodeAt(0) : 0;
-                    let fluctuation = Math.sin(todaySeed + charCode) * 0.15;
-                    let finalOdds = Math.max(1.01, Math.min(5.00, baseOdds + fluctuation)).toFixed(2);
-
-                    const playerVotes = window.allVotes.filter(v => v.targetPlayer === player.name);
-                    
-                    const uniqueVoters = [...new Set(playerVotes.map(v => v.voterName))];
-                    const votersList = uniqueVoters.join(', ');
-
                     const li = document.createElement('li'); 
                     li.className = 'leaderboard-item';
-                    li.style.flexDirection = 'column';
-                    li.style.alignItems = 'flex-start';
                     
                     li.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <div>
-                                <span class="rank">${index + 1}</span>
-                                <strong>${player.name}</strong> 
-                                <br><span style="font-size: 12px; color: #888; margin-left:26px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="color: #6A1B9A; font-weight: bold; margin-right: 8px;">賠率: ${finalOdds}</span>
-                                <button class="action-btn" style="background-color: #9C27B0; padding: 4px 8px; font-size: 12px;" onclick="voteForPlayer('${player.name}')">🗳️ 投票</button>
-                            </div>
+                        <div style="display: flex; align-items: center;">
+                            <span class="rank">${index + 1}</span>
+                            <strong>${player.name}</strong> 
                         </div>
-                        <div style="font-size: 12px; color: #555; margin-top: 6px; margin-left: 26px; width: 100%;">
-                            <strong>得票數: <span style="color:#d35400;">${playerVotes.length}</span> 票</strong> 
-                            ${playerVotes.length > 0 ? `<br><span style="color:#008CBA">支持者: ${votersList}</span>` : ''}
+                        <div style="text-align: right;">
+                            <span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
                         </div>
                     `;
                     bettingListEl.appendChild(li);
                 });
             }
-            
-            const selectMyTarget = document.getElementById('wagerMyTarget');
-            const selectOpponentTarget = document.getElementById('wagerOpponentTarget');
-            if (selectMyTarget && selectOpponentTarget && selectMyTarget.options.length <= 1 && uniqueNames.length > 0) {
-                let optionsHtml = '<option value="">請選擇...</option>';
-                uniqueNames.forEach(n => {
-                    optionsHtml += `<option value="${n}">${n}</option>`;
-                });
-                selectMyTarget.innerHTML = optionsHtml;
-                selectOpponentTarget.innerHTML = optionsHtml;
-            }
 
-            const wagerListEl = document.getElementById('wagerList');
-            if (wagerListEl) {
-                wagerListEl.innerHTML = '';
-                const sortedWagers = [...window.allWagers].sort((a, b) => b.timestamp - a.timestamp);
-                const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
+            const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
+            const displayData = { baseline: {}, daily: {} };
 
-                if (sortedWagers.length === 0) {
-                    wagerListEl.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">目前尚無人發起對決。</td></tr>';
-                } else {
-                    sortedWagers.forEach(w => {
-                        const isToday = w.dateString === todayStr;
-                        const statusHtml = isToday ? `<span style="color:#28a745;font-weight:bold;">🔥 進行中</span>` : `<span style="color:#6c757d;">🔒 已結算</span>`;
-                        const timeStr = new Date(w.timestamp).toLocaleTimeString('zh-TW', {hour: '2-digit', minute:'2-digit'});
-                        
-                        let actionLinks = '';
-                        if ((currentUser && w.userId === currentUser.uid) || window.isAdmin) {
-                            actionLinks = `<a title="刪除此紀錄" style="cursor:pointer; text-decoration:none; margin-left:8px;" onclick="deleteWager('${w.id}')">🗑️</a>`;
-                        }
-
-                        let matchDisplay = '';
-                        let isHidden = isToday && !(currentUser && w.userId === currentUser.uid) && !window.isAdmin;
-
-                        if (w.type === 'versus' || w.myTarget) {
-                            let myPredVal = w.myPredictedPct !== undefined ? `+${w.myPredictedPct}%` : `+${w.myPredictedExp ? w.myPredictedExp.toLocaleString() : '0'}`;
-                            let oppPredVal = w.opponentPredictedPct !== undefined ? `+${w.opponentPredictedPct}%` : `+${w.opponentPredictedExp ? w.opponentPredictedExp.toLocaleString() : '0'}`;
-                            
-                            let p1 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.myTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 ${myPredVal})</span>`;
-                            let p2 = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 蓋牌</span>' : `<span style="color:var(--secondary-color); font-weight:bold;">${w.opponentTarget}</span> <span style="font-size:11px;color:#007B9E;">(預測 ${oppPredVal})</span>`;
-                            matchDisplay = `${p1} <br><span style="font-size:10px;color:#999;margin:0 4px;">VS</span><br> ${p2}`;
-                        } else if (w.predictedExp !== undefined) {
-                            let pExp = isHidden ? '<span style="color:#999; font-style:italic;" title="當日結算後才會公開！">🔒 結算後公開</span>' : `+${w.predictedExp.toLocaleString()}`;
-                            matchDisplay = `<span style="color:var(--secondary-color); font-weight:bold;">${w.targetPlayer}</span> <span style="font-size:10px;color:#999;">預測</span> <strong style="color:#007B9E;">${pExp}</strong> <span style="font-size:9px;color:#ccc;">(舊制)</span>`;
-                        } else {
-                            matchDisplay = `<span style="color:var(--secondary-color); font-weight:bold;">${w.targetPlayer || '-'}</span> <span style="font-size:9px;color:#ccc;">(舊制)</span>`;
-                        }
-
-                        const penaltyAmount = Math.max(1, Math.floor(w.amount * 0.05));
-
-                        wagerListEl.innerHTML += `
-                            <tr>
-                                <td style="color:#666; font-size:11px;">${w.dateString} ${timeStr}</td>
-                                <td><strong>${w.voterName}</strong></td>
-                                <td>${matchDisplay}</td>
-                                <td><strong>${w.opponentName}</strong></td>
-                                <td style="color:#d35400;">總池 <strong>${w.amount.toLocaleString()}</strong> ${w.currency}<br><span style="font-size:10px;color:#d9534f;">(輸家罰加碼: ${penaltyAmount.toLocaleString()})</span></td>
-                                <td>${statusHtml}${actionLinks}</td>
-                            </tr>
-                        `;
-                    });
-                }
-            }
-
-            const dateSet = new Set();
-            const startDate = new Date(2026, 3, 9);  
-            const eventEndDate = new Date(2026, 4, 27); 
-            
-            const today = new Date();
-            today.setHours(23, 59, 59, 999);
-            const displayEndDate = today < eventEndDate ? today : eventEndDate;
-
-            for (let d = new Date(startDate); d <= displayEndDate; d.setDate(d.getDate() + 1)) {
-                dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
-            }
-            Object.keys(displayData.daily).forEach(d => dateSet.add(d));
-            const dates = Array.from(dateSet).sort(); 
-
-            const tableEl = document.getElementById('dataTable');
-            
-            function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
-                if (!rec) {
-                    let missingLink = '';
-                    if (window.isAdmin && cellDate && cellName) {
-                        missingLink = `<br><a title="補登此日紀錄" style="cursor:pointer; text-decoration:none; font-size: 12px; color: #007B9E; font-weight: bold; background: #e0f7fa; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;" onclick="addMissingRecord('${cellName}', '${cellDate}')">➕ 補登</a>`;
-                    }
-                    return `<td style="color:#ccc; vertical-align: middle;">-${missingLink}</td>`;
-                }
-                let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
-                let actionLinks = '';
-                if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
-                    actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
-                        <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
-                        <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
-                    </span>`;
-                }
-                
-                let gainHtml = '';
-                if (dailyGain !== null) {
-                    let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
-                    let gainColor = dailyGain > 0 ? '#d35400' : '#888';
-                    gainHtml = `<br><span style="color:${gainColor}; font-weight:bold; font-size:0.85em;">+${gainM} M</span>`;
-                }
-                
-                return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
-            }
-
-            if (uniqueNames.length === 0) {
-                tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
-            } else {
-                let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
-                uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
-                tableHtml += '</tr></thead><tbody>';
-
-                tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
-                uniqueNames.forEach(name => {
-                    tableHtml += renderCell(displayData.baseline[name], null, null, null);
-                });
-                tableHtml += `</tr>`;
-
-                let previousExp = {};
-                uniqueNames.forEach(name => {
-                    previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
-                });
-
-                let recordNo = 2;
-                dates.forEach(date => {
-                    tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
-                    uniqueNames.forEach(name => {
-                        const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
-                        let dailyGain = null;
-                        if (rec) {
-                            dailyGain = rec.trueTotalExp - previousExp[name];
-                            previousExp[name] = rec.trueTotalExp; 
-                        }
-                        tableHtml += renderCell(rec, dailyGain, date, name);
-                    });
-                    tableHtml += `</tr>`;
-                    recordNo++;
-                });
-                tableHtml += '</tbody>';
-                tableEl.innerHTML = tableHtml;
-            }
-
-            const chartLabels = ['起點', ...dates];
-            const chartDataByName = {};
-            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
-            
-            let lastExpForChart = {};
             uniqueNames.forEach(name => {
                 const rec = displayData.baseline[name];
                 if (rec) {
