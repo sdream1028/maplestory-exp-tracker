@@ -261,7 +261,7 @@
 160+ 額外摸彩資格(汪汪150+)，獎品未定。</div>
             </div>
 
-            <!-- 🌟 全新獨立：Nani 專屬挑戰區塊 -->
+            <!-- 🌟 全新獨立：Nani 專屬挑戰區塊 (隨等級增加小火焰) -->
             <div class="card" style="border: 2px solid #8e44ad; background: #faf5ff;">
                 <h3 style="margin-top: 0; color: #8e44ad; text-align: center; border-bottom: 2px solid #e1bee7; padding-bottom: 8px;">🎯 Nani 專屬挑戰 (目標 LV 150)</h3>
                 <div id="naniChallenge" style="text-align: center; padding: 15px 10px;">
@@ -774,7 +774,7 @@
                 }
             });
 
-            // 🌟 處理 Nani 專屬挑戰
+            // 🌟 處理 Nani 專屬挑戰 (修正為小火焰排排站)
             const naniChallengeEl = document.getElementById('naniChallenge');
             if (naniChallengeEl) {
                 naniChallengeEl.innerHTML = '<div style="color:#999;">尚未加入紀錄</div>';
@@ -788,11 +788,19 @@
 
                 if (naniData) {
                     const latest = naniData.latestRecord;
+                    // 以 LV 134 作為預設基準起點，計算升了幾級
+                    const startLv = 134; 
+                    const levelsGained = Math.max(0, latest.lv - startLv);
+                    
+                    // 根據升級數量產生小火焰，如果都沒升就給個小苗
+                    const fireIcons = levelsGained > 0 ? '🔥'.repeat(levelsGained) : '🌱';
+
                     const isAchieved = latest.lv >= 150;
                     const statusColor = isAchieved ? '#27ae60' : '#e67e22';
                     const statusText = isAchieved ? '✅ 挑戰成功 (LV 150+)' : '🏃‍♂️ 努力衝刺中...';
+                    
                     naniChallengeEl.innerHTML = `
-                        <div style="font-size: 32px; margin: 5px 0;">${isAchieved ? '🎉' : '🔥'}</div>
+                        <div style="font-size: 18px; margin: 5px 0; word-break: break-all; line-height: 1.4; padding: 0 10px;">${fireIcons}</div>
                         <div style="font-size: 15px;"><strong>目前等級: LV ${latest.lv}</strong></div>
                         <div style="color: ${statusColor}; font-weight: bold; margin-top: 8px;">${statusText}</div>
                         <div style="font-size: 12px; color: #666; margin-top: 5px;">累積: +${(naniData.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2})} M</div>
@@ -910,21 +918,27 @@
                 tableEl.innerHTML = tableHtml;
             }
 
+            // 🌟 準備繪製圖表所需的資料
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [] });
             
+            // 🌟 修正：紀錄上一次已知的經驗值和等級，以便圖表拉平
             let lastExpForChart = {};
+            let lastLvForChart = {};
+
             uniqueNames.forEach(name => {
                 const rec = displayData.baseline[name];
                 if (rec) {
                     chartDataByName[name].lv.push(rec.lv);
                     chartDataByName[name].expGained.push(0); 
                     lastExpForChart[name] = rec.trueTotalExp;
+                    lastLvForChart[name] = rec.lv;
                 } else {
                     chartDataByName[name].lv.push(null);
                     chartDataByName[name].expGained.push(null); 
                     lastExpForChart[name] = 0;
+                    lastLvForChart[name] = null;
                 }
             });
 
@@ -932,13 +946,22 @@
                 uniqueNames.forEach(name => {
                     const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
                     if (rec) {
+                        const gainedExp = rec.trueTotalExp - displayData.baseline[name].trueTotalExp;
                         chartDataByName[name].lv.push(rec.lv);
-                        chartDataByName[name].expGained.push(rec.trueTotalExp - displayData.baseline[name].trueTotalExp);
+                        chartDataByName[name].expGained.push(gainedExp);
                         
                         lastExpForChart[name] = rec.trueTotalExp; 
+                        lastLvForChart[name] = rec.lv;
                     } else {
-                        chartDataByName[name].lv.push(null);
-                        chartDataByName[name].expGained.push(null); 
+                        // 🌟 修正：如果今天沒打卡，就拿上次的累積總經驗來畫水平線
+                        if (lastExpForChart[name] !== 0 && displayData.baseline[name]) {
+                            const gainedExp = lastExpForChart[name] - displayData.baseline[name].trueTotalExp;
+                            chartDataByName[name].lv.push(lastLvForChart[name]);
+                            chartDataByName[name].expGained.push(gainedExp);
+                        } else {
+                            chartDataByName[name].lv.push(null);
+                            chartDataByName[name].expGained.push(null); 
+                        }
                     }
                 });
             });
