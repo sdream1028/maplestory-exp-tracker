@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
     <title>首戰龍王 - 找出獄友</title>
-    <!-- 🌟 已修復被污染的網址 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
@@ -192,13 +191,25 @@
         </div>
     </div>
 
-    <!-- 🌟 經驗表放大專用視窗 (取代原本的總表視窗) -->
+    <!-- 🌟 經驗表放大專用視窗 (點兩下彈出的視窗) -->
     <div id="expTableModal" class="modal">
         <div class="card" style="width: 95%; height: 90%; max-width: 800px; position: relative; display: flex; flex-direction: column; padding-top: 20px;">
             <span class="card-close" onclick="closeExpTableModal()" style="z-index: 1000; top: 10px; right: 20px; font-size: 30px;">&times;</span>
             <h3 style="border-bottom: 2px solid var(--primary-color); margin-top: 0; color: #2c3e50;">📖 遊戲經驗值對照表 (LV 1 ~ 200)</h3>
-            <div id="expTableContent" style="flex-grow: 1; overflow: auto; margin-top: 10px; background: #fff; border: 1px solid #ddd; border-radius: 5px;">
-                <!-- 複製的經驗值表格會放在這裡 -->
+            <div class="table-responsive" style="flex-grow: 1; overflow: auto; margin-top: 10px; background: #fff; border: 1px solid #ddd; border-radius: 5px; max-height: none;">
+                <table class="spreadsheet-table" id="referenceExpTableInside">
+                    <thead>
+                        <tr>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">當前等級</th>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">升下一級所需經驗</th>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">累計獲得經驗</th>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">倍率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 將由 JavaScript 動態產生 -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -299,7 +310,7 @@
             </div>
 
             <div class="card">
-                <h3>👑 總活動成長榜 (無分組)</h3>
+                <h3>👑 總活動成長榜 </h3>
                 <ul class="leaderboard-list" id="leaderboardList">
                     <li>連線中...</li>
                 </ul>
@@ -312,27 +323,6 @@
                 <ul class="leaderboard-list" id="bettingList">
                     <li>載入中...</li>
                 </ul>
-            </div>
-        </div>
-
-        <!-- 🌟 新增：Excel 版本經驗值對照表 -->
-        <div class="card" style="grid-column: 1 / -1; margin-top: 15px; border: 2px solid #4CAF50;">
-            <h3 style="color: #2e7d32; border-bottom: 2px solid #c8e6c9;">📖 遊戲經驗值對照表 (LV 1 ~ 200)</h3>
-            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">本表資料完整還原自 Excel 設定檔，方便各位隨時查詢升級所需經驗。</p>
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <table class="spreadsheet-table" id="referenceExpTable">
-                    <thead>
-                        <tr>
-                            <th style="background-color: #4CAF50; color: white;">當前等級</th>
-                            <th style="background-color: #4CAF50; color: white;">升下一級所需經驗</th>
-                            <th style="background-color: #4CAF50; color: white;">累計獲得經驗</th>
-                            <th style="background-color: #4CAF50; color: white;">倍率</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 將由 JavaScript 動態產生 -->
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -1103,7 +1093,7 @@
                     borderWidth: 2, 
                     pointRadius: 4, 
                     fill: false, 
-                    tension: 0.4, 
+                    tension: 0.3, 
                     customLvData: chartDataByName[name].lv 
                 };
             });
