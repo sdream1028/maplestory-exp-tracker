@@ -1339,7 +1339,8 @@
             const items = window.currentWheelItems;
             
             // 隨機目標角度 + 加上 6 到 10 圈的額外旋轉，營造刺激感
-            const randomDeg = Math.floor(Math.random() * 360);
+            // 🌟 修復機率：移除 Math.floor，保留小數點，確保不管人數多少，機率都是絕對公平的！
+            const randomDeg = Math.random() * 360; 
             const spins = (Math.floor(Math.random() * 5) + 6) * 360;
             const totalDeg = spins + randomDeg;
 
@@ -1364,9 +1365,13 @@
                 // 因為指針在正上方 (相當於我們畫圖的起點 -90度)，
                 // 且轉盤是順時針轉，所以原本在起點的區塊會被推向右邊。
                 // 停留在正上方的區塊角度相當於 360 - 轉動的角度。
-                const pointerDeg = (360 - actualDeg) % 360;
+                let pointerDeg = (360 - actualDeg) % 360;
+                if (pointerDeg < 0) pointerDeg += 360; // 安全機制：確保角度絕對是正數
+                
                 const itemAngle = 360 / items.length;
-                const winningIndex = Math.floor(pointerDeg / itemAngle);
+                
+                // 安全機制：使用 % items.length 避免浮點數除法產生的極端進位導致超出陣列
+                const winningIndex = Math.floor(pointerDeg / itemAngle) % items.length;
 
                 alert(`🎉 恭喜中獎：【 ${items[winningIndex]} 】！`);
             }, 4050);
