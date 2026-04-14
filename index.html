@@ -227,7 +227,7 @@
 
                 <div class="toolbar" id="ocrToolbar">
                     <p><strong>第一步：</strong>用滑鼠在上方圖片中<strong>框選</strong>數值區域。<br>
-                       <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
+                        <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
                     <button class="action-btn" id="btnName">🏷️ 辨識【名稱】</button>
                     <button class="action-btn" id="btnLv">⭐ 辨識【等級】</button>
                     <button class="action-btn" id="btnExp">💯 辨識【經驗數字】</button>
@@ -323,6 +323,27 @@
                 <ul class="leaderboard-list" id="bettingList">
                     <li>載入中...</li>
                 </ul>
+            </div>
+
+            <!-- 🎡 幸運抽獎轉盤 (新增區塊) -->
+            <div class="card" style="border: 2px solid #81D4FA; background: #FAFAFA; text-align: center;">
+                <h3 style="margin-top: 0; color: #0288D1; border-bottom: 2px solid #B3E5FC; padding-bottom: 8px;">🎡 幸運抽獎轉盤</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">輸入抽獎人員或獎品 (每行一個)</p>
+                <textarea id="wheelItems" rows="5" style="width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; resize: vertical;" placeholder="例如:&#10;玩家A&#10;玩家B&#10;頭獎：200雪">參與者A
+參與者B
+參與者C
+特別獎</textarea>
+                <button onclick="window.updateWheel()" style="width: 100%; background-color: #03A9F4; color: white; padding: 8px; margin-bottom: 15px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;">🔄 更新轉盤名單</button>
+                
+                <div style="position: relative; width: 100%; max-width: 250px; aspect-ratio: 1; margin: 0 auto; overflow: hidden; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 4px solid #0288D1;">
+                    <!-- 轉盤本體 -->
+                    <canvas id="wheelCanvas" width="400" height="400" style="width: 100%; height: 100%; transform: rotate(0deg); transition: transform 4s cubic-bezier(0.17, 0.67, 0.1, 1);"></canvas>
+                    <!-- 轉盤指針 (外層陰影與內層藍色) -->
+                    <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #333; z-index: 10;"></div>
+                    <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #0288D1; z-index: 11;"></div>
+                </div>
+                
+                <button id="spinBtn" onclick="window.spinWheel()" style="width: 100%; background-color: #0288D1; font-size: 18px; font-weight: bold; padding: 12px; margin-top: 15px; border-radius: 5px; border: none; color: white; cursor: pointer; box-shadow: 0 4px 0 #01579B; transition: background 0.2s, box-shadow 0.2s, transform 0.2s;">🎯 開始抽獎</button>
             </div>
         </div>
     </div>
@@ -1098,9 +1119,9 @@
                 };
             });
 
-            const ctx = document.getElementById('expChart').getContext('2d');
+            const ctxChart = document.getElementById('expChart').getContext('2d');
             if (chartInstance) chartInstance.destroy(); 
-            chartInstance = new Chart(ctx, {
+            chartInstance = new Chart(ctxChart, {
                 type: 'line', data: { labels: chartLabels, datasets: datasets },
                 options: {
                     responsive: true, 
@@ -1223,6 +1244,139 @@
                 topScrollContent.style.width = tableEl.scrollWidth + 'px';
             }
         });
+
+
+        // ==========================================
+        // 🎡 轉盤功能邏輯 (新增)
+        // ==========================================
+        window.currentRotation = 0;
+        window.currentWheelItems = [];
+
+        window.drawWheel = function() {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const rawItems = document.getElementById('wheelItems').value.split('\n');
+            const items = rawItems.filter(i => i.trim() !== '');
+            
+            if(items.length === 0) {
+                items.push("請輸入名單");
+            }
+            window.currentWheelItems = items;
+
+            const cw = canvas.width;
+            const ch = canvas.height;
+            const cx = cw / 2;
+            const cy = ch / 2;
+            const radius = Math.min(cx, cy);
+
+            ctx.clearRect(0, 0, cw, ch);
+            const arc = 2 * Math.PI / items.length;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(-Math.PI / 2); // 讓第一塊扇形從正上方 (12點鐘方向) 開始畫
+
+            for (let i = 0; i < items.length; i++) {
+                const angle = i * arc;
+                ctx.beginPath();
+                
+                // 簡約風格顏色：白底與淺藍底交替
+                let color;
+                if (i % 2 === 0) {
+                    color = '#ffffff'; // 白色
+                } else {
+                    color = '#e1f5fe'; // 淺藍色
+                }
+                // 若總數是奇數，避免最後一塊跟第一塊同為白色，給最後一塊稍微深一點的藍
+                if (i === items.length - 1 && items.length % 2 !== 0) {
+                    color = '#b3e5fc'; 
+                }
+                ctx.fillStyle = color;
+                
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, angle, angle + arc);
+                ctx.fill();
+                
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#dddddd"; // 淡淡的邊框
+                ctx.stroke();
+
+                // 畫文字
+                ctx.save();
+                ctx.fillStyle = "#333333"; // 深灰色文字，乾淨易讀
+                ctx.shadowColor = "transparent"; // 移除陰影保持乾淨
+                ctx.shadowBlur = 0;
+                
+                // 根據項目多寡自動調整字體大小
+                let fontSize = items.length > 15 ? 14 : (items.length > 8 ? 18 : 22);
+                ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
+                
+                // 讓文字對齊在扇形的中心線上
+                ctx.translate(Math.cos(angle + arc / 2) * (radius * 0.55), Math.sin(angle + arc / 2) * (radius * 0.55));
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(items[i], 0, 0);
+                ctx.restore();
+            }
+            ctx.restore();
+        };
+
+        window.updateWheel = function() {
+            window.drawWheel();
+        };
+
+        window.spinWheel = function() {
+            if (!window.currentWheelItems || window.currentWheelItems.length === 0) return;
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = true;
+            btn.style.backgroundColor = "#95a5a6";
+            btn.style.boxShadow = "none";
+            btn.style.transform = "translateY(2px)";
+            btn.innerText = "旋轉中...";
+
+            const items = window.currentWheelItems;
+            
+            // 隨機目標角度 + 加上 6 到 10 圈的額外旋轉，營造刺激感
+            const randomDeg = Math.floor(Math.random() * 360);
+            const spins = (Math.floor(Math.random() * 5) + 6) * 360;
+            const totalDeg = spins + randomDeg;
+
+            window.currentRotation += totalDeg;
+
+            const canvas = document.getElementById('wheelCanvas');
+            // CSS Cubic-bezier 讓動畫先快後慢，更有真實轉盤的感覺
+            canvas.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.1, 1)';
+            canvas.style.transform = `rotate(${window.currentRotation}deg)`;
+
+            // 等待動畫結束後計算結果
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.style.backgroundColor = "#0288D1";
+                btn.style.boxShadow = "0 4px 0 #01579B";
+                btn.style.transform = "translateY(0)";
+                btn.innerText = "🎯 開始抽獎";
+                
+                // 計算最後停下的角度
+                const actualDeg = window.currentRotation % 360;
+                
+                // 因為指針在正上方 (相當於我們畫圖的起點 -90度)，
+                // 且轉盤是順時針轉，所以原本在起點的區塊會被推向右邊。
+                // 停留在正上方的區塊角度相當於 360 - 轉動的角度。
+                const pointerDeg = (360 - actualDeg) % 360;
+                const itemAngle = 360 / items.length;
+                const winningIndex = Math.floor(pointerDeg / itemAngle);
+
+                alert(`🎉 恭喜中獎：【 ${items[winningIndex]} 】！`);
+            }, 4050);
+        };
+
+        // 頁面載入時自動先畫一次初始轉盤
+        setTimeout(() => {
+            window.drawWheel();
+        }, 500);
+
     </script>
 </body>
 </html>
