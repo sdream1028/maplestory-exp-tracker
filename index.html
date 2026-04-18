@@ -191,6 +191,17 @@
         </div>
     </div>
 
+    <!-- 🌟 修改活動規則專用視窗 -->
+    <div id="editRulesModal" class="modal">
+        <div class="card" style="width: 90%; max-width: 500px; position: relative;">
+            <span class="card-close" onclick="document.getElementById('editRulesModal').style.display='none'">&times;</span>
+            <h3 style="border-bottom: 2px solid var(--secondary-color); color: var(--secondary-color);">✏️ 修改活動規則與獎勵</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 5px;">你可以在這裡自由換行輸入，儲存後會即時同步給所有人。</p>
+            <textarea id="editRulesTextarea" rows="15" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; resize: vertical; line-height: 1.5;"></textarea>
+            <button id="saveRulesBtn" onclick="saveRules()" style="width: 100%; margin-top: 15px; background-color: var(--secondary-color); font-weight: bold;">💾 儲存規則更新</button>
+        </div>
+    </div>
+
     <!-- 🌟 經驗表放大專用視窗 (點兩下彈出的視窗) -->
     <div id="expTableModal" class="modal">
         <div class="card" style="width: 95%; height: 90%; max-width: 800px; position: relative; display: flex; flex-direction: column; padding-top: 20px;">
@@ -283,22 +294,9 @@
         <div class="sidebar">
             <div class="card event-sidebar">
                 <h3>📜 活動規則與獎勵</h3>
-                <div class="event-text">即日起<span class="highlight">04/09</span>到<span class="highlight">05/27</span> 舉辦活動
-為了各位可以體驗首戰龍王
-"找出獄友 "
-今天報名開始上線貼入你的第一張經驗值當"起點"。
-
-<span class="highlight">活動規則 :</span>
-每日上線時貼角色等級 經驗值(藏牌偷練)
-統計到5/27日晚上8點前最後一張圖經驗值"總量"
-
-<span class="highlight">🏆 結算出來經驗值前四名可挑選：</span>
-1. 突襲卷一組 ( 7張 )
-2. 200 雪 (嘟嘟&奶油虎)
-3. 100 瞬移之石(奶油虎)
-4. 周年轉蛋隱藏獎勵(奶油虎-未知)
-**Leo加碼 130 雪**
-**160+ 額外摸彩資格(汪汪150+)，獎品未定**</div>
+                <!-- 🌟 將活動規則內容綁定 ID，等待 Firebase 載入 -->
+                <div class="event-text" id="eventRulesText">載入中...</div>
+                <button id="editRulesBtn" onclick="openEditRulesModal()" style="display: none; width: 100%; margin-top: 15px; background-color: var(--secondary-color); font-weight: bold;">✏️ 修改活動規則</button>
             </div>
 
             <!-- 🌟 Nani 專屬挑戰區塊 (隨等級增加小火焰) -->
@@ -325,7 +323,7 @@
                 </ul>
             </div>
 
-            <!-- 🎡 幸運抽獎轉盤 (新增區塊) -->
+            <!-- 🎡 幸運抽獎轉盤 -->
             <div class="card" style="border: 2px solid #81D4FA; background: #FAFAFA; text-align: center;">
                 <h3 style="margin-top: 0; color: #0288D1; border-bottom: 2px solid #B3E5FC; padding-bottom: 8px;">🎡 幸運抽獎轉盤</h3>
                 <p style="font-size: 12px; color: #666; margin-bottom: 10px;">輸入抽獎人員或獎品 (每行一個)</p>
@@ -348,11 +346,11 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (加入了 setDoc 的引入) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -372,17 +370,20 @@
         const appId = 'maplestory-event-app';
         let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null; 
         window.allRecords = []; 
+        window.currentRulesText = ""; // 儲存目前的規則字串
 
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
 
+        // 🌟 管理員模式認證 (包含修改規則按鈕顯示)
         window.isAdmin = false;
         window.enableAdmin = function() {
             if (window.isAdmin) return;
             const pwd = prompt("請輸入管理員密碼以開啟全域修改權限：");
             if (pwd === "龍王") {
                 window.isAdmin = true;
-                alert("👑 管理員模式已開啟！你現在可以修改、刪除紀錄，也能替遺漏者進行補登。");
+                alert("👑 管理員模式已開啟！你現在可以修改、刪除紀錄，也能替遺漏者進行補登，並可修改「活動規則與獎勵」。");
+                document.getElementById('editRulesBtn').style.display = 'block'; // 顯示修改規則按鈕
                 processAndRender(); 
             } else if (pwd !== null) {
                 alert("❌ 密碼錯誤");
@@ -420,8 +421,58 @@
                     snapshot.forEach(doc => { window.allRecords.push({ id: doc.id, ...doc.data() }); });
                     processAndRender();
                 }, (error) => { console.error("紀錄讀取失敗:", error); });
+
+                // 🌟 新增：監聽並載入活動規則
+                const rulesDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules');
+                onSnapshot(rulesDocRef, (docSnap) => {
+                    const rulesEl = document.getElementById('eventRulesText');
+                    if (docSnap.exists() && docSnap.data().text) {
+                        window.currentRulesText = docSnap.data().text;
+                        rulesEl.innerText = window.currentRulesText;
+                    } else {
+                        // 若資料庫尚未有資料，填入預設的規則文案
+                        window.currentRulesText = `即日起04/09到05/27 舉辦活動\n為了各位可以體驗首戰龍王\n"找出獄友 "\n今天報名開始上線貼入你的第一張經驗值當"起點"。\n\n活動規則 :\n每日上線時貼角色等級 經驗值(藏牌偷練)\n統計到5/27日晚上8點前最後一張圖經驗值"總量"\n\n🏆 結算出來經驗值前四名可挑選：\n1. 突襲卷一組 ( 7張 )\n2. 200 雪 (嘟嘟&奶油虎)\n3. 100 瞬移之石(奶油虎)\n4. 周年轉蛋隱藏獎勵(奶油虎-未知)\n**Leo加碼 130 雪**\n**160+ 額外摸彩資格(汪汪150+)，獎品未定**`;
+                        rulesEl.innerText = window.currentRulesText;
+                    }
+                }, (error) => { console.error("規則讀取失敗:", error); });
+
             });
             initAuth();
+        }
+
+        // ==========================================
+        // 🌟 新增：儲存活動規則邏輯
+        // ==========================================
+        window.openEditRulesModal = function() {
+            document.getElementById('editRulesTextarea').value = window.currentRulesText;
+            document.getElementById('editRulesModal').style.display = 'flex';
+        }
+
+        window.saveRules = async function() {
+            const newText = document.getElementById('editRulesTextarea').value.trim();
+            if (!newText) {
+                alert("規則內容不能為空喔！");
+                return;
+            }
+
+            const btn = document.getElementById('saveRulesBtn');
+            btn.disabled = true;
+            btn.innerText = "儲存同步中...";
+
+            try {
+                // 使用 setDoc 與 merge: true 確保即使文件不存在也能成功創建並寫入
+                const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules');
+                await setDoc(settingsDocRef, { text: newText }, { merge: true });
+                
+                document.getElementById('editRulesModal').style.display = 'none';
+                alert("✅ 活動規則已成功更新，並同步給所有人了！");
+            } catch (err) {
+                console.error("儲存規則失敗", err);
+                alert("修改失敗：" + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "💾 儲存規則更新";
+            }
         }
 
         window.toggleMenu = function() {
@@ -1247,7 +1298,7 @@
 
 
         // ==========================================
-        // 🎡 轉盤功能邏輯 (新增)
+        // 🎡 轉盤功能邏輯 
         // ==========================================
         window.currentRotation = 0;
         window.currentWheelItems = [];
