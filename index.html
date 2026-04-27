@@ -85,27 +85,6 @@
             50% { transform: scale(1.15); }
             100% { transform: scale(1); }
         }
-
-        /* ==========================================
-           🌟 榮譽殿堂 (頒獎台) 專屬 CSS 樣式
-           ========================================== */
-        .hall-of-fame { display: flex; flex-direction: column; align-items: center; width: 100%; overflow-x: auto; padding: 15px 0 5px 0; }
-        .podium-group { display: flex; justify-content: center; align-items: flex-end; gap: 15px; margin-bottom: 25px; width: 100%; max-width: 650px; padding-bottom: 10px; border-bottom: 3px solid #795548; }
-        .podium-item { display: flex; flex-direction: column; align-items: center; width: 110px; }
-        
-        .speech-bubble { background: #fff; border: 2px solid #333; border-radius: 8px; padding: 4px; font-size: 12px; margin-bottom: 8px; position: relative; text-align: center; box-shadow: 2px 2px 0 rgba(0,0,0,0.2); font-weight: bold; width: 95px; word-break: break-all; line-height: 1.3; }
-        .speech-bubble::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); border-width: 8px 6px 0; border-style: solid; border-color: #333 transparent transparent transparent; }
-        .speech-bubble::before { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); border-width: 6px 4px 0; border-style: solid; border-color: #fff transparent transparent transparent; z-index: 1; }
-        
-        .char-img { height: 90px; width: auto; max-width: 100px; z-index: 2; position: relative; object-fit: contain; margin-bottom: -4px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); }
-        
-        .podium-base { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; color: white; text-shadow: 1px 1px 2px black; position: relative; z-index: 1; border: 2px solid #333; border-bottom: none; border-radius: 4px 4px 0 0; }
-        .base-gold { background: linear-gradient(to bottom, #FFF176, #FFB300, #F57F17); height: 75px; box-shadow: inset 0 0 10px rgba(255,255,255,0.5); }
-        .base-silver { background: linear-gradient(to bottom, #F5F5F5, #BDBDBD, #757575); height: 50px; box-shadow: inset 0 0 10px rgba(255,255,255,0.5); }
-        .base-normal { background: linear-gradient(to bottom, #A1887F, #6D4C41, #4E342E); height: 30px; }
-        
-        .cup-icon { font-size: 26px; margin-top: -15px; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.5)); }
-        .name-tag { background: rgba(0,0,0,0.8); color: #FFEB3B; padding: 2px 5px; font-size: 13px; border-radius: 4px; margin-top: 3px; border: 1px solid #555; width: 85%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -283,18 +262,6 @@
                 <button id="saveBtn" disabled>等待資料庫連線...</button>
             </div>
 
-            <!-- ==========================================
-                 🌟 榮譽殿堂 (人物頒獎台區塊)
-                 ========================================== -->
-            <div class="card" id="hallOfFameCard">
-                <h3 style="color: #d35400; border-bottom: 2px solid #f39c12; margin-bottom: 5px;">🏆 榮譽殿堂 (名人堂) 測試中</h3>
-                <p style="font-size: 12px; color: #666; margin-top: 0; margin-bottom: 15px;">※ 角色達 LV 160 解鎖銀獎盃 🥈，達 LV 170 解鎖金獎盃 🏆！</p>
-                <div id="hallOfFameContainer" class="hall-of-fame">
-                    <!-- 將由 JavaScript 動態生成人物與頒獎台 -->
-                    <div style="color:#999; padding:20px;">資料載入中...</div>
-                </div>
-            </div>
-
             <div class="card" style="grid-column: 1 / -1;">
                 <!-- 🌟 點擊兩下開啟全螢幕經驗值對照表 -->
                 <h3 ondblclick="openExpTableModal()" title="點擊兩下查詢經驗對照表" style="cursor: zoom-in; user-select: none;">📅 經驗值統計表 (點擊 🖼️ 查詢截圖，<span style="color:#d35400;">點擊兩下查經驗表</span>)</h3>
@@ -384,20 +351,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // ==========================================
-        // 🌟 【角色圖片設定區】🌟
-        // 在這裡填入每個人的去背角色圖片網址
-        // 請把圖片上傳到 Discord 頻道中，對著圖片點右鍵選擇「複製圖片網址」，貼在下方引號內
-        // ==========================================
-        window.characterImages = {
-            "嘟嘟": "", // 範例網址，請務必替換成真實的去背圖網址
-            "新竹難聊人": "", 
-            "奶油虎": "",
-            "炙燒鮭魚": "",
-            // 若找不到對應名字，就會自動使用下方這張「預設灰色剪影」
-            "預設": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>"
-        };
 
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -955,72 +908,6 @@
                         </div>`;
                     listEl.appendChild(li);
                 });
-            }
-
-            // ==========================================
-            // 🌟 處理榮譽殿堂 (Hall of Fame) - 依等級排序
-            // ==========================================
-            const hofContainer = document.getElementById('hallOfFameContainer');
-            if (hofContainer) {
-                // 取出所有人，依最新等級降序排列 (等級相同比經驗)
-                const hofPlayers = [...leaderboard].sort((a, b) => {
-                    if (b.latestRecord.lv !== a.latestRecord.lv) {
-                        return b.latestRecord.lv - a.latestRecord.lv;
-                    }
-                    return b.latestRecord.exp - a.latestRecord.exp;
-                });
-
-                let hofHtml = '';
-                // 將玩家依序切成「三個一組」
-                for (let i = 0; i < hofPlayers.length; i += 3) {
-                    let group = hofPlayers.slice(i, i + 3);
-                    
-                    // 為了做出頒獎台 1st(中), 2nd(左), 3rd(右) 的視覺效果
-                    let displayGroup = [];
-                    if (group.length === 3) {
-                        displayGroup = [group[1], group[0], group[2]];
-                    } else if (group.length === 2) {
-                        displayGroup = [group[1], group[0]];
-                    } else {
-                        displayGroup = [group[0]];
-                    }
-
-                    hofHtml += '<div class="podium-group">';
-                    displayGroup.forEach(player => {
-                        const lv = player.latestRecord.lv;
-                        let baseClass = 'base-normal';
-                        let cupIcon = '';
-                        
-                        // 判定獎盃與底座
-                        if (lv >= 170) { 
-                            baseClass = 'base-gold'; 
-                            cupIcon = '<div class="cup-icon">🏆</div>'; 
-                        } else if (lv >= 160) { 
-                            baseClass = 'base-silver'; 
-                            cupIcon = '<div class="cup-icon">🥈</div>'; 
-                        }
-
-                        // 從設定區抓取圖片，若無則使用預設剪影
-                        const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
-
-                        hofHtml += `
-                            <div class="podium-item">
-                                <div class="speech-bubble">我是${lv}等<br>${player.name}！</div>
-                                <img src="${imgSrc}" class="char-img" alt="${player.name}">
-                                <div class="podium-base ${baseClass}">
-                                    ${cupIcon}
-                                    <div class="name-tag">${player.name}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    hofHtml += '</div>';
-                }
-                
-                if (hofPlayers.length === 0) {
-                    hofHtml = '<div style="color:#999; padding:20px; text-align:center;">目前尚無角色紀錄，快來搶頭香！</div>';
-                }
-                hofContainer.innerHTML = hofHtml;
             }
 
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
