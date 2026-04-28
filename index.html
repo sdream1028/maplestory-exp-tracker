@@ -89,8 +89,8 @@
         /* ==========================================
            🌟 榮譽殿堂 (自由排版地圖版)
            ========================================== */
-        #hallOfFameCard { padding: 0; overflow: hidden; } 
-        #hallOfFameCard h3 { padding: 15px; margin: 0; background: #fff; border-bottom: 2px solid #f39c12; }
+        #hallOfFameCard { padding: 0; overflow: hidden; border: 2px solid #2c3e50; } 
+        #hallOfFameCard h3 { padding: 15px; margin: 0; background: #fff; border-bottom: 2px solid #2c3e50; }
         
         #hofAdminControls { font-size: 13px; display: flex; gap: 8px; }
         #hofAdminControls button { padding: 4px 8px; margin: 0; font-weight: bold; }
@@ -99,10 +99,9 @@
             position: relative;
             width: 100%;
             height: 550px; /* 大畫面地圖 */
-            background-image: url('https://truth.bahamut.com.tw/s01/201702/6e2ae1858bbb0c591942093d313f9a46.JPG');
+            background-color: #1a252f;
             background-size: cover;
             background-position: center bottom;
-            border-bottom: 5px solid #2c3e50;
             overflow: hidden;
         }
 
@@ -356,13 +355,14 @@
                  ========================================== -->
             <div class="card" id="hallOfFameCard">
                 <h3>
-                    <span>🏆 榮譽殿堂 (名人堂) 開發中</span>
-                    <div id="hofAdminControls">
-                        <button id="toggleHofBtn" onclick="toggleHofVisibility()" style="background-color:#95a5a6; display:none;">👁️ 設為公開</button>
+                    <span>🏆 榮譽殿堂 (名人堂)</span>
+                    <div id="hofAdminControls" style="display: none;">
+                        <button id="toggleHofBtn" onclick="toggleHofVisibility()" style="background-color:#95a5a6;">👁️ 設為公開</button>
                         <button id="saveHofPosBtn" onclick="saveHofPositions()" style="display:none; background-color:#e74c3c;">💾 儲存排版</button>
                     </div>
                 </h3>
                 <div id="hallOfFameContainer">
+                    <!-- 資料渲染前會顯示這裡的防呆文字 -->
                     <div class="closed-notice">
                         <div style="font-size: 40px; margin-bottom: 10px;">🚧</div>
                         <div style="font-size: 16px; font-weight: bold; color: #555;">榮譽殿堂 尚未公開</div>
@@ -423,7 +423,7 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
-        // 🌟 【防當機修正：必須放最頂端的核心變數】🌟
+        // 🌟 【防當機修正：核心變數設定】🌟
         // ==========================================
         const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
         
@@ -440,8 +440,10 @@
         }
 
         // ==========================================
-        // 🌟 【人物圖片設定區】🌟
+        // 🌟 【人物圖片與背景設定區】🌟
         // ==========================================
+        window.hallOfFameBg = "https://truth.bahamut.com.tw/s01/201702/6e2ae1858bbb0c591942093d313f9a46.JPG"; // 👈 夜間精靈樹
+
         window.characterImages = {
             "嘟嘟": "https://i.imgur.com/K3wS12d.png", 
             "鮭魚": "https://i.imgur.com/K3wS12d.png", 
@@ -480,13 +482,16 @@
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
 
+        // ==========================================
+        // 🔒 開啟管理員模式 (雙擊標題觸發)
+        // ==========================================
         window.isAdmin = false;
         window.enableAdmin = function() {
             if (window.isAdmin) return;
             const pwd = prompt("請輸入管理員密碼以開啟全域修改權限：");
             if (pwd === "龍王") {
                 window.isAdmin = true;
-                alert("👑 管理員模式已開啟！你現在可以修改紀錄、編輯規則、並且【拖曳調整】名人堂的角色佔位！");
+                alert("👑 管理員模式已開啟！\n\n現在你可以：\n1. 修改/刪除所有人的紀錄\n2. 編輯活動規則\n3. 開放「榮譽殿堂」給所有人看\n4. 直接用滑鼠【拖曳】榮譽殿堂的人物站位！");
                 document.getElementById('editRulesBtn').style.display = 'block'; 
                 document.getElementById('hofAdminControls').style.display = 'flex';
                 processAndRender(); 
@@ -520,7 +525,7 @@
                     }
                 } catch (err) { 
                     console.error("登入失敗:", err); 
-                    statusEl.innerText = `❌ 資料庫連線失敗！(可能是您的伺服器網域未加入 Firebase 授權名單)。詳細原因: ` + err.message;
+                    statusEl.innerText = `❌ 資料庫連線失敗！請檢查網路。詳細原因: ` + err.message;
                 }
             };
 
@@ -1060,6 +1065,7 @@
             }
         }
 
+        // 🌟 嚴格捕捉錯誤的核心渲染函式
         function processAndRender() {
             try {
                 if (!expCumulativeTable || !expNeededTable) return; 
@@ -1089,10 +1095,11 @@
                 // 完全依據總成長量 (expGained) 進行排名！
                 const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
 
-                const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
+                const listEl = document.getElementById('leaderboardList'); 
+                if(listEl) listEl.innerHTML = '';
                 const top5 = leaderboard.slice(0, 5);
-                if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
-                else {
+                if (top5.length === 0 && listEl) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
+                else if (listEl) {
                     top5.forEach((player, index) => {
                         const latest = player.latestRecord;
                         const lvIndex = Math.min(Math.max(latest.lv - 1, 0), 199);
@@ -1137,7 +1144,9 @@
                         // ✅ 管理員預覽，或已公開狀態，顯示阿爾卡娜地圖
                         const hofPlayers = [...leaderboard]; 
 
-                        let hofHtml = `<div id="hofDragContainer">`;
+                        const hasCustomBg = window.hallOfFameBg && window.hallOfFameBg.trim() !== "";
+                        const bgStyle = hasCustomBg ? `background-image: url('${window.hallOfFameBg}');` : '';
+                        let hofHtml = `<div id="hofDragContainer" style="${bgStyle}">`;
                         
                         if (hofPlayers.length > 0) {
                             // 預設的相對位置表 (Left %, Top %)
@@ -1145,7 +1154,6 @@
                                 { l: 50, t: 40 }, // 1st
                                 { l: 30, t: 60 }, // 2nd
                                 { l: 70, t: 60 }, // 3rd
-                                // 第4名以後預設排在地上
                             ];
 
                             hofPlayers.forEach((player, index) => {
@@ -1273,32 +1281,34 @@
                 }
 
                 const bettingListEl = document.getElementById('bettingList');
-                bettingListEl.innerHTML = '';
-                
-                let totalMarketExp = leaderboard.reduce((sum, p) => sum + p.expGained, 0);
-                if (totalMarketExp === 0) totalMarketExp = 1;
-                
-                if (leaderboard.length === 0) {
-                    bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
-                } else {
-                    leaderboard.forEach((player, index) => {
-                        let rawWinRate = (player.expGained / totalMarketExp) * 100;
-                        if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
+                if (bettingListEl) {
+                    bettingListEl.innerHTML = '';
+                    
+                    let totalMarketExp = leaderboard.reduce((sum, p) => sum + p.expGained, 0);
+                    if (totalMarketExp === 0) totalMarketExp = 1;
+                    
+                    if (leaderboard.length === 0) {
+                        bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
+                    } else {
+                        leaderboard.forEach((player, index) => {
+                            let rawWinRate = (player.expGained / totalMarketExp) * 100;
+                            if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
 
-                        const li = document.createElement('li'); 
-                        li.className = 'leaderboard-item';
-                        
-                        li.innerHTML = `
-                            <div style="display: flex; align-items: center;">
-                                <span class="rank">${index + 1}</span>
-                                <strong>${player.name}</strong> 
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
-                            </div>
-                        `;
-                        bettingListEl.appendChild(li);
-                    });
+                            const li = document.createElement('li'); 
+                            li.className = 'leaderboard-item';
+                            
+                            li.innerHTML = `
+                                <div style="display: flex; align-items: center;">
+                                    <span class="rank">${index + 1}</span>
+                                    <strong>${player.name}</strong> 
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
+                                </div>
+                            `;
+                            bettingListEl.appendChild(li);
+                        });
+                    }
                 }
 
                 const dateSet = new Set();
@@ -1344,41 +1354,43 @@
                     return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
                 }
 
-                if (uniqueNames.length === 0) {
-                    tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
-                } else {
-                    let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
-                    uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
-                    tableHtml += '</tr></thead><tbody>';
+                if (tableEl) {
+                    if (uniqueNames.length === 0) {
+                        tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
+                    } else {
+                        let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
+                        uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
+                        tableHtml += '</tr></thead><tbody>';
 
-                    tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
-                    uniqueNames.forEach(name => {
-                        tableHtml += renderCell(displayData.baseline[name], null, null, null);
-                    });
-                    tableHtml += `</tr>`;
-
-                    let previousExp = {};
-                    uniqueNames.forEach(name => {
-                        previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
-                    });
-
-                    let recordNo = 2;
-                    dates.forEach(date => {
-                        tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
+                        tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
                         uniqueNames.forEach(name => {
-                            const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
-                            let dailyGain = null;
-                            if (rec) {
-                                dailyGain = rec.trueTotalExp - previousExp[name];
-                                previousExp[name] = rec.trueTotalExp; 
-                            }
-                            tableHtml += renderCell(rec, dailyGain, date, name);
+                            tableHtml += renderCell(displayData.baseline[name], null, null, null);
                         });
                         tableHtml += `</tr>`;
-                        recordNo++;
-                    });
-                    tableHtml += '</tbody>';
-                    tableEl.innerHTML = tableHtml;
+
+                        let previousExp = {};
+                        uniqueNames.forEach(name => {
+                            previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
+                        });
+
+                        let recordNo = 2;
+                        dates.forEach(date => {
+                            tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
+                            uniqueNames.forEach(name => {
+                                const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                                let dailyGain = null;
+                                if (rec) {
+                                    dailyGain = rec.trueTotalExp - previousExp[name];
+                                    previousExp[name] = rec.trueTotalExp; 
+                                }
+                                tableHtml += renderCell(rec, dailyGain, date, name);
+                            });
+                            tableHtml += `</tr>`;
+                            recordNo++;
+                        });
+                        tableHtml += '</tbody>';
+                        tableEl.innerHTML = tableHtml;
+                    }
                 }
 
                 const chartLabels = ['起點', ...dates];
@@ -1404,9 +1416,6 @@
                         lastLvForChart[name] = null;
                     }
                 });
-
-                const dToday = new Date();
-                const todayStr = `${String(dToday.getMonth()+1).padStart(2,'0')}/${String(dToday.getDate()).padStart(2,'0')}`;
 
                 dates.forEach(date => {
                     uniqueNames.forEach(name => {
@@ -1455,31 +1464,34 @@
                     };
                 });
 
-                const ctxChart = document.getElementById('expChart').getContext('2d');
-                if (chartInstance) chartInstance.destroy(); 
-                chartInstance = new Chart(ctxChart, {
-                    type: 'line', data: { labels: chartLabels, datasets: datasets },
-                    options: {
-                        responsive: true, 
-                        spanGaps: true, 
-                        scales: { 
-                            y: { 
-                                min: 0, 
-                                title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
-                                ticks: {
-                                    callback: function(value) {
-                                        return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                const expChartCanvas = document.getElementById('expChart');
+                if (expChartCanvas) {
+                    const ctxChart = expChartCanvas.getContext('2d');
+                    if (chartInstance) chartInstance.destroy(); 
+                    chartInstance = new Chart(ctxChart, {
+                        type: 'line', data: { labels: chartLabels, datasets: datasets },
+                        options: {
+                            responsive: true, 
+                            spanGaps: true, 
+                            scales: { 
+                                y: { 
+                                    min: 0, 
+                                    title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                        }
                                     }
-                                }
-                            } 
-                        },
-                        plugins: { tooltip: { callbacks: { label: function(context) {
-                            const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
-                            const expGainedVal = context.parsed.y;
-                            return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 總成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
-                        }}}}
-                    }
-                });
+                                } 
+                            },
+                            plugins: { tooltip: { callbacks: { label: function(context) {
+                                const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
+                                const expGainedVal = context.parsed.y;
+                                return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 總成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
+                            }}}}
+                        }
+                    });
+                }
 
                 let targetIndexInDates = dates.indexOf(todayStr);
                 let displayDateStr = todayStr;
@@ -1570,7 +1582,8 @@
                 }, 100);
             } catch (error) {
                 console.error("渲染過程發生錯誤:", error);
-                document.getElementById('status').innerText = "❌ 畫面渲染失敗，請重整網頁或檢查主控台。";
+                const statusEl = document.getElementById('status');
+                if (statusEl) statusEl.innerText = "❌ 畫面渲染失敗，請重整網頁或檢查主控台。";
             }
         }
 
