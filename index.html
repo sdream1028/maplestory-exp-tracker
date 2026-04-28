@@ -85,6 +85,109 @@
             50% { transform: scale(1.15); }
             100% { transform: scale(1); }
         }
+
+        /* ==========================================
+           🌟 榮譽殿堂 (頒獎台) 專屬 CSS 樣式 - 豪華優化版
+           ========================================== */
+        #hallOfFameCard { padding: 0; overflow: hidden; } 
+        #hallOfFameCard h3 { padding: 15px; margin: 0; background: #fff; border-bottom: 2px solid #f39c12; }
+        .hof-desc { padding: 0 15px 10px 15px; background: #fff; font-size: 12px; color: #666; margin: 0; }
+        
+        .hof-top3-container {
+            display: flex; justify-content: center; align-items: flex-end;
+            height: 380px; /* 拉高容器，確保背景圖片完整顯示 */
+            padding: 40px 10px 0 10px;
+            background: linear-gradient(to bottom, #FFB75E, #ED8F03); /* 如果沒圖片時的預設夕陽漸層 */
+            position: relative;
+            overflow: hidden;
+            border-bottom: 5px solid #4E342E; /* 舞台地板 */
+        }
+        
+        /* 夕陽光暈特效 (只在沒有自訂背景時顯示) */
+        .hof-top3-container:not(.has-custom-bg)::before {
+            content: ''; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 150px 150px 0 0; z-index: 0; pointer-events: none;
+        }
+
+        .podium-stage { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
+        
+        /* 預設的排版 (無圖片時) */
+        .podium-stage-1 { z-index: 3; }
+        .podium-stage-2 { z-index: 2; margin-right: -15px; } 
+        .podium-stage-3 { z-index: 1; margin-left: -15px; }
+        
+        /* 🌟 使用自訂地圖背景時，讓背景完整顯示並置中 */
+        .hof-top3-container.has-custom-bg { background-position: center center; }
+        
+        .speech-bubble {
+            background: #fff; border: 2px solid #333; border-radius: 8px; padding: 4px 6px; font-size: 12px;
+            margin-bottom: 8px; position: relative; text-align: center; box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+            font-weight: bold; min-width: 80px; line-height: 1.3; color: #000;
+        }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            border-width: 8px 6px 0; border-style: solid; border-color: #333 transparent transparent transparent;
+        }
+        .speech-bubble::before {
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            border-width: 6px 4px 0; border-style: solid; border-color: #fff transparent transparent transparent; z-index: 1;
+        }
+        .speech-bubble-other { font-size: 11px; min-width: 50px; padding: 2px 4px; }
+
+        .char-img { object-fit: contain; position: relative; z-index: 5; margin-bottom: -15px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4)); }
+        .char-rank-1 { height: 110px; max-width: 120px; }
+        .char-rank-2 { height: 95px; max-width: 105px; }
+        .char-rank-3 { height: 90px; max-width: 100px; }
+        .char-rank-other { height: 75px; max-width: 85px; margin-bottom: -10px; }
+
+        .stage-name-tag {
+            position: relative; z-index: 10; margin-bottom: -10px;
+            background: rgba(0,0,0,0.85); color: #FFD700; border: 1px solid #555; border-radius: 3px;
+            padding: 2px 8px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis; text-align: center;
+        }
+
+        /* 無地圖時的備用金屬底座 */
+        .stage-box {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(to right, #95a5a6, #7f8c8d 20%, #34495e 80%, #2c3e50);
+            border: 2px solid #222; border-bottom: none;
+            box-shadow: inset 0 3px 5px rgba(255,255,255,0.3), 0 -2px 10px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden;
+        }
+        .stage-box::before { 
+            content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 0;
+            border: 1px dashed rgba(255,255,255,0.2); border-bottom: none; pointer-events: none;
+        }
+        .stage-1-box { width: 130px; height: 110px; border-top: 6px solid #FFD700; }
+        .stage-2-box { width: 110px; height: 70px; border-top: 6px solid #C0C0C0; }
+        .stage-3-box { width: 110px; height: 50px; border-top: 6px solid #CD7F32; }
+        .stage-other-box { width: 90px; height: 35px; border-top: 4px solid #A1887F; background: linear-gradient(to bottom, #8D6E63, #5D4037); }
+
+        .red-carpet {
+            position: absolute; top: 0; bottom: 0; left: 25%; right: 25%;
+            background: linear-gradient(to right, #c0392b, #e74c3c 50%, #c0392b);
+            border-left: 2px solid rgba(0,0,0,0.3); border-right: 2px solid rgba(0,0,0,0.3);
+        }
+
+        .stage-trophy { font-size: 36px; position: relative; z-index: 5; margin-top: 15px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.6)); }
+        .stage-trophy-other { font-size: 20px; position: relative; z-index: 5; margin-top: 5px; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5)); }
+        
+        /* 當使用自訂地圖背景時，漂浮在人旁邊的獎盃 */
+        .stage-trophy-floating { display: none; font-size: 30px; margin-top: 5px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.6)); position: relative; z-index: 10; }
+
+        .hof-others-title {
+            background: #4E342E; color: #fff; padding: 5px 15px; font-size: 13px; font-weight: bold; text-align: center;
+            border-top: 1px solid #3E2723;
+        }
+        .hof-others-scroll {
+            display: flex; gap: 20px; overflow-x: auto; padding: 25px 15px 10px 15px;
+            background: #ECEFF1; align-items: flex-end; border-radius: 0 0 8px 8px;
+        }
+        .hof-others-scroll::-webkit-scrollbar { height: 8px; }
+        .hof-others-scroll::-webkit-scrollbar-thumb { background: #B0BEC5; border-radius: 4px; }
+        .hof-others-scroll::-webkit-scrollbar-track { background: #ECEFF1; }
     </style>
 </head>
 <body>
@@ -289,6 +392,19 @@
                 <h3 id="dailyChartTitle" style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
                 <canvas id="dailyExpChart"></canvas>
             </div>
+
+            <!-- ==========================================
+                 🌟 榮譽殿堂 (自訂地圖背景升級版)
+                 已經為你移動到「每日經驗增長長條圖」的下方！
+                 ========================================== -->
+            <div class="card" id="hallOfFameCard">
+                <h3 style="color: #d35400;">🏆 榮譽殿堂 (名人堂) 開發中</h3>
+                <p class="hof-desc">※ 角色達 LV 160 解鎖銀獎盃 🥈，達 LV 170 解鎖金獎盃 🏆！</p>
+                <div id="hallOfFameContainer">
+                    <!-- 將由 JavaScript 動態生成人物與頒獎台 -->
+                    <div style="color:#999; padding:20px; text-align:center;">資料載入中...</div>
+                </div>
+            </div>
         </div>
 
         <div class="sidebar">
@@ -346,11 +462,28 @@
         </div>
     </div>
 
-    <!-- Firebase SDK (加入了 setDoc 的引入) -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // 🌟 【地圖背景與人物圖片設定區】🌟
+        // ==========================================
+
+        // 🖼️ 請把你拍好的「沒有站人的楓之谷地圖空景」上傳後，把網址貼在這裡
+        // 如果留空("")，系統就會自動使用預設的「金屬底座+夕陽漸層」排版
+        window.hallOfFameBg = "https://media.discordapp.net/attachments/1491430470876135535/1498705388739104778/dfacb4033b722196ccb2d2bd24a5ba0a.png?ex=69f221a9&is=69f0d029&hm=3efac6e3f2936296c97c672efeff67a81dc8ee0dfa7ab142433fb6c863724f63&=&format=webp&quality=lossless"; // 👈 已經幫你替換為超夢幻的阿爾卡娜精靈樹背景！
+
+        window.characterImages = {
+            "嘟嘟": "https://media.discordapp.net/attachments/1491430522071683252/1498687504071528648/image-104.png?ex=69f21101&is=69f0bf81&hm=9391399c2ad834df1703ec9dcdd05f4dbf8a7ed230ca3cdc5091a72cbe30f4a1&=&format=webp&quality=lossless", 
+            "鮭魚": "", 
+            "奶油虎": "", // 👈 記得上傳去背圖後填入網址
+            "新竹難聊人": "", // 👈 記得上傳去背圖後填入網址
+            // 若找不到對應名字，就會自動使用下方這張「預設灰色剪影」
+            "預設": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>"
+        };
 
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -370,12 +503,11 @@
         const appId = 'maplestory-event-app';
         let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null; 
         window.allRecords = []; 
-        window.currentRulesText = ""; // 儲存目前的規則字串
+        window.currentRulesText = ""; 
 
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
 
-        // 🌟 管理員模式認證 (包含修改規則按鈕顯示)
         window.isAdmin = false;
         window.enableAdmin = function() {
             if (window.isAdmin) return;
@@ -383,7 +515,7 @@
             if (pwd === "龍王") {
                 window.isAdmin = true;
                 alert("👑 管理員模式已開啟！你現在可以修改、刪除紀錄，也能替遺漏者進行補登，並可修改「活動規則與獎勵」。");
-                document.getElementById('editRulesBtn').style.display = 'block'; // 顯示修改規則按鈕
+                document.getElementById('editRulesBtn').style.display = 'block'; 
                 processAndRender(); 
             } else if (pwd !== null) {
                 alert("❌ 密碼錯誤");
@@ -422,7 +554,6 @@
                     processAndRender();
                 }, (error) => { console.error("紀錄讀取失敗:", error); });
 
-                // 🌟 新增：監聽並載入活動規則
                 const rulesDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules');
                 onSnapshot(rulesDocRef, (docSnap) => {
                     const rulesEl = document.getElementById('eventRulesText');
@@ -430,7 +561,6 @@
                         window.currentRulesText = docSnap.data().text;
                         rulesEl.innerText = window.currentRulesText;
                     } else {
-                        // 若資料庫尚未有資料，填入預設的規則文案
                         window.currentRulesText = `即日起04/09到05/27 舉辦活動\n為了各位可以體驗首戰龍王\n"找出獄友 "\n今天報名開始上線貼入你的第一張經驗值當"起點"。\n\n活動規則 :\n每日上線時貼角色等級 經驗值(藏牌偷練)\n統計到5/27日晚上8點前最後一張圖經驗值"總量"\n\n🏆 結算出來經驗值前四名可挑選：\n1. 突襲卷一組 ( 7張 )\n2. 200 雪 (嘟嘟&奶油虎)\n3. 100 瞬移之石(奶油虎)\n4. 周年轉蛋隱藏獎勵(奶油虎-未知)\n**Leo加碼 130 雪**\n**160+ 額外摸彩資格(汪汪150+)，獎品未定**`;
                         rulesEl.innerText = window.currentRulesText;
                     }
@@ -440,9 +570,6 @@
             initAuth();
         }
 
-        // ==========================================
-        // 🌟 新增：儲存活動規則邏輯
-        // ==========================================
         window.openEditRulesModal = function() {
             document.getElementById('editRulesTextarea').value = window.currentRulesText;
             document.getElementById('editRulesModal').style.display = 'flex';
@@ -460,7 +587,6 @@
             btn.innerText = "儲存同步中...";
 
             try {
-                // 使用 setDoc 與 merge: true 確保即使文件不存在也能成功創建並寫入
                 const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules');
                 await setDoc(settingsDocRef, { text: newText }, { merge: true });
                 
@@ -628,12 +754,10 @@
             }
         }
 
-        // 🌟 開啟放大版的「經驗值對照表」
         window.openExpTableModal = function() {
             document.getElementById('expTableModal').style.display = 'flex';
         }
 
-        // 🌟 關閉放大版的「經驗值對照表」
         window.closeExpTableModal = function() {
             document.getElementById('expTableModal').style.display = 'none';
         }
@@ -826,10 +950,7 @@
         }
 
         const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
-        
-        const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 254068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
-        // 🌟 新增：繪製遊戲經驗值對照表 (直接繪製在彈窗內)
         function renderReferenceExpTable() {
             const tbody = document.querySelector('#referenceExpTableInside tbody');
             if (!tbody || !expNeededTable || !expCumulativeTable) return;
@@ -840,7 +961,6 @@
                 const needed = expNeededTable[i];
                 const cumulative = expCumulativeTable[i];
                 
-                // 計算倍率
                 let multiplier = '-';
                 if (i > 0) {
                     multiplier = (needed / expNeededTable[i - 1]).toFixed(2);
@@ -856,11 +976,10 @@
             tbody.innerHTML = html;
         }
 
-        // 頁面載入時立刻繪製經驗值對照表
         renderReferenceExpTable();
 
         function processAndRender() {
-            if (!expCumulativeTable || !expNeededTable) return; // 安全機制
+            if (!expCumulativeTable || !expNeededTable) return; 
 
             window.allRecords.forEach(r => {
                 const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
@@ -886,7 +1005,6 @@
 
             const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
 
-            // 🌟 處理總榜
             const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
             const top5 = leaderboard.slice(0, 5);
             if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
@@ -910,6 +1028,100 @@
                 });
             }
 
+            // ==========================================
+            // 🌟 處理榮譽殿堂 (Hall of Fame) - 豪華優化版
+            // ==========================================
+            const hofContainer = document.getElementById('hallOfFameContainer');
+            if (hofContainer) {
+                // 依最新等級降序排列 (等級相同比經驗)
+                const hofPlayers = [...leaderboard].sort((a, b) => {
+                    if (b.latestRecord.lv !== a.latestRecord.lv) {
+                        return b.latestRecord.lv - a.latestRecord.lv;
+                    }
+                    return b.latestRecord.exp - a.latestRecord.exp;
+                });
+
+                // 決定獎盃的函式
+                function getTrophy(lv) {
+                    if (lv >= 170) return '🏆';
+                    if (lv >= 160) return '🥈';
+                    return '';
+                }
+
+                let hofHtml = '';
+                if (hofPlayers.length > 0) {
+                    // --- 上半部：前三名大舞台 ---
+                    const top3 = hofPlayers.slice(0, 3);
+                    const first = top3[0];
+                    const second = top3[1];
+                    const third = top3[2];
+
+                    // 檢查是否有設定自訂背景
+                    const hasCustomBg = window.hallOfFameBg && window.hallOfFameBg.trim() !== "";
+                    const bgStyle = hasCustomBg ? `background-image: url('${window.hallOfFameBg}'); background-size: cover; background-position: center bottom;` : '';
+                    const bgClass = hasCustomBg ? 'has-custom-bg' : '';
+
+                    hofHtml += `<div class="hof-top3-container ${bgClass}" style="${bgStyle}">`;
+
+                    // 建立單個舞台的 HTML 產生器
+                    const genStage = (player, rank) => {
+                        if (!player) return '';
+                        const lv = player.latestRecord.lv;
+                        const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
+                        const trophy = getTrophy(lv);
+                        
+                        return `
+                            <div class="podium-stage podium-stage-${rank}">
+                                <div class="speech-bubble">我是${lv}等<br>${player.name}！</div>
+                                <img src="${imgSrc}" class="char-img char-rank-${rank}" alt="${player.name}">
+                                <div class="stage-name-tag">${player.name}</div>
+                                ${trophy ? `<div class="stage-trophy-floating">${trophy}</div>` : ''}
+                                <div class="stage-box stage-${rank}-box">
+                                    ${rank === 1 ? '<div class="red-carpet"></div>' : ''}
+                                    ${trophy ? `<div class="stage-trophy">${trophy}</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    };
+
+                    // 依照真實頒獎台站位排版：第2名(左)、第1名(中)、第3名(右)
+                    if (second) hofHtml += genStage(second, 2);
+                    if (first) hofHtml += genStage(first, 1);
+                    if (third) hofHtml += genStage(third, 3);
+
+                    hofHtml += `</div>`;
+
+                    // --- 下半部：其他挑戰者 (左右滑動) ---
+                    if (hofPlayers.length > 3) {
+                        const others = hofPlayers.slice(3);
+                        hofHtml += `<div class="hof-others-title">✨ 其他挑戰者 (左右滑動) ✨</div>`;
+                        hofHtml += `<div class="hof-others-scroll">`;
+                        
+                        others.forEach(player => {
+                            const lv = player.latestRecord.lv;
+                            const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
+                            const trophy = getTrophy(lv);
+                            
+                            hofHtml += `
+                                <div class="podium-stage">
+                                    <div class="speech-bubble speech-bubble-other">LV ${lv}</div>
+                                    <img src="${imgSrc}" class="char-img char-rank-other" alt="${player.name}">
+                                    <div class="stage-name-tag">${player.name}</div>
+                                    <div class="stage-box stage-other-box">
+                                        ${trophy ? `<div class="stage-trophy-other">${trophy}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        hofHtml += `</div>`;
+                    }
+                } else {
+                    hofHtml = '<div style="color:#999; padding:20px; text-align:center;">目前尚無角色紀錄，快來搶頭香！</div>';
+                }
+                
+                hofContainer.innerHTML = hofHtml;
+            }
+
             const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
             const displayData = { baseline: {}, daily: {} };
 
@@ -928,7 +1140,6 @@
                 }
             });
 
-            // 🌟 處理 Nani 專屬挑戰 (每 5 顆換行，150 變大火焰)
             const naniChallengeEl = document.getElementById('naniChallenge');
             if (naniChallengeEl) {
                 naniChallengeEl.innerHTML = '<div style="color:#999;">尚未加入紀錄</div>';
@@ -950,12 +1161,10 @@
                     let statusText = '';
 
                     if (isAchieved) {
-                        // ✅ 達成 150 等：一顆超大火焰 + 恭喜賀詞
                         displayHTML = '<div style="font-size: 64px; margin: 10px 0; text-shadow: 0 0 15px #FF9800; animation: pulse 1.5s infinite;">🔥</div>';
                         statusColor = '#27ae60';
                         statusText = '🎊 恭喜 Nani 達成 LV 150 目標！🎊';
                     } else {
-                        // 🏃‍♂️ 未達成：計算小火焰，並強制「每 5 顆」一排
                         const levelsGained = Math.max(0, latest.lv - startLv);
                         
                         if (levelsGained === 0) {
@@ -981,7 +1190,6 @@
                 }
             }
 
-            // 🌟 處理預測勝率榜 (簡化版)
             const bettingListEl = document.getElementById('bettingList');
             bettingListEl.innerHTML = '';
             
@@ -1011,7 +1219,6 @@
                 });
             }
 
-            // 🌟 日期處理
             const dateSet = new Set();
             const startDate = new Date(2026, 3, 9);  
             const eventEndDate = new Date(2026, 4, 27); 
@@ -1026,7 +1233,6 @@
             Object.keys(displayData.daily).forEach(d => dateSet.add(d));
             const dates = Array.from(dateSet).sort(); 
 
-            // 🌟 繪製統計表
             const tableEl = document.getElementById('dataTable');
             
             function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
@@ -1093,7 +1299,6 @@
                 tableEl.innerHTML = tableHtml;
             }
 
-            // 🌟 準備繪製圖表所需的資料
             const chartLabels = ['起點', ...dates];
             const chartDataByName = {};
             uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
@@ -1135,7 +1340,6 @@
                         lastExpForChart[name] = rec.trueTotalExp; 
                         lastLvForChart[name] = rec.lv;
                     } else {
-                        // 如果是今天沒打卡，就讓線條斷在昨天；如果是過期沒打卡，就畫水平線
                         if (date === todayStr) {
                             chartDataByName[name].lv.push(null);
                             chartDataByName[name].expGained.push(null); 
@@ -1154,7 +1358,6 @@
                 });
             });
 
-            // 繪製：1. 全員成長曲線圖 (累積)
             const datasets = uniqueNames.map((name, index) => {
                 const color = getColorByIndex(index);
                 return {
@@ -1196,16 +1399,14 @@
                 }
             });
 
-            // 🌟 繪製：2. 每日經驗增長長條圖 (單日增加量)
             let targetIndexInDates = dates.indexOf(todayStr);
             let displayDateStr = todayStr;
 
-            // 如果今天沒人打卡，往前找最後一天有資料的日期
             if (targetIndexInDates === -1) {
                 targetIndexInDates = dates.length - 1;
                 displayDateStr = dates[targetIndexInDates] || '';
             }
-            const dataIndex = targetIndexInDates + 1; // +1 因為 chartLabels 第一個是 '起點'
+            const dataIndex = targetIndexInDates + 1; 
 
             let dailyList = [];
             uniqueNames.forEach((name, index) => {
@@ -1220,7 +1421,6 @@
                 });
             });
 
-            // 依增長量由高到低排序
             dailyList.sort((a, b) => b.gain - a.gain);
 
             const dailyChartTitle = document.getElementById('dailyChartTitle');
@@ -1296,7 +1496,6 @@
             }
         });
 
-
         // ==========================================
         // 🎡 轉盤功能邏輯 
         // ==========================================
@@ -1326,20 +1525,18 @@
 
             ctx.save();
             ctx.translate(cx, cy);
-            ctx.rotate(-Math.PI / 2); // 讓第一塊扇形從正上方 (12點鐘方向) 開始畫
+            ctx.rotate(-Math.PI / 2); 
 
             for (let i = 0; i < items.length; i++) {
                 const angle = i * arc;
                 ctx.beginPath();
                 
-                // 簡約風格顏色：白底與淺藍底交替
                 let color;
                 if (i % 2 === 0) {
-                    color = '#ffffff'; // 白色
+                    color = '#ffffff'; 
                 } else {
-                    color = '#e1f5fe'; // 淺藍色
+                    color = '#e1f5fe'; 
                 }
-                // 若總數是奇數，避免最後一塊跟第一塊同為白色，給最後一塊稍微深一點的藍
                 if (i === items.length - 1 && items.length % 2 !== 0) {
                     color = '#b3e5fc'; 
                 }
@@ -1350,20 +1547,17 @@
                 ctx.fill();
                 
                 ctx.lineWidth = 2;
-                ctx.strokeStyle = "#dddddd"; // 淡淡的邊框
+                ctx.strokeStyle = "#dddddd"; 
                 ctx.stroke();
 
-                // 畫文字
                 ctx.save();
-                ctx.fillStyle = "#333333"; // 深灰色文字，乾淨易讀
-                ctx.shadowColor = "transparent"; // 移除陰影保持乾淨
+                ctx.fillStyle = "#333333"; 
+                ctx.shadowColor = "transparent"; 
                 ctx.shadowBlur = 0;
                 
-                // 根據項目多寡自動調整字體大小
                 let fontSize = items.length > 15 ? 14 : (items.length > 8 ? 18 : 22);
                 ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
                 
-                // 讓文字對齊在扇形的中心線上
                 ctx.translate(Math.cos(angle + arc / 2) * (radius * 0.55), Math.sin(angle + arc / 2) * (radius * 0.55));
                 ctx.rotate(angle + arc / 2);
                 ctx.textAlign = "center";
@@ -1389,8 +1583,6 @@
 
             const items = window.currentWheelItems;
             
-            // 隨機目標角度 + 加上 6 到 10 圈的額外旋轉，營造刺激感
-            // 🌟 修復機率：移除 Math.floor，保留小數點，確保不管人數多少，機率都是絕對公平的！
             const randomDeg = Math.random() * 360; 
             const spins = (Math.floor(Math.random() * 5) + 6) * 360;
             const totalDeg = spins + randomDeg;
@@ -1398,11 +1590,9 @@
             window.currentRotation += totalDeg;
 
             const canvas = document.getElementById('wheelCanvas');
-            // CSS Cubic-bezier 讓動畫先快後慢，更有真實轉盤的感覺
             canvas.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.1, 1)';
             canvas.style.transform = `rotate(${window.currentRotation}deg)`;
 
-            // 等待動畫結束後計算結果
             setTimeout(() => {
                 btn.disabled = false;
                 btn.style.backgroundColor = "#0288D1";
@@ -1410,25 +1600,18 @@
                 btn.style.transform = "translateY(0)";
                 btn.innerText = "🎯 開始抽獎";
                 
-                // 計算最後停下的角度
                 const actualDeg = window.currentRotation % 360;
                 
-                // 因為指針在正上方 (相當於我們畫圖的起點 -90度)，
-                // 且轉盤是順時針轉，所以原本在起點的區塊會被推向右邊。
-                // 停留在正上方的區塊角度相當於 360 - 轉動的角度。
                 let pointerDeg = (360 - actualDeg) % 360;
-                if (pointerDeg < 0) pointerDeg += 360; // 安全機制：確保角度絕對是正數
+                if (pointerDeg < 0) pointerDeg += 360; 
                 
                 const itemAngle = 360 / items.length;
-                
-                // 安全機制：使用 % items.length 避免浮點數除法產生的極端進位導致超出陣列
                 const winningIndex = Math.floor(pointerDeg / itemAngle) % items.length;
 
                 alert(`🎉 恭喜中獎：【 ${items[winningIndex]} 】！`);
             }, 4050);
         };
 
-        // 頁面載入時自動先畫一次初始轉盤
         setTimeout(() => {
             window.drawWheel();
         }, 500);
