@@ -19,7 +19,6 @@
         header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px; }
         #menuBtn { position: absolute; left: 10px; font-size: 24px; background: none; border: none; cursor: pointer; color: #2c3e50; padding: 5px; }
         #menuBtn:hover { color: var(--primary-color); }
-        /* 隱藏的管理員開關游標提示 */
         h2 { margin: 5px 0; color: #2c3e50; font-size: 1.5em; cursor: help; user-select: none; }
 
         .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
@@ -52,7 +51,6 @@
         .player-info { flex-grow: 1; }
         .player-lv { font-weight: bold; color: var(--secondary-color); font-size: 0.9em; text-align: right;}
         
-        /* 🌟 表格滾動與固定標題列優化 */
         .table-responsive { overflow-x: auto; overflow-y: auto; max-height: 480px; margin-top: 10px; }
         .spreadsheet-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border-left: 1px solid #ddd; border-top: 1px solid #ddd; }
         .spreadsheet-table th, .spreadsheet-table td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; text-align: center; background-color: #fff; }
@@ -79,7 +77,6 @@
         .upload-btn { display: inline-block; background-color: #9C27B0; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%; text-align: center; box-sizing: border-box; }
         .upload-btn:hover { background-color: #7B1FA2; }
 
-        /* 🌟 Nani 150等大火焰的呼吸跳動特效 */
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.15); }
@@ -460,37 +457,37 @@
     </div>
 
     <!-- ==========================================
-         🌟 核心程式碼區 (絕無重複宣告)
+         🌟 核心程式碼區 (保證乾淨、無重複)
          ========================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // 🌟 1. 定義經驗值對照表 (只有一份)
+        // ==========================================
+        // 🌟 1. 定義經驗值對照表 (確保只有一份)
+        // ==========================================
         const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
         const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 254068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
+        // 🌟 2. 其他全域變數與預設圖設定
         const distinctColors = [
             '#e6194B', '#3cb44b', '#f58231', '#4363d8', '#ffe119',
             '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
             '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
             '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9'
         ];
-        function getColorByIndex(index) {
-            return distinctColors[index % distinctColors.length];
-        }
+        function getColorByIndex(index) { return distinctColors[index % distinctColors.length]; }
 
-        // 🌟 2. 其他全域變數與預設圖設定
         window.hallOfFameBg = "https://truth.bahamut.com.tw/s01/201702/6e2ae1858bbb0c591942093d313f9a46.JPG";
         const defaultSilhouette = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>";
         
-        // 這個是用來放程式碼裡面的預設圖片網址 (當雲端沒有設定時使用)
-        // 目前大家都先預設為空字串，系統會自動幫他們轉成「預設灰色剪影」
+        // 為了避免黑畫面，所有還沒設定的圖片都清空，系統會自動使用預設剪影
         window.characterImages = {
             "嘟嘟": "", "鮭魚": "", "Someday": "", "屁花花": "", "En104107": "", "奶油虎": "", "新竹難聊人": "" 
         };
 
+        // 🌟 3. Firebase 設定
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
             firebaseConfig = JSON.parse(__firebase_config);
@@ -506,6 +503,7 @@
             };
         }
 
+        // 🌟 4. 全域狀態變數
         const appId = 'maplestory-event-app';
         let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null; 
         window.allRecords = []; 
@@ -517,7 +515,7 @@
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
 
-        // 🌟 3. 渲染經驗值表格的邏輯
+        // 🌟 5. 渲染經驗值表格的邏輯
         function renderReferenceExpTable() {
             const tbody = document.querySelector('#referenceExpTableInside tbody');
             if (!tbody || !expNeededTable || !expCumulativeTable) return;
@@ -537,11 +535,9 @@
             }
             tbody.innerHTML = html;
         }
-
-        // 網頁載入時立刻渲染表格
         renderReferenceExpTable();
 
-        // 🌟 4. 管理員模式設定
+        // 🌟 6. 管理員模式設定
         window.isAdmin = false;
         window.enableAdmin = function() {
             if (window.isAdmin) return;
@@ -557,7 +553,7 @@
             }
         }
 
-        // 🌟 5. Firebase 初始化與連線
+        // 🌟 7. Firebase 初始化與連線
         try {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
@@ -642,7 +638,7 @@
         }
 
         // ==========================================
-        // 🌟 6. 其他 UI 按鈕邏輯 (上傳、編輯、規則、切換)
+        // 🌟 8. 管理員 UI 功能 (殿堂與規則)
         // ==========================================
         window.toggleHofVisibility = async function() {
             const newStatus = !window.hofSettings.isPublic;
@@ -752,6 +748,9 @@
             finally { btn.disabled = false; btn.innerText = "💾 儲存規則更新"; }
         }
 
+        // ==========================================
+        // 🌟 9. 一般 UI 功能 (選單、編輯紀錄等)
+        // ==========================================
         window.toggleMenu = function() {
             document.getElementById('sideMenu').classList.toggle('open');
             document.getElementById('menuOverlay').classList.toggle('open');
@@ -791,6 +790,19 @@
             try {
                 const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
                 let updateData = { name: name, lv: lv, exp: exp };
+
+                const fileInput = document.getElementById('editImageUpload');
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    const base64Str = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    const compressedImg = await compressImage(base64Str);
+                    if (compressedImg) updateData.image = compressedImg; 
+                }
+
                 await updateDoc(recordRef, updateData);
                 window.closeEditModal();
             } catch (err) { alert("修改失敗：" + err.message); } 
@@ -827,9 +839,21 @@
                 const currentYear = new Date().getFullYear();
                 const targetDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 12, 0, 0);
 
+                let proofImg = null;
+                const fileInput = document.getElementById('addMissingImageUpload');
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    const base64Str = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    proofImg = await compressImage(base64Str);
+                }
+
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 await addDoc(publicCollection, { 
-                    name: name, lv: lv, exp: exp, image: null, 
+                    name: name, lv: lv, exp: exp, image: proofImg, 
                     timestamp: targetDate.getTime(), userId: currentUser ? currentUser.uid : 'admin'
                 });
                 document.getElementById('addMissingModal').style.display = 'none';
@@ -842,7 +866,7 @@
         window.closeExpTableModal = function() { document.getElementById('expTableModal').style.display = 'none'; }
 
         // ==========================================
-        // 🌟 7. OCR 與 畫面擷取邏輯
+        // 🌟 10. OCR 與畫面擷取
         // ==========================================
         const canvas = document.getElementById('screenCanvas');
         const ctx = canvas.getContext('2d');
@@ -1021,7 +1045,7 @@
             } finally { saveBtn.disabled = false; }
         });
 
-        // 🌟 8. 管理員拖曳核心邏輯
+        // 🌟 11. 拖曳功能
         function makeDraggable(el, playerName) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             
@@ -1067,10 +1091,9 @@
             }
         }
 
-        // 🌟 9. 最關鍵的：安全防當機版渲染系統
+        // 🌟 12. 嚴格防當機渲染核心
         function processAndRender() {
             try {
-                // 如果最開頭的經驗值陣列沒有讀到，直接退出避免當機
                 if (typeof expCumulativeTable === 'undefined' || typeof expNeededTable === 'undefined') {
                     console.error("找不到經驗值對照表變數");
                     return; 
@@ -1093,7 +1116,6 @@
                     }
                 });
 
-                // 完全依據總成長量 (expGained) 進行排名
                 const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
 
                 const listEl = document.getElementById('leaderboardList'); 
@@ -1123,7 +1145,7 @@
                 }
 
                 // ==========================================
-                // 🌟 處理榮譽殿堂 (完美防當機版)
+                // 🌟 處理榮譽殿堂 (無殘影純淨版)
                 // ==========================================
                 const hofContainer = document.getElementById('hallOfFameContainer');
                 const hofTitle = document.getElementById('hofCardTitle');
@@ -1173,7 +1195,6 @@
                             hofPlayers.forEach((player, index) => {
                                 const lv = player.latestRecord.lv;
                                 
-                                // 🌟 抓圖片的防呆機制：確保不會因為變數消失而當機
                                 const hofCharData = window.hofCharacters[player.name] || {};
                                 let defaultImg = defaultSilhouette;
                                 if (window.characterImages && window.characterImages[player.name] && window.characterImages[player.name] !== "") {
@@ -1181,19 +1202,16 @@
                                 }
                                 const imgSrc = hofCharData.image || defaultImg;
                                 
-                                // 決定人物大小：自訂 size > 前三名預設 > 地上預設
                                 let defaultHeight = 80;
                                 if (index === 0) defaultHeight = 130;
                                 else if (index === 1 || index === 2) defaultHeight = 110;
                                 const customHeight = hofCharData.size || defaultHeight;
 
-                                // 管理員專屬的 ⚙️ 設定按鈕
                                 let adminEditBtn = '';
                                 if (window.isAdmin) {
                                     adminEditBtn = `<button class="hof-char-edit-btn" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();" onclick="openHofCharModal('${player.name}')">⚙️</button>`;
                                 }
 
-                                // 取得位置 (優先序: 暫存拖曳 > DB儲存 > 預設)
                                 let pos = { l: 0, t: 0 };
                                 if (window.localHofPositions[player.name]) {
                                     pos.l = window.localHofPositions[player.name].left;
@@ -1205,14 +1223,12 @@
                                     if (index < 3) {
                                         pos = defaultPositions[index];
                                     } else {
-                                        // 沒存過位置的第4名以後，預設分散排在最下方草地上
                                         const groundIndex = index - 3;
-                                        pos.l = 10 + (groundIndex * 15) % 80; // 避免擠在一起，分布在 10%~90% 的寬度
-                                        pos.t = 95; // 草地高度
+                                        pos.l = 10 + (groundIndex * 15) % 80; 
+                                        pos.t = 95; 
                                     }
                                 }
 
-                                // 依據排名決定大小的 class
                                 let rankClass = 'char-rank-other';
                                 if (index === 0) rankClass = 'char-rank-1';
                                 else if (index === 1) rankClass = 'char-rank-2';
@@ -1234,13 +1250,10 @@
                         hofHtml += `</div>`;
                         hofContainer.innerHTML = hofHtml;
 
-                        // 畫面畫完後，幫所有人物掛載拖曳事件 (僅限管理員)
                         setTimeout(() => {
                             if (window.isAdmin) {
                                 const charElements = document.querySelectorAll('.draggable-char');
-                                charElements.forEach(el => {
-                                    makeDraggable(el, el.getAttribute('data-name'));
-                                });
+                                charElements.forEach(el => { makeDraggable(el, el.getAttribute('data-name')); });
                             }
                         }, 0);
                     }
@@ -1499,7 +1512,7 @@
         });
 
         // ==========================================
-        // 🎡 轉盤功能邏輯 
+        // 🌟 13. 轉盤功能邏輯 
         // ==========================================
         window.currentRotation = 0; window.currentWheelItems = [];
 
