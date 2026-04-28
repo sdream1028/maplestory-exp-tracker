@@ -356,7 +356,7 @@
                  ========================================== -->
             <div class="card" id="hallOfFameCard">
                 <h3>
-                    <span>🏆 榮譽殿堂 (名人堂)</span>
+                    <span>🏆 榮譽殿堂 (名人堂) 開發中</span>
                     <div id="hofAdminControls">
                         <button id="toggleHofBtn" onclick="toggleHofVisibility()" style="background-color:#95a5a6; display:none;">👁️ 設為公開</button>
                         <button id="saveHofPosBtn" onclick="saveHofPositions()" style="display:none; background-color:#e74c3c;">💾 儲存排版</button>
@@ -1132,7 +1132,7 @@
 
                     if (!window.isAdmin && !window.hofSettings.isPublic) {
                         // 🔒 未公開時，一般人看到開發中
-                        hofContainer.innerHTML = '<div class="closed-notice"><div style="font-size: 40px; margin-bottom: 10px;">🚧</div><div style="font-size: 16px; font-weight: bold; color: #555;">榮譽殿堂 尚未開放</div><div style="font-size: 12px; color: #888; margin-top: 5px;">名次結算中，敬請期待！</div></div>';
+                        hofContainer.innerHTML = '<div class="closed-notice"><div style="font-size: 40px; margin-bottom: 10px;">🚧</div><div style="font-size: 16px; font-weight: bold; color: #555;">榮譽殿堂 尚未開放</div><div style="font-size: 12px; color: #888; margin-top: 5px;">目前僅管理員使用，敬請期待！</div></div>';
                     } else {
                         // ✅ 管理員預覽，或已公開狀態，顯示阿爾卡娜地圖
                         const hofPlayers = [...leaderboard]; 
