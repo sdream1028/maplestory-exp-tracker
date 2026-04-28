@@ -13,13 +13,11 @@
         .container { display: grid; grid-template-columns: 1fr 320px; gap: 15px; max-width: 1200px; margin: 0 auto; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
         
-        /* 🌟 防止表格無限變寬撐爆整個網頁 */
         .main-content { min-width: 0; }
         
         header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px; }
         #menuBtn { position: absolute; left: 10px; font-size: 24px; background: none; border: none; cursor: pointer; color: #2c3e50; padding: 5px; }
         #menuBtn:hover { color: var(--primary-color); }
-        /* 隱藏的管理員開關游標提示 */
         h2 { margin: 5px 0; color: #2c3e50; font-size: 1.5em; cursor: help; user-select: none; }
 
         .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
@@ -52,7 +50,6 @@
         .player-info { flex-grow: 1; }
         .player-lv { font-weight: bold; color: var(--secondary-color); font-size: 0.9em; text-align: right;}
         
-        /* 🌟 表格滾動與固定標題列優化 */
         .table-responsive { overflow-x: auto; overflow-y: auto; max-height: 480px; margin-top: 10px; }
         .spreadsheet-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border-left: 1px solid #ddd; border-top: 1px solid #ddd; }
         .spreadsheet-table th, .spreadsheet-table td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; text-align: center; background-color: #fff; }
@@ -79,7 +76,6 @@
         .upload-btn { display: inline-block; background-color: #9C27B0; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%; text-align: center; box-sizing: border-box; }
         .upload-btn:hover { background-color: #7B1FA2; }
 
-        /* 🌟 Nani 150等大火焰的呼吸跳動特效 */
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.15); }
@@ -98,14 +94,13 @@
         #hofDragContainer {
             position: relative;
             width: 100%;
-            height: 550px; /* 大畫面地圖 */
+            height: 550px; 
             background-color: #1a252f;
             background-size: cover;
             background-position: center bottom;
             overflow: hidden;
         }
 
-        /* 單個人物包裝，錨點為腳底 (bottom-center) */
         .draggable-char {
             position: absolute;
             transform: translate(-50%, -100%);
@@ -119,6 +114,26 @@
 
         .admin-draggable { cursor: grab; }
         .admin-draggable:active { cursor: grabbing; z-index: 100 !important; }
+
+        /* 管理員專屬：角色右上角的設定按鈕 */
+        .hof-char-edit-btn {
+            position: absolute;
+            top: 25px; 
+            right: -25px;
+            background: #8e44ad;
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 28px; height: 28px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 20;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            padding: 0;
+            transition: 0.2s;
+        }
+        .hof-char-edit-btn:hover { background: #9b59b6; transform: scale(1.1); }
 
         .speech-bubble {
             background: rgba(255, 255, 255, 0.95); border: 2px solid #333; border-radius: 8px; padding: 4px 8px; font-size: 12px;
@@ -134,19 +149,18 @@
             border-width: 6px 4px 0; border-style: solid; border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent; z-index: 1;
         }
 
-        .char-img { object-fit: contain; position: relative; z-index: 5; margin-bottom: -5px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); }
-        
-        /* 依據排名自動調整大小 */
-        .char-rank-1 .char-img { height: 110px; }
-        .char-rank-2 .char-img { height: 95px; }
-        .char-rank-3 .char-img { height: 95px; }
-        .char-rank-other .char-img { height: 75px; } /* 未上榜人員縮小一點放草地 */
+        .char-img { object-fit: contain; position: relative; z-index: 5; margin-bottom: -5px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); max-width: none; }
 
         .stage-name-tag {
             position: relative; z-index: 10; margin-top: 5px;
             background: rgba(0,0,0,0.85); color: #FFD700; border: 1px solid #555; border-radius: 3px;
             padding: 2px 8px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
             white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; text-align: center;
+        }
+        
+        .closed-notice {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 250px; background: #fafafa; color: #888; border-bottom: 2px solid #ddd;
         }
     </style>
 </head>
@@ -264,6 +278,35 @@
         </div>
     </div>
 
+    <!-- 🌟 設定殿堂人物專用視窗 -->
+    <div id="hofCharModal" class="modal">
+        <div class="card" style="width: 340px; position: relative;">
+            <span class="card-close" onclick="document.getElementById('hofCharModal').style.display='none'">&times;</span>
+            <h3 style="border-bottom: 2px solid #8e44ad; color: #8e44ad;">⚙️ 設定人物外觀</h3>
+            
+            <div class="input-group">
+                <label style="width:120px;">玩家名稱:</label>
+                <input type="text" id="hofCharName" readonly style="background:#eee; border:none; outline:none; font-weight:bold; color:#333;">
+            </div>
+            
+            <div class="input-group" style="flex-direction: column; align-items: flex-start; margin-top:10px;">
+                <label style="width: 100%; margin-bottom: 5px;">🖼️ 上傳去背圖片 (PNG/JPG):</label>
+                <input type="file" id="hofCharUpload" accept="image/png, image/jpeg, image/webp" style="font-size: 12px; width: 100%;">
+                <small style="color: #666; margin-top: 5px;">如果已經有圖片，重新上傳會直接覆蓋。</small>
+            </div>
+            
+            <div class="input-group" style="flex-direction: column; align-items: flex-start; margin-top: 15px;">
+                <label style="width: 100%; margin-bottom: 5px;">📏 調整圖片大小: <span id="hofCharSizeVal" style="color:#d35400;">100</span> px</label>
+                <input type="range" id="hofCharSize" min="40" max="300" value="100" style="width: 100%; cursor: pointer;" oninput="document.getElementById('hofCharSizeVal').innerText=this.value">
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top: 20px;">
+                <button id="saveHofCharBtn" onclick="saveHofChar()" style="flex: 1; background-color: #8e44ad; font-weight:bold;">💾 儲存設定</button>
+                <button onclick="deleteHofChar()" style="background-color: #e74c3c;">🗑️ 恢復預設</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 經驗表視窗 -->
     <div id="expTableModal" class="modal">
         <div class="card" style="width: 95%; height: 90%; max-width: 800px; position: relative; display: flex; flex-direction: column; padding-top: 20px;">
@@ -357,8 +400,12 @@
                     </div>
                 </h3>
                 
-                <!-- 這個區塊在未公開時會被 JS 完全隱藏 (display:none) -->
-                <div id="hallOfFameContainer" style="display: none;">
+                <div id="hallOfFameContainer">
+                    <div class="closed-notice">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🚧</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #555;">榮譽殿堂 尚未開放</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 5px;">名次結算中，敬請期待！</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -414,7 +461,7 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
-        // 🌟 【防當機修正：核心經驗表變數設定】
+        // 🌟 【核心經驗表變數設定】
         // ==========================================
         const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
         const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 254068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
@@ -430,19 +477,9 @@
         }
 
         // ==========================================
-        // 🌟 【人物圖片與背景設定區】🌟
+        // 🌟 【地圖背景設定區】🌟
         // ==========================================
-        window.hallOfFameBg = "https://truth.bahamut.com.tw/s01/201702/6e2ae1858bbb0c591942093d313f9a46.JPG"; // 👈 夜間精靈樹
-
-        // 為了避免出現黑色方塊，沒有圖片的人我都先設為空字串 ("")
-        // 等你有去背網址後，再填入引號內，就會自動顯示了！
-        window.characterImages = {
-            "嘟嘟": "", 
-            "鮭魚": "", 
-            "奶油虎": "", 
-            "新竹難聊人": "", 
-            "預設": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>"
-        };
+        window.hallOfFameBg = "https://truth.bahamut.com.tw/s01/201702/6e2ae1858bbb0c591942093d313f9a46.JPG";
 
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
@@ -466,7 +503,8 @@
         
         // 🌟 榮譽殿堂相關設定
         window.hofSettings = { isPublic: false, positions: {} };
-        window.localHofPositions = {}; // 暫存拖曳的位置
+        window.localHofPositions = {}; 
+        window.hofCharacters = {}; // 存放雲端下載的每個人的專屬外觀
 
         const statusEl = document.getElementById('status');
         const saveBtn = document.getElementById('saveBtn');
@@ -480,7 +518,7 @@
             const pwd = prompt("請輸入管理員密碼以開啟全域修改權限：");
             if (pwd === "龍王") {
                 window.isAdmin = true;
-                alert("👑 管理員模式已開啟！\n\n現在你可以：\n1. 修改/刪除所有人的紀錄\n2. 編輯活動規則\n3. 開放「榮譽殿堂」給所有人看\n4. 直接用滑鼠【拖曳】榮譽殿堂的人物站位！");
+                alert("👑 管理員模式已開啟！\n\n現在你可以：\n1. 編輯規則\n2. 點擊「👁️設為公開/隱藏」切換殿堂狀態\n3. 拖曳榮譽殿堂的人物站位\n4. 點擊人物右上角的「⚙️」自訂他們的圖片跟大小！");
                 document.getElementById('editRulesBtn').style.display = 'block'; 
                 document.getElementById('hofAdminControls').style.display = 'flex';
                 processAndRender(); 
@@ -558,12 +596,22 @@
                     processAndRender();
                 }, (error) => { console.error("名人堂設定讀取失敗:", error); });
 
+                // 4. 監聽各個人物的去背圖片與大小設定
+                const hofCharsRef = collection(db, 'artifacts', appId, 'public', 'data', 'hofCharacters');
+                onSnapshot(hofCharsRef, (snapshot) => {
+                    window.hofCharacters = {};
+                    snapshot.forEach(doc => { 
+                        window.hofCharacters[doc.id] = doc.data(); 
+                    });
+                    processAndRender();
+                }, (error) => { console.error("名人堂圖片讀取失敗:", error); });
+
             });
             initAuth();
         }
 
         // ==========================================
-        // 🌟 名人堂管理功能：切換公開與儲存位置
+        // 🌟 名人堂管理功能：切換公開、儲存位置、設定圖片
         // ==========================================
         window.toggleHofVisibility = async function() {
             const newStatus = !window.hofSettings.isPublic;
@@ -583,11 +631,10 @@
             btn.disabled = true;
             btn.innerText = "儲存中...";
             try {
-                // 將記憶體中拖曳的 localHofPositions 寫入 Firebase
                 const currentPos = window.hofSettings.positions || {};
                 const newPos = { ...currentPos, ...window.localHofPositions };
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'hof'), { positions: newPos }, { merge: true });
-                window.localHofPositions = {}; // 清空暫存
+                window.localHofPositions = {}; 
                 btn.style.display = 'none';
                 alert("✅ 排版儲存成功，所有人看到的畫面已更新！");
             } catch(e) {
@@ -598,6 +645,93 @@
             }
         };
 
+        // 開啟設定人物外觀視窗
+        window.openHofCharModal = function(name) {
+            document.getElementById('hofCharName').value = name;
+            document.getElementById('hofCharUpload').value = '';
+            
+            const existingData = window.hofCharacters[name] || {};
+            // 如果沒有自訂過大小，預設給 100
+            const currentSize = existingData.size || 100;
+            document.getElementById('hofCharSize').value = currentSize;
+            document.getElementById('hofCharSizeVal').innerText = currentSize;
+            
+            document.getElementById('hofCharModal').style.display = 'flex';
+        }
+
+        // 壓縮 PNG 圖片 (保留透明度)
+        function compressTransparentImage(imgSrc, maxWidth = 350) {
+            return new Promise((resolve) => {
+                if (!imgSrc) return resolve(null);
+                const img = new Image();
+                img.onload = () => {
+                    const tempCanvas = document.createElement('canvas');
+                    let width = img.width, height = img.height;
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                    tempCanvas.width = width; tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    // 🌟 重點：使用 image/png 才能保留去背透明！
+                    resolve(tempCanvas.toDataURL('image/png')); 
+                };
+                img.onerror = () => resolve(null);
+                img.src = imgSrc;
+            });
+        }
+
+        window.saveHofChar = async function() {
+            const name = document.getElementById('hofCharName').value;
+            const size = parseInt(document.getElementById('hofCharSize').value, 10);
+            const fileInput = document.getElementById('hofCharUpload');
+            
+            const btn = document.getElementById('saveHofCharBtn');
+            btn.disabled = true; btn.innerText = "處理中...";
+            
+            try {
+                // 如果沒有上傳新圖片，就保留原本的圖片
+                let finalImage = window.hofCharacters[name]?.image || null;
+                
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    const base64Str = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    // 將去背圖片壓縮 (限制寬度 350 避免爆容量)
+                    finalImage = await compressTransparentImage(base64Str, 350); 
+                }
+                
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'hofCharacters', name);
+                if (finalImage) {
+                    await setDoc(docRef, { image: finalImage, size: size }, { merge: true });
+                } else {
+                    await setDoc(docRef, { size: size }, { merge: true });
+                }
+                
+                document.getElementById('hofCharModal').style.display = 'none';
+            } catch(e) {
+                alert("儲存失敗: " + e.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "💾 儲存設定";
+            }
+        }
+
+        window.deleteHofChar = async function() {
+            const name = document.getElementById('hofCharName').value;
+            if(confirm(`確定要清除 ${name} 的自訂圖片與設定，恢復成預設外觀嗎？`)) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'hofCharacters', name));
+                    document.getElementById('hofCharModal').style.display = 'none';
+                } catch(e) {
+                    alert("刪除失敗：" + e.message);
+                }
+            }
+        }
+
         window.openEditRulesModal = function() {
             document.getElementById('editRulesTextarea').value = window.currentRulesText;
             document.getElementById('editRulesModal').style.display = 'flex';
@@ -605,28 +739,15 @@
 
         window.saveRules = async function() {
             const newText = document.getElementById('editRulesTextarea').value.trim();
-            if (!newText) {
-                alert("規則內容不能為空喔！");
-                return;
-            }
-
+            if (!newText) { alert("規則不能為空！"); return; }
             const btn = document.getElementById('saveRulesBtn');
-            btn.disabled = true;
-            btn.innerText = "儲存同步中...";
-
+            btn.disabled = true; btn.innerText = "儲存中...";
             try {
-                const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules');
-                await setDoc(settingsDocRef, { text: newText }, { merge: true });
-                
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules'), { text: newText }, { merge: true });
                 document.getElementById('editRulesModal').style.display = 'none';
-                alert("✅ 活動規則已成功更新，並同步給所有人了！");
-            } catch (err) {
-                console.error("儲存規則失敗", err);
-                alert("修改失敗：" + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "💾 儲存規則更新";
-            }
+                alert("✅ 活動規則已更新！");
+            } catch (err) { alert("修改失敗：" + err.message); } 
+            finally { btn.disabled = false; btn.innerText = "💾 儲存規則更新"; }
         }
 
         window.toggleMenu = function() {
@@ -642,14 +763,9 @@
             if (rec && rec.image) {
                 document.getElementById('modalImg').src = rec.image;
                 document.getElementById('imageModal').style.display = 'flex';
-            } else {
-                alert("此筆紀錄沒有附帶截圖！");
-            }
+            } else { alert("此筆紀錄沒有附帶截圖！"); }
         }
-
-        window.closeEditModal = function() {
-            document.getElementById('editModal').style.display = 'none';
-        }
+        window.closeEditModal = function() { document.getElementById('editModal').style.display = 'none'; }
         
         window.editRecord = function(id) {
             const rec = window.allRecords.find(r => r.id === id);
@@ -658,15 +774,6 @@
             document.getElementById('editName').value = rec.name;
             document.getElementById('editLv').value = rec.lv;
             document.getElementById('editExp').value = rec.exp;
-            
-            document.getElementById('editImageUpload').value = '';
-            const statusLabel = document.getElementById('editImageStatus');
-            if (rec.image) {
-                statusLabel.innerText = "🖼️ 此紀錄已有截圖，上傳新檔案將會覆蓋。";
-            } else {
-                statusLabel.innerText = "❌ 此紀錄目前無截圖，可上傳補交。";
-            }
-            
             document.getElementById('editModal').style.display = 'flex';
         }
         
@@ -675,51 +782,23 @@
             const name = document.getElementById('editName').value.trim();
             const lv = parseInt(document.getElementById('editLv').value, 10);
             const exp = parseInt(document.getElementById('editExp').value, 10);
-            
-            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整的名稱、等級與經驗值！"); return; }
+            if (!name || isNaN(lv) || isNaN(exp)) return;
 
             const btn = document.getElementById('saveEditBtn');
             btn.disabled = true; btn.innerText = "儲存中...";
             try {
                 const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
                 let updateData = { name: name, lv: lv, exp: exp };
-
-                const fileInput = document.getElementById('editImageUpload');
-                if (fileInput.files && fileInput.files[0]) {
-                    btn.innerText = "壓縮圖片中...";
-                    const file = fileInput.files[0];
-                    const base64Str = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(file);
-                    });
-                    
-                    const compressedImg = await compressImage(base64Str);
-                    if (compressedImg) {
-                        updateData.image = compressedImg; 
-                    }
-                }
-
-                btn.innerText = "更新資料庫...";
                 await updateDoc(recordRef, updateData);
                 window.closeEditModal();
-            } catch (err) {
-                console.error("修改失敗", err);
-                alert("修改失敗：" + err.message);
-            } finally {
-                btn.disabled = false; btn.innerText = "💾 儲存修改";
-            }
+            } catch (err) { alert("修改失敗：" + err.message); } 
+            finally { btn.disabled = false; btn.innerText = "💾 儲存修改"; }
         }
         
         window.deleteRecord = async function(id) {
             if (confirm("確定要刪除這筆紀錄嗎？(刪除後無法復原)")) {
-                try {
-                    const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
-                    await deleteDoc(recordRef);
-                } catch (err) {
-                    console.error("刪除失敗", err);
-                    alert("刪除失敗：" + err.message);
-                }
+                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id)); } 
+                catch (err) { alert("刪除失敗：" + err.message); }
             }
         }
 
@@ -728,7 +807,6 @@
             document.getElementById('addMissingDate').value = dateStr;
             document.getElementById('addMissingLv').value = '';
             document.getElementById('addMissingExp').value = '';
-            document.getElementById('addMissingImageUpload').value = '';
             document.getElementById('addMissingModal').style.display = 'flex';
         }
 
@@ -737,8 +815,7 @@
             const dateStr = document.getElementById('addMissingDate').value;
             const lv = parseInt(document.getElementById('addMissingLv').value, 10);
             const exp = parseInt(document.getElementById('addMissingExp').value, 10);
-
-            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整的名稱、等級與經驗值！"); return; }
+            if (!name || isNaN(lv) || isNaN(exp)) return;
 
             const btn = document.getElementById('saveMissingBtn');
             btn.disabled = true; btn.innerText = "儲存中...";
@@ -748,48 +825,23 @@
                 const currentYear = new Date().getFullYear();
                 const targetDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 12, 0, 0);
 
-                let proofImg = null;
-                const fileInput = document.getElementById('addMissingImageUpload');
-                if (fileInput.files && fileInput.files[0]) {
-                    btn.innerText = "壓縮圖片中...";
-                    const file = fileInput.files[0];
-                    const base64Str = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(file);
-                    });
-                    proofImg = await compressImage(base64Str);
-                }
-
-                btn.innerText = "新增至資料庫...";
                 const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
                 await addDoc(publicCollection, { 
-                    name: name, 
-                    lv: lv, 
-                    exp: exp, 
-                    image: proofImg, 
-                    timestamp: targetDate.getTime(), 
-                    userId: currentUser ? currentUser.uid : 'admin_retroactive'
+                    name: name, lv: lv, exp: exp, image: null, 
+                    timestamp: targetDate.getTime(), userId: currentUser ? currentUser.uid : 'admin'
                 });
-
                 document.getElementById('addMissingModal').style.display = 'none';
                 alert("✅ 補登成功！");
-            } catch (err) {
-                console.error("補登失敗", err);
-                alert("補登失敗：" + err.message);
-            } finally {
-                btn.disabled = false; btn.innerText = "💾 儲存補登紀錄";
-            }
+            } catch (err) { alert("補登失敗：" + err.message); } 
+            finally { btn.disabled = false; btn.innerText = "💾 儲存補登紀錄"; }
         }
 
-        window.openExpTableModal = function() {
-            document.getElementById('expTableModal').style.display = 'flex';
-        }
+        window.openExpTableModal = function() { document.getElementById('expTableModal').style.display = 'flex'; }
+        window.closeExpTableModal = function() { document.getElementById('expTableModal').style.display = 'none'; }
 
-        window.closeExpTableModal = function() {
-            document.getElementById('expTableModal').style.display = 'none';
-        }
-
+        // ==========================================
+        // 🌟 OCR 與 畫面擷取邏輯
+        // ==========================================
         const canvas = document.getElementById('screenCanvas');
         const ctx = canvas.getContext('2d');
         let baseImage = new Image(), isDrawing = false, startX, startY, currentX, currentY, selectionRect = null; 
@@ -967,94 +1019,11 @@
             } finally { saveBtn.disabled = false; }
         });
 
-        function renderReferenceExpTable() {
-            const tbody = document.querySelector('#referenceExpTableInside tbody');
-            if (!tbody || !expNeededTable || !expCumulativeTable) return;
-            
-            let html = '';
-            for (let i = 0; i < 200; i++) {
-                const lv = i + 1;
-                const needed = expNeededTable[i];
-                const cumulative = expCumulativeTable[i];
-                
-                let multiplier = '-';
-                if (i > 0) {
-                    multiplier = (needed / expNeededTable[i - 1]).toFixed(2);
-                }
-                
-                html += `<tr>
-                    <td style="font-weight: bold; background-color: #f9f9f9;">LV ${lv}</td>
-                    <td>${needed ? needed.toLocaleString() : '-'}</td>
-                    <td>${cumulative !== undefined ? cumulative.toLocaleString() : '-'}</td>
-                    <td>${multiplier}</td>
-                </tr>`;
-            }
-            tbody.innerHTML = html;
-        }
+        // ==========================================
+        // 🌟 嚴格防當機渲染核心
+        // ==========================================
+        const defaultSilhouette = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>";
 
-        renderReferenceExpTable();
-
-        // 🌟 讓元素可以被拖曳的函式
-        function makeDraggable(el, playerName) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            
-            // 如果不是管理員，不掛載拖曳事件
-            if (!window.isAdmin) return;
-            
-            el.classList.add('admin-draggable');
-            el.onmousedown = dragMouseDown;
-            el.ontouchstart = dragMouseDown;
-
-            function dragMouseDown(e) {
-                e.preventDefault();
-                const event = e.touches ? e.touches[0] : e;
-                pos3 = event.clientX;
-                pos4 = event.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-                document.ontouchend = closeDragElement;
-                document.ontouchmove = elementDrag;
-            }
-
-            function elementDrag(e) {
-                e.preventDefault();
-                const event = e.touches ? e.touches[0] : e;
-                pos1 = pos3 - event.clientX;
-                pos2 = pos4 - event.clientY;
-                pos3 = event.clientX;
-                pos4 = event.clientY;
-                
-                // 設定絕對像素位置
-                el.style.top = (el.offsetTop - pos2) + "px";
-                el.style.left = (el.offsetLeft - pos1) + "px";
-            }
-
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-                document.ontouchend = null;
-                document.ontouchmove = null;
-                
-                // 拖曳結束後，計算出相對於容器的「百分比位置」，這樣 RWD 縮放才不會跑掉
-                const container = document.getElementById('hofDragContainer');
-                if (!container) return;
-                const rect = container.getBoundingClientRect();
-                
-                let leftPct = (el.offsetLeft / rect.width) * 100;
-                let topPct = (el.offsetTop / rect.height) * 100;
-                
-                // 限制不要拖出界外
-                leftPct = Math.max(0, Math.min(100, leftPct));
-                topPct = Math.max(0, Math.min(100, topPct));
-                
-                window.localHofPositions[playerName] = { left: leftPct, top: topPct };
-                
-                const saveBtn = document.getElementById('saveHofPosBtn');
-                if (saveBtn) saveBtn.style.display = 'inline-block';
-            }
-        }
-
-        // 🌟 嚴格捕捉錯誤的核心渲染函式
         function processAndRender() {
             try {
                 if (typeof expCumulativeTable === 'undefined' || typeof expNeededTable === 'undefined') return; 
@@ -1069,12 +1038,7 @@
                 const playerStats = {};
                 sortedRecords.forEach(r => {
                     if (!playerStats[r.name]) {
-                        playerStats[r.name] = {
-                            name: r.name,
-                            firstRecord: r, 
-                            latestRecord: r, 
-                            expGained: 0 
-                        };
+                        playerStats[r.name] = { name: r.name, firstRecord: r, latestRecord: r, expGained: 0 };
                     } else {
                         playerStats[r.name].latestRecord = r; 
                         playerStats[r.name].expGained = r.trueTotalExp - playerStats[r.name].firstRecord.trueTotalExp;
@@ -1109,18 +1073,16 @@
                 }
 
                 // ==========================================
-                // 🌟 處理榮譽殿堂 (完全隱藏版)
+                // 🌟 處理榮譽殿堂 (自訂圖片上傳+拖曳排版)
                 // ==========================================
                 const hofContainer = document.getElementById('hallOfFameContainer');
                 const hofTitle = document.getElementById('hofCardTitle');
 
                 if (hofContainer) {
-                    
-                    // 管理員按鈕顯示狀態更新
                     const toggleBtn = document.getElementById('toggleHofBtn');
                     if (toggleBtn) {
                         if (window.hofSettings.isPublic) {
-                            toggleBtn.innerText = "🟢 已公開殿堂";
+                            toggleBtn.innerText = "🟢 已公開 (點擊隱藏)";
                             toggleBtn.style.backgroundColor = "#27ae60";
                         } else {
                             toggleBtn.innerText = "👁️ 設為公開";
@@ -1129,10 +1091,10 @@
                     }
 
                     if (!window.isAdmin && !window.hofSettings.isPublic) {
-                        // 🔒 關閉時：一般人什麼都看不到，只顯示 Title「開發中」
+                        // 🔒 關閉時：一般人看到「敬請期待」
                         if(hofTitle) hofTitle.innerText = "🏆 榮譽殿堂 (名人堂) 開發中";
-                        hofContainer.style.display = 'none'; 
-                        hofContainer.innerHTML = ''; 
+                        hofContainer.style.display = 'block'; 
+                        hofContainer.innerHTML = '<div class="closed-notice"><div style="font-size: 40px; margin-bottom: 10px;">🚧</div><div style="font-size: 16px; font-weight: bold; color: #555;">榮譽殿堂 尚未開放</div><div style="font-size: 12px; color: #888; margin-top: 5px;">名次結算中，敬請期待！</div></div>'; 
                     } else {
                         // ✅ 管理員預覽，或已公開狀態
                         if(hofTitle) {
@@ -1160,13 +1122,28 @@
 
                             hofPlayers.forEach((player, index) => {
                                 const lv = player.latestRecord.lv;
-                                const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
                                 
-                                // 依據排名決定大小的 class
-                                let rankClass = 'char-rank-other';
-                                if (index === 0) rankClass = 'char-rank-1';
-                                else if (index === 1) rankClass = 'char-rank-2';
-                                else if (index === 2) rankClass = 'char-rank-3';
+                                // 🌟 優先取得 Firebase 裡儲存的自訂圖片與大小，若無才抓 window 設定，最後才是灰色剪影
+                                const hofCharData = window.hofCharacters[player.name] || {};
+                                
+                                // 確保變數不會 undefined 導致當機！
+                                let defaultImg = defaultSilhouette;
+                                if (window.characterImages && window.characterImages[player.name] && window.characterImages[player.name] !== "") {
+                                    defaultImg = window.characterImages[player.name];
+                                }
+                                const imgSrc = hofCharData.image || defaultImg;
+                                
+                                // 決定人物大小：自訂 size > 前三名預設 > 地上預設
+                                let defaultHeight = 80;
+                                if (index === 0) defaultHeight = 130;
+                                else if (index === 1 || index === 2) defaultHeight = 110;
+                                const customHeight = hofCharData.size || defaultHeight;
+
+                                // 管理員專屬的 ⚙️ 設定按鈕
+                                let adminEditBtn = '';
+                                if (window.isAdmin) {
+                                    adminEditBtn = `<button class="hof-char-edit-btn" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();" onclick="openHofCharModal('${player.name}')">⚙️</button>`;
+                                }
 
                                 // 取得位置 (優先序: 暫存拖曳 > DB儲存 > 預設)
                                 let pos = { l: 0, t: 0 };
@@ -1188,9 +1165,10 @@
                                 }
 
                                 hofHtml += `
-                                    <div class="draggable-char ${rankClass}" id="hof_char_${index}" data-name="${player.name}" style="left: ${pos.l}%; top: ${pos.t}%;">
+                                    <div class="draggable-char" id="hof_char_${index}" data-name="${player.name}" style="left: ${pos.l}%; top: ${pos.t}%;">
+                                        ${adminEditBtn}
                                         <div class="speech-bubble">我是${lv}等<br>${player.name}！</div>
-                                        <img src="${imgSrc}" class="char-img" alt="${player.name}" draggable="false">
+                                        <img src="${imgSrc}" class="char-img" style="height: ${customHeight}px;" alt="${player.name}" draggable="false">
                                         <div class="stage-name-tag">${player.name}</div>
                                     </div>
                                 `;
@@ -1221,7 +1199,6 @@
                     const userRecs = sortedRecords.filter(r => r.name === name);
                     if (userRecs.length > 0) {
                         displayData.baseline[name] = userRecs[0]; 
-                        
                         for (let i = 1; i < userRecs.length; i++) {
                             const rec = userRecs[i];
                             const d = new Date(rec.timestamp);
@@ -1238,76 +1215,44 @@
                     let naniData = null;
 
                     leaderboard.forEach(player => {
-                        if (player.name && player.name.toLowerCase() === 'nani') {
-                            naniData = player;
-                        }
+                        if (player.name && player.name.toLowerCase() === 'nani') { naniData = player; }
                     });
 
                     if (naniData) {
                         const latest = naniData.latestRecord;
                         const startLv = 134; 
                         const isAchieved = latest.lv >= 150;
-                        
-                        let displayHTML = '';
-                        let statusColor = '';
-                        let statusText = '';
+                        let displayHTML = '', statusColor = '', statusText = '';
 
                         if (isAchieved) {
                             displayHTML = '<div style="font-size: 64px; margin: 10px 0; text-shadow: 0 0 15px #FF9800; animation: pulse 1.5s infinite;">🔥</div>';
-                            statusColor = '#27ae60';
-                            statusText = '🎊 恭喜 Nani 達成 LV 150 目標！🎊';
+                            statusColor = '#27ae60'; statusText = '🎊 恭喜 Nani 達成 LV 150 目標！🎊';
                         } else {
                             const levelsGained = Math.max(0, latest.lv - startLv);
-                            
-                            if (levelsGained === 0) {
-                                displayHTML = '<div style="font-size: 18px; margin: 5px 0;">🌱</div>';
-                            } else {
+                            if (levelsGained === 0) { displayHTML = '<div style="font-size: 18px; margin: 5px 0;">🌱</div>'; } 
+                            else {
                                 let firesArray = [];
-                                for (let i = 0; i < levelsGained; i += 5) {
-                                    firesArray.push('🔥'.repeat(Math.min(5, levelsGained - i)));
-                                }
+                                for (let i = 0; i < levelsGained; i += 5) firesArray.push('🔥'.repeat(Math.min(5, levelsGained - i)));
                                 displayHTML = `<div style="font-size: 18px; margin: 5px 0; line-height: 1.5; padding: 0 10px; letter-spacing: 3px;">${firesArray.join('<br>')}</div>`;
                             }
-                            
-                            statusColor = '#e67e22';
-                            statusText = '🏃‍♂️ 努力衝刺中...';
+                            statusColor = '#e67e22'; statusText = '🏃‍♂️ 努力衝刺中...';
                         }
-                        
-                        naniChallengeEl.innerHTML = `
-                            ${displayHTML}
-                            <div style="font-size: 15px;"><strong>目前等級: LV ${latest.lv}</strong></div>
-                            <div style="color: ${statusColor}; font-weight: bold; margin-top: 8px;">${statusText}</div>
-                            <div style="font-size: 12px; color: #666; margin-top: 5px;">累積: +${(naniData.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2})} M</div>
-                        `;
+                        naniChallengeEl.innerHTML = `${displayHTML}<div style="font-size: 15px;"><strong>目前等級: LV ${latest.lv}</strong></div><div style="color: ${statusColor}; font-weight: bold; margin-top: 8px;">${statusText}</div><div style="font-size: 12px; color: #666; margin-top: 5px;">累積: +${(naniData.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2})} M</div>`;
                     }
                 }
 
                 const bettingListEl = document.getElementById('bettingList');
                 if (bettingListEl) {
                     bettingListEl.innerHTML = '';
-                    
                     let totalMarketExp = leaderboard.reduce((sum, p) => sum + p.expGained, 0);
                     if (totalMarketExp === 0) totalMarketExp = 1;
-                    
-                    if (leaderboard.length === 0) {
-                        bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
-                    } else {
+                    if (leaderboard.length === 0) { bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>'; } 
+                    else {
                         leaderboard.forEach((player, index) => {
                             let rawWinRate = (player.expGained / totalMarketExp) * 100;
                             if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
-
-                            const li = document.createElement('li'); 
-                            li.className = 'leaderboard-item';
-                            
-                            li.innerHTML = `
-                                <div style="display: flex; align-items: center;">
-                                    <span class="rank">${index + 1}</span>
-                                    <strong>${player.name}</strong> 
-                                </div>
-                                <div style="text-align: right;">
-                                    <span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
-                                </div>
-                            `;
+                            const li = document.createElement('li'); li.className = 'leaderboard-item';
+                            li.innerHTML = `<div style="display: flex; align-items: center;"><span class="rank">${index + 1}</span><strong>${player.name}</strong></div><div style="text-align: right;"><span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span></div>`;
                             bettingListEl.appendChild(li);
                         });
                     }
@@ -1316,9 +1261,7 @@
                 const dateSet = new Set();
                 const startDate = new Date(2026, 3, 9);  
                 const eventEndDate = new Date(2026, 4, 27); 
-                
-                const today = new Date();
-                today.setHours(23, 59, 59, 999);
+                const today = new Date(); today.setHours(23, 59, 59, 999);
                 const displayEndDate = today < eventEndDate ? today : eventEndDate;
 
                 for (let d = new Date(startDate); d <= displayEndDate; d.setDate(d.getDate() + 1)) {
@@ -1340,19 +1283,14 @@
                     let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
                     let actionLinks = '';
                     if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
-                        actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
-                            <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
-                            <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
-                        </span>`;
+                        actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;"><a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a><a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a></span>`;
                     }
-                    
                     let gainHtml = '';
                     if (dailyGain !== null) {
                         let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
                         let gainColor = dailyGain > 0 ? '#d35400' : '#888';
                         gainHtml = `<br><span style="color:${gainColor}; font-weight:bold; font-size:0.85em;">+${gainM} M</span>`;
                     }
-                    
                     return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
                 }
 
@@ -1365,15 +1303,11 @@
                         tableHtml += '</tr></thead><tbody>';
 
                         tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
-                        uniqueNames.forEach(name => {
-                            tableHtml += renderCell(displayData.baseline[name], null, null, null);
-                        });
+                        uniqueNames.forEach(name => { tableHtml += renderCell(displayData.baseline[name], null, null, null); });
                         tableHtml += `</tr>`;
 
                         let previousExp = {};
-                        uniqueNames.forEach(name => {
-                            previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
-                        });
+                        uniqueNames.forEach(name => { previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0; });
 
                         let recordNo = 2;
                         dates.forEach(date => {
@@ -1399,23 +1333,16 @@
                 const chartDataByName = {};
                 uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
                 
-                let lastExpForChart = {};
-                let lastLvForChart = {};
+                let lastExpForChart = {}; let lastLvForChart = {};
 
                 uniqueNames.forEach(name => {
                     const rec = displayData.baseline[name];
                     if (rec) {
-                        chartDataByName[name].lv.push(rec.lv);
-                        chartDataByName[name].expGained.push(0); 
-                        chartDataByName[name].dailyExpGained.push(0); 
-                        lastExpForChart[name] = rec.trueTotalExp;
-                        lastLvForChart[name] = rec.lv;
+                        chartDataByName[name].lv.push(rec.lv); chartDataByName[name].expGained.push(0); chartDataByName[name].dailyExpGained.push(0); 
+                        lastExpForChart[name] = rec.trueTotalExp; lastLvForChart[name] = rec.lv;
                     } else {
-                        chartDataByName[name].lv.push(null);
-                        chartDataByName[name].expGained.push(null); 
-                        chartDataByName[name].dailyExpGained.push(0); 
-                        lastExpForChart[name] = 0;
-                        lastLvForChart[name] = null;
+                        chartDataByName[name].lv.push(null); chartDataByName[name].expGained.push(null); chartDataByName[name].dailyExpGained.push(0); 
+                        lastExpForChart[name] = 0; lastLvForChart[name] = null;
                     }
                 });
 
@@ -1424,28 +1351,18 @@
                         const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
                         if (rec) {
                             const gainedExp = rec.trueTotalExp - displayData.baseline[name].trueTotalExp;
-                            chartDataByName[name].lv.push(rec.lv);
-                            chartDataByName[name].expGained.push(gainedExp);
-                            
+                            chartDataByName[name].lv.push(rec.lv); chartDataByName[name].expGained.push(gainedExp);
                             let dailyDiff = rec.trueTotalExp - lastExpForChart[name];
                             chartDataByName[name].dailyExpGained.push(dailyDiff);
-                            
-                            lastExpForChart[name] = rec.trueTotalExp; 
-                            lastLvForChart[name] = rec.lv;
+                            lastExpForChart[name] = rec.trueTotalExp; lastLvForChart[name] = rec.lv;
                         } else {
                             if (date === todayStr) {
-                                chartDataByName[name].lv.push(null);
-                                chartDataByName[name].expGained.push(null); 
-                                chartDataByName[name].dailyExpGained.push(0); 
+                                chartDataByName[name].lv.push(null); chartDataByName[name].expGained.push(null); chartDataByName[name].dailyExpGained.push(0); 
                             } else if (lastExpForChart[name] !== 0 && displayData.baseline[name]) {
                                 const gainedExp = lastExpForChart[name] - displayData.baseline[name].trueTotalExp;
-                                chartDataByName[name].lv.push(lastLvForChart[name]);
-                                chartDataByName[name].expGained.push(gainedExp);
-                                chartDataByName[name].dailyExpGained.push(0); 
+                                chartDataByName[name].lv.push(lastLvForChart[name]); chartDataByName[name].expGained.push(gainedExp); chartDataByName[name].dailyExpGained.push(0); 
                             } else {
-                                chartDataByName[name].lv.push(null);
-                                chartDataByName[name].expGained.push(null); 
-                                chartDataByName[name].dailyExpGained.push(0); 
+                                chartDataByName[name].lv.push(null); chartDataByName[name].expGained.push(null); chartDataByName[name].dailyExpGained.push(0); 
                             }
                         }
                     });
@@ -1453,17 +1370,7 @@
 
                 const datasets = uniqueNames.map((name, index) => {
                     const color = getColorByIndex(index);
-                    return {
-                        label: name, 
-                        data: chartDataByName[name].expGained, 
-                        borderColor: color, 
-                        backgroundColor: color + '33', 
-                        borderWidth: 2, 
-                        pointRadius: 4, 
-                        fill: false, 
-                        tension: 0.3, 
-                        customLvData: chartDataByName[name].lv 
-                    };
+                    return { label: name, data: chartDataByName[name].expGained, borderColor: color, backgroundColor: color + '33', borderWidth: 2, pointRadius: 4, fill: false, tension: 0.3, customLvData: chartDataByName[name].lv };
                 });
 
                 const expChartCanvas = document.getElementById('expChart');
@@ -1473,19 +1380,8 @@
                     chartInstance = new Chart(ctxChart, {
                         type: 'line', data: { labels: chartLabels, datasets: datasets },
                         options: {
-                            responsive: true, 
-                            spanGaps: true, 
-                            scales: { 
-                                y: { 
-                                    min: 0, 
-                                    title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
-                                    ticks: {
-                                        callback: function(value) {
-                                            return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
-                                        }
-                                    }
-                                } 
-                            },
+                            responsive: true, spanGaps: true, 
+                            scales: { y: { min: 0, title: { display: true, text: '總成長經驗值 (百萬 EXP)' }, ticks: { callback: function(value) { return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M'; } } } },
                             plugins: { tooltip: { callbacks: { label: function(context) {
                                 const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
                                 const expGainedVal = context.parsed.y;
@@ -1495,34 +1391,20 @@
                     });
                 }
 
-                let targetIndexInDates = dates.indexOf(todayStr);
-                let displayDateStr = todayStr;
-
-                if (targetIndexInDates === -1) {
-                    targetIndexInDates = dates.length - 1;
-                    displayDateStr = dates[targetIndexInDates] || '';
-                }
+                let targetIndexInDates = dates.indexOf(todayStr); let displayDateStr = todayStr;
+                if (targetIndexInDates === -1) { targetIndexInDates = dates.length - 1; displayDateStr = dates[targetIndexInDates] || ''; }
                 const dataIndex = targetIndexInDates + 1; 
 
                 let dailyList = [];
                 uniqueNames.forEach((name, index) => {
                     let gain = chartDataByName[name].dailyExpGained[dataIndex] || 0;
                     let lv = chartDataByName[name].lv[dataIndex] || lastLvForChart[name];
-                    dailyList.push({
-                        name: name,
-                        gain: gain,
-                        lv: lv,
-                        bgColor: getColorByIndex(index) + 'CC',
-                        borderColor: getColorByIndex(index)
-                    });
+                    dailyList.push({ name: name, gain: gain, lv: lv, bgColor: getColorByIndex(index) + 'CC', borderColor: getColorByIndex(index) });
                 });
-
                 dailyList.sort((a, b) => b.gain - a.gain);
 
                 const dailyChartTitle = document.getElementById('dailyChartTitle');
-                if (dailyChartTitle) {
-                    dailyChartTitle.innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`;
-                }
+                if (dailyChartTitle) { dailyChartTitle.innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`; }
 
                 const ctxDaily = document.getElementById('dailyExpChart');
                 if (ctxDaily) {
@@ -1531,53 +1413,21 @@
                         type: 'bar',
                         data: {
                             labels: dailyList.map(item => item.name),
-                            datasets: [{
-                                label: '單日增加 (EXP)',
-                                data: dailyList.map(item => item.gain),
-                                backgroundColor: dailyList.map(item => item.bgColor),
-                                borderColor: dailyList.map(item => item.borderColor),
-                                borderWidth: 1,
-                                customLvData: dailyList.map(item => item.lv)
-                            }]
+                            datasets: [{ label: '單日增加 (EXP)', data: dailyList.map(item => item.gain), backgroundColor: dailyList.map(item => item.bgColor), borderColor: dailyList.map(item => item.borderColor), borderWidth: 1, customLvData: dailyList.map(item => item.lv) }]
                         },
                         options: {
                             responsive: true,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            const lvVal = context.dataset.customLvData[context.dataIndex];
-                                            const gainVal = context.parsed.y;
-                                            return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 今日增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`;
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    min: 0,
-                                    title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
-                                    ticks: {
-                                        callback: function(value) {
-                                            return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
-                                        }
-                                    }
-                                }
-                            }
+                            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { const lvVal = context.dataset.customLvData[context.dataIndex]; const gainVal = context.parsed.y; return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 今日增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`; } } } },
+                            scales: { y: { min: 0, title: { display: true, text: '單日經驗增長量 (百萬 EXP)' }, ticks: { callback: function(value) { return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M'; } } } }
                         }
                     });
                 }
 
                 setTimeout(() => {
-                    const tableScroll = document.getElementById('tableResponsive');
-                    const topScrollWrapper = document.getElementById('topScrollWrapper');
-                    const topScrollContent = document.getElementById('topScrollContent');
-                    const tableEl = document.getElementById('dataTable');
-                    
+                    const tableScroll = document.getElementById('tableResponsive'); const topScrollWrapper = document.getElementById('topScrollWrapper');
+                    const topScrollContent = document.getElementById('topScrollContent'); const tableEl = document.getElementById('dataTable');
                     if (tableEl && topScrollContent && tableScroll && topScrollWrapper) {
                         topScrollContent.style.width = tableEl.scrollWidth + 'px';
-                        
                         topScrollWrapper.onscroll = () => { tableScroll.scrollLeft = topScrollWrapper.scrollLeft; };
                         tableScroll.onscroll = () => { topScrollWrapper.scrollLeft = tableScroll.scrollLeft; };
                     }
@@ -1590,132 +1440,77 @@
         }
 
         window.addEventListener('resize', () => {
-            const tableEl = document.getElementById('dataTable');
-            const topScrollContent = document.getElementById('topScrollContent');
-            if (tableEl && topScrollContent) {
-                topScrollContent.style.width = tableEl.scrollWidth + 'px';
-            }
+            const tableEl = document.getElementById('dataTable'); const topScrollContent = document.getElementById('topScrollContent');
+            if (tableEl && topScrollContent) { topScrollContent.style.width = tableEl.scrollWidth + 'px'; }
         });
 
         // ==========================================
         // 🎡 轉盤功能邏輯 
         // ==========================================
-        window.currentRotation = 0;
-        window.currentWheelItems = [];
+        window.currentRotation = 0; window.currentWheelItems = [];
 
         window.drawWheel = function() {
-            const canvas = document.getElementById('wheelCanvas');
-            if (!canvas) return;
+            const canvas = document.getElementById('wheelCanvas'); if (!canvas) return;
             const ctx = canvas.getContext('2d');
             const rawItems = document.getElementById('wheelItems').value.split('\n');
             const items = rawItems.filter(i => i.trim() !== '');
-            
-            if(items.length === 0) {
-                items.push("請輸入名單");
-            }
+            if(items.length === 0) items.push("請輸入名單");
             window.currentWheelItems = items;
 
-            const cw = canvas.width;
-            const ch = canvas.height;
-            const cx = cw / 2;
-            const cy = ch / 2;
-            const radius = Math.min(cx, cy);
+            const cw = canvas.width; const ch = canvas.height; const cx = cw / 2; const cy = ch / 2; const radius = Math.min(cx, cy);
 
-            ctx.clearRect(0, 0, cw, ch);
-            const arc = 2 * Math.PI / items.length;
-
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(-Math.PI / 2); 
+            ctx.clearRect(0, 0, cw, ch); const arc = 2 * Math.PI / items.length;
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(-Math.PI / 2); 
 
             for (let i = 0; i < items.length; i++) {
-                const angle = i * arc;
-                ctx.beginPath();
-                
+                const angle = i * arc; ctx.beginPath();
                 let color;
-                if (i % 2 === 0) {
-                    color = '#ffffff'; 
-                } else {
-                    color = '#e1f5fe'; 
-                }
-                if (i === items.length - 1 && items.length % 2 !== 0) {
-                    color = '#b3e5fc'; 
-                }
+                if (i % 2 === 0) color = '#ffffff'; else color = '#e1f5fe'; 
+                if (i === items.length - 1 && items.length % 2 !== 0) color = '#b3e5fc'; 
                 ctx.fillStyle = color;
                 
-                ctx.moveTo(0, 0);
-                ctx.arc(0, 0, radius, angle, angle + arc);
-                ctx.fill();
-                
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = "#dddddd"; 
-                ctx.stroke();
+                ctx.moveTo(0, 0); ctx.arc(0, 0, radius, angle, angle + arc); ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = "#dddddd"; ctx.stroke();
 
-                ctx.save();
-                ctx.fillStyle = "#333333"; 
-                ctx.shadowColor = "transparent"; 
-                ctx.shadowBlur = 0;
-                
+                ctx.save(); ctx.fillStyle = "#333333"; ctx.shadowColor = "transparent"; ctx.shadowBlur = 0;
                 let fontSize = items.length > 15 ? 14 : (items.length > 8 ? 18 : 22);
                 ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
                 
                 ctx.translate(Math.cos(angle + arc / 2) * (radius * 0.55), Math.sin(angle + arc / 2) * (radius * 0.55));
-                ctx.rotate(angle + arc / 2);
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(items[i], 0, 0);
-                ctx.restore();
+                ctx.rotate(angle + arc / 2); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(items[i], 0, 0); ctx.restore();
             }
             ctx.restore();
         };
 
-        window.updateWheel = function() {
-            window.drawWheel();
-        };
+        window.updateWheel = function() { window.drawWheel(); };
 
         window.spinWheel = function() {
             if (!window.currentWheelItems || window.currentWheelItems.length === 0) return;
             const btn = document.getElementById('spinBtn');
-            btn.disabled = true;
-            btn.style.backgroundColor = "#95a5a6";
-            btn.style.boxShadow = "none";
-            btn.style.transform = "translateY(2px)";
-            btn.innerText = "旋轉中...";
+            btn.disabled = true; btn.style.backgroundColor = "#95a5a6"; btn.style.boxShadow = "none";
+            btn.style.transform = "translateY(2px)"; btn.innerText = "旋轉中...";
 
             const items = window.currentWheelItems;
-            
-            const randomDeg = Math.random() * 360; 
-            const spins = (Math.floor(Math.random() * 5) + 6) * 360;
-            const totalDeg = spins + randomDeg;
-
-            window.currentRotation += totalDeg;
+            const randomDeg = Math.random() * 360; const spins = (Math.floor(Math.random() * 5) + 6) * 360;
+            const totalDeg = spins + randomDeg; window.currentRotation += totalDeg;
 
             const canvas = document.getElementById('wheelCanvas');
             canvas.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.1, 1)';
             canvas.style.transform = `rotate(${window.currentRotation}deg)`;
 
             setTimeout(() => {
-                btn.disabled = false;
-                btn.style.backgroundColor = "#0288D1";
-                btn.style.boxShadow = "0 4px 0 #01579B";
-                btn.style.transform = "translateY(0)";
-                btn.innerText = "🎯 開始抽獎";
+                btn.disabled = false; btn.style.backgroundColor = "#0288D1"; btn.style.boxShadow = "0 4px 0 #01579B";
+                btn.style.transform = "translateY(0)"; btn.innerText = "🎯 開始抽獎";
                 
                 const actualDeg = window.currentRotation % 360;
-                
-                let pointerDeg = (360 - actualDeg) % 360;
-                if (pointerDeg < 0) pointerDeg += 360; 
-                
-                const itemAngle = 360 / items.length;
-                const winningIndex = Math.floor(pointerDeg / itemAngle) % items.length;
-
+                let pointerDeg = (360 - actualDeg) % 360; if (pointerDeg < 0) pointerDeg += 360; 
+                const itemAngle = 360 / items.length; const winningIndex = Math.floor(pointerDeg / itemAngle) % items.length;
                 alert(`🎉 恭喜中獎：【 ${items[winningIndex]} 】！`);
             }, 4050);
         };
 
-        setTimeout(() => {
-            window.drawWheel();
-        }, 500);
+        setTimeout(() => { window.drawWheel(); }, 500);
 
     </script>
 </body>
