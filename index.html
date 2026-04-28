@@ -404,7 +404,6 @@
 
             <!-- ==========================================
                  🌟 榮譽殿堂 (自訂地圖背景升級版)
-                 已經為你移動到「每日經驗增長長條圖」的下方！
                  ========================================== -->
             <div class="card" id="hallOfFameCard">
                 <h3 style="color: #d35400;">🏆 榮譽殿堂 (名人堂)</h3>
@@ -471,17 +470,32 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK & 程式碼邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
+        // 🌟 【防當機修正：必須放最頂端的核心變數】🌟
+        // ==========================================
+        const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
+        
+        const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 254068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
+
+        const distinctColors = [
+            '#e6194B', '#3cb44b', '#f58231', '#4363d8', '#ffe119',
+            '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
+            '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
+            '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9'
+        ];
+        function getColorByIndex(index) {
+            return distinctColors[index % distinctColors.length];
+        }
+
+        // ==========================================
         // 🌟 【地圖背景與人物圖片設定區】🌟
         // ==========================================
-
-        // 🖼️ 系統已經為你換上夢幻的阿爾卡娜精靈樹！
         window.hallOfFameBg = "https://media.discordapp.net/attachments/1491430470876135535/1498705388739104778/dfacb4033b722196ccb2d2bd24a5ba0a.png?ex=69f221a9&is=69f0d029&hm=3efac6e3f2936296c97c672efeff67a81dc8ee0dfa7ab142433fb6c863724f63&=&format=webp&quality=lossless";
 
         window.characterImages = {
@@ -490,9 +504,8 @@
             "Someday": "https://i.imgur.com/K3wS12d.png",
             "屁花花": "https://i.imgur.com/K3wS12d.png",
             "En104107": "https://i.imgur.com/K3wS12d.png",
-            "奶油虎": "", // 👈 等你去背好之後貼在這裡
-            "新竹難聊人": "", // 👈 等你去背好之後貼在這裡
-            // 若找不到對應名字，就會自動使用下方這張「預設灰色剪影」
+            "奶油虎": "", 
+            "新竹難聊人": "", 
             "預設": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>"
         };
 
@@ -950,18 +963,6 @@
             } finally { saveBtn.disabled = false; }
         });
 
-        const distinctColors = [
-            '#e6194B', '#3cb44b', '#f58231', '#4363d8', '#ffe119',
-            '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
-            '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
-            '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9'
-        ];
-        function getColorByIndex(index) {
-            return distinctColors[index % distinctColors.length];
-        }
-
-        const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
-
         function renderReferenceExpTable() {
             const tbody = document.querySelector('#referenceExpTableInside tbody');
             if (!tbody || !expNeededTable || !expCumulativeTable) return;
@@ -989,514 +990,510 @@
 
         renderReferenceExpTable();
 
+        // 🌟 這裡加上了 try...catch，萬一有錯才不會卡死
         function processAndRender() {
-            if (!expCumulativeTable || !expNeededTable) return; 
+            try {
+                if (!expCumulativeTable || !expNeededTable) return; 
 
-            window.allRecords.forEach(r => {
-                const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
-                r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
-            });
-
-            const sortedRecords = [...window.allRecords].sort((a, b) => a.timestamp - b.timestamp);
-            
-            const playerStats = {};
-            sortedRecords.forEach(r => {
-                if (!playerStats[r.name]) {
-                    playerStats[r.name] = {
-                        name: r.name,
-                        firstRecord: r, 
-                        latestRecord: r, 
-                        expGained: 0 
-                    };
-                } else {
-                    playerStats[r.name].latestRecord = r; 
-                    playerStats[r.name].expGained = r.trueTotalExp - playerStats[r.name].firstRecord.trueTotalExp;
-                }
-            });
-
-            const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
-
-            const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
-            const top5 = leaderboard.slice(0, 5);
-            if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
-            else {
-                top5.forEach((player, index) => {
-                    const latest = player.latestRecord;
-                    const lvIndex = Math.min(Math.max(latest.lv - 1, 0), 199);
-                    const percentage = ((latest.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
-                    const expGainedM = (player.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
-                    
-                    const li = document.createElement('li'); li.className = 'leaderboard-item';
-                    li.innerHTML = `
-                        <span class="rank">${index + 1}</span>
-                        <div class="player-info"><strong>${player.name}</strong></div>
-                        <div class="player-lv">LV ${latest.lv} (${percentage}%)<br>
-                        <span title="詳細成長量: +${player.expGained.toLocaleString()} EXP" style="color:#d35400; font-weight:bold; font-size:0.85em; cursor:help;">
-                            🔥 成長: +${expGainedM} M EXP
-                        </span>
-                        </div>`;
-                    listEl.appendChild(li);
+                window.allRecords.forEach(r => {
+                    const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
+                    r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
                 });
-            }
 
-            // ==========================================
-            // 🌟 處理榮譽殿堂 (Hall of Fame) - 豪華優化版
-            // ==========================================
-            const hofContainer = document.getElementById('hallOfFameContainer');
-            if (hofContainer) {
-                // 依最新等級降序排列 (等級相同比經驗)
-                const hofPlayers = [...leaderboard].sort((a, b) => {
-                    if (b.latestRecord.lv !== a.latestRecord.lv) {
-                        return b.latestRecord.lv - a.latestRecord.lv;
+                const sortedRecords = [...window.allRecords].sort((a, b) => a.timestamp - b.timestamp);
+                
+                const playerStats = {};
+                sortedRecords.forEach(r => {
+                    if (!playerStats[r.name]) {
+                        playerStats[r.name] = {
+                            name: r.name,
+                            firstRecord: r, 
+                            latestRecord: r, 
+                            expGained: 0 
+                        };
+                    } else {
+                        playerStats[r.name].latestRecord = r; 
+                        playerStats[r.name].expGained = r.trueTotalExp - playerStats[r.name].firstRecord.trueTotalExp;
                     }
-                    return b.latestRecord.exp - a.latestRecord.exp;
                 });
 
-                // 決定獎盃的函式
-                function getTrophy(lv) {
-                    if (lv >= 170) return '🏆';
-                    if (lv >= 160) return '🥈';
-                    return '';
+                const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
+
+                const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
+                const top5 = leaderboard.slice(0, 5);
+                if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
+                else {
+                    top5.forEach((player, index) => {
+                        const latest = player.latestRecord;
+                        const lvIndex = Math.min(Math.max(latest.lv - 1, 0), 199);
+                        const percentage = ((latest.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
+                        const expGainedM = (player.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
+                        
+                        const li = document.createElement('li'); li.className = 'leaderboard-item';
+                        li.innerHTML = `
+                            <span class="rank">${index + 1}</span>
+                            <div class="player-info"><strong>${player.name}</strong></div>
+                            <div class="player-lv">LV ${latest.lv} (${percentage}%)<br>
+                            <span title="詳細成長量: +${player.expGained.toLocaleString()} EXP" style="color:#d35400; font-weight:bold; font-size:0.85em; cursor:help;">
+                                🔥 成長: +${expGainedM} M EXP
+                            </span>
+                            </div>`;
+                        listEl.appendChild(li);
+                    });
                 }
 
-                let hofHtml = '';
-                if (hofPlayers.length > 0) {
-                    // --- 上半部：前三名大舞台 ---
-                    const top3 = hofPlayers.slice(0, 3);
-                    const first = top3[0];
-                    const second = top3[1];
-                    const third = top3[2];
+                const hofContainer = document.getElementById('hallOfFameContainer');
+                if (hofContainer) {
+                    const hofPlayers = [...leaderboard].sort((a, b) => {
+                        if (b.latestRecord.lv !== a.latestRecord.lv) {
+                            return b.latestRecord.lv - a.latestRecord.lv;
+                        }
+                        return b.latestRecord.exp - a.latestRecord.exp;
+                    });
 
-                    // 檢查是否有設定自訂背景
-                    const hasCustomBg = window.hallOfFameBg && window.hallOfFameBg.trim() !== "";
-                    const bgStyle = hasCustomBg ? `background-image: url('${window.hallOfFameBg}');` : '';
-                    const bgClass = hasCustomBg ? 'has-custom-bg' : '';
+                    function getTrophy(lv) {
+                        if (lv >= 170) return '🏆';
+                        if (lv >= 160) return '🥈';
+                        return '';
+                    }
 
-                    hofHtml += `<div class="hof-top3-container ${bgClass}" style="${bgStyle}">`;
+                    let hofHtml = '';
+                    if (hofPlayers.length > 0) {
+                        const top3 = hofPlayers.slice(0, 3);
+                        const first = top3[0];
+                        const second = top3[1];
+                        const third = top3[2];
 
-                    // 建立單個舞台的 HTML 產生器
-                    const genStage = (player, rank) => {
-                        if (!player) return '';
-                        const lv = player.latestRecord.lv;
-                        const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
-                        const trophy = getTrophy(lv);
-                        
-                        return `
-                            <div class="podium-stage podium-stage-${rank}">
-                                <div class="speech-bubble">我是${lv}等<br>${player.name}！</div>
-                                <img src="${imgSrc}" class="char-img char-rank-${rank}" alt="${player.name}">
-                                <div class="stage-name-tag">${player.name}</div>
-                                ${trophy ? `<div class="stage-trophy-floating">${trophy}</div>` : ''}
-                                <div class="stage-box stage-${rank}-box">
-                                    ${rank === 1 ? '<div class="red-carpet"></div>' : ''}
-                                    ${trophy ? `<div class="stage-trophy">${trophy}</div>` : ''}
-                                </div>
-                            </div>
-                        `;
-                    };
+                        const hasCustomBg = window.hallOfFameBg && window.hallOfFameBg.trim() !== "";
+                        const bgStyle = hasCustomBg ? `background-image: url('${window.hallOfFameBg}');` : '';
+                        const bgClass = hasCustomBg ? 'has-custom-bg' : '';
 
-                    // 依照真實頒獎台站位排版：第2名(左)、第1名(中)、第3名(右)
-                    if (second) hofHtml += genStage(second, 2);
-                    if (first) hofHtml += genStage(first, 1);
-                    if (third) hofHtml += genStage(third, 3);
+                        hofHtml += `<div class="hof-top3-container ${bgClass}" style="${bgStyle}">`;
 
-                    hofHtml += `</div>`;
-
-                    // --- 下半部：其他挑戰者 (左右滑動) ---
-                    if (hofPlayers.length > 3) {
-                        const others = hofPlayers.slice(3);
-                        hofHtml += `<div class="hof-others-title">✨ 其他挑戰者 (左右滑動) ✨</div>`;
-                        hofHtml += `<div class="hof-others-scroll">`;
-                        
-                        others.forEach(player => {
+                        const genStage = (player, rank) => {
+                            if (!player) return '';
                             const lv = player.latestRecord.lv;
                             const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
                             const trophy = getTrophy(lv);
                             
-                            hofHtml += `
-                                <div class="podium-stage">
-                                    <div class="speech-bubble speech-bubble-other">LV ${lv}</div>
-                                    <img src="${imgSrc}" class="char-img char-rank-other" alt="${player.name}">
+                            return `
+                                <div class="podium-stage podium-stage-${rank}">
+                                    <div class="speech-bubble">我是${lv}等<br>${player.name}！</div>
+                                    <img src="${imgSrc}" class="char-img char-rank-${rank}" alt="${player.name}">
                                     <div class="stage-name-tag">${player.name}</div>
-                                    <div class="stage-box stage-other-box">
-                                        ${trophy ? `<div class="stage-trophy-other">${trophy}</div>` : ''}
+                                    ${trophy ? `<div class="stage-trophy-floating">${trophy}</div>` : ''}
+                                    <div class="stage-box stage-${rank}-box">
+                                        ${rank === 1 ? '<div class="red-carpet"></div>' : ''}
+                                        ${trophy ? `<div class="stage-trophy">${trophy}</div>` : ''}
                                     </div>
                                 </div>
                             `;
-                        });
+                        };
+
+                        if (second) hofHtml += genStage(second, 2);
+                        if (first) hofHtml += genStage(first, 1);
+                        if (third) hofHtml += genStage(third, 3);
+
                         hofHtml += `</div>`;
-                    }
-                } else {
-                    hofHtml = '<div style="color:#999; padding:20px; text-align:center;">目前尚無角色紀錄，快來搶頭香！</div>';
-                }
-                
-                hofContainer.innerHTML = hofHtml;
-            }
 
-            const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
-            const displayData = { baseline: {}, daily: {} };
-
-            uniqueNames.forEach(name => {
-                const userRecs = sortedRecords.filter(r => r.name === name);
-                if (userRecs.length > 0) {
-                    displayData.baseline[name] = userRecs[0]; 
-                    
-                    for (let i = 1; i < userRecs.length; i++) {
-                        const rec = userRecs[i];
-                        const d = new Date(rec.timestamp);
-                        const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-                        if (!displayData.daily[dateStr]) displayData.daily[dateStr] = {};
-                        displayData.daily[dateStr][name] = rec;
-                    }
-                }
-            });
-
-            const naniChallengeEl = document.getElementById('naniChallenge');
-            if (naniChallengeEl) {
-                naniChallengeEl.innerHTML = '<div style="color:#999;">尚未加入紀錄</div>';
-                let naniData = null;
-
-                leaderboard.forEach(player => {
-                    if (player.name.toLowerCase() === 'nani') {
-                        naniData = player;
-                    }
-                });
-
-                if (naniData) {
-                    const latest = naniData.latestRecord;
-                    const startLv = 134; 
-                    const isAchieved = latest.lv >= 150;
-                    
-                    let displayHTML = '';
-                    let statusColor = '';
-                    let statusText = '';
-
-                    if (isAchieved) {
-                        displayHTML = '<div style="font-size: 64px; margin: 10px 0; text-shadow: 0 0 15px #FF9800; animation: pulse 1.5s infinite;">🔥</div>';
-                        statusColor = '#27ae60';
-                        statusText = '🎊 恭喜 Nani 達成 LV 150 目標！🎊';
+                        if (hofPlayers.length > 3) {
+                            const others = hofPlayers.slice(3);
+                            hofHtml += `<div class="hof-others-title">✨ 其他挑戰者 (左右滑動) ✨</div>`;
+                            hofHtml += `<div class="hof-others-scroll">`;
+                            
+                            others.forEach(player => {
+                                const lv = player.latestRecord.lv;
+                                const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
+                                const trophy = getTrophy(lv);
+                                
+                                hofHtml += `
+                                    <div class="podium-stage">
+                                        <div class="speech-bubble speech-bubble-other">LV ${lv}</div>
+                                        <img src="${imgSrc}" class="char-img char-rank-other" alt="${player.name}">
+                                        <div class="stage-name-tag">${player.name}</div>
+                                        <div class="stage-box stage-other-box">
+                                            ${trophy ? `<div class="stage-trophy-other">${trophy}</div>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            hofHtml += `</div>`;
+                        }
                     } else {
-                        const levelsGained = Math.max(0, latest.lv - startLv);
+                        hofHtml = '<div style="color:#999; padding:20px; text-align:center;">目前尚無角色紀錄，快來搶頭香！</div>';
+                    }
+                    
+                    hofContainer.innerHTML = hofHtml;
+                }
+
+                const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
+                const displayData = { baseline: {}, daily: {} };
+
+                uniqueNames.forEach(name => {
+                    const userRecs = sortedRecords.filter(r => r.name === name);
+                    if (userRecs.length > 0) {
+                        displayData.baseline[name] = userRecs[0]; 
                         
-                        if (levelsGained === 0) {
-                            displayHTML = '<div style="font-size: 18px; margin: 5px 0;">🌱</div>';
+                        for (let i = 1; i < userRecs.length; i++) {
+                            const rec = userRecs[i];
+                            const d = new Date(rec.timestamp);
+                            const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+                            if (!displayData.daily[dateStr]) displayData.daily[dateStr] = {};
+                            displayData.daily[dateStr][name] = rec;
+                        }
+                    }
+                });
+
+                const naniChallengeEl = document.getElementById('naniChallenge');
+                if (naniChallengeEl) {
+                    naniChallengeEl.innerHTML = '<div style="color:#999;">尚未加入紀錄</div>';
+                    let naniData = null;
+
+                    leaderboard.forEach(player => {
+                        if (player.name && player.name.toLowerCase() === 'nani') {
+                            naniData = player;
+                        }
+                    });
+
+                    if (naniData) {
+                        const latest = naniData.latestRecord;
+                        const startLv = 134; 
+                        const isAchieved = latest.lv >= 150;
+                        
+                        let displayHTML = '';
+                        let statusColor = '';
+                        let statusText = '';
+
+                        if (isAchieved) {
+                            displayHTML = '<div style="font-size: 64px; margin: 10px 0; text-shadow: 0 0 15px #FF9800; animation: pulse 1.5s infinite;">🔥</div>';
+                            statusColor = '#27ae60';
+                            statusText = '🎊 恭喜 Nani 達成 LV 150 目標！🎊';
                         } else {
-                            let firesArray = [];
-                            for (let i = 0; i < levelsGained; i += 5) {
-                                firesArray.push('🔥'.repeat(Math.min(5, levelsGained - i)));
+                            const levelsGained = Math.max(0, latest.lv - startLv);
+                            
+                            if (levelsGained === 0) {
+                                displayHTML = '<div style="font-size: 18px; margin: 5px 0;">🌱</div>';
+                            } else {
+                                let firesArray = [];
+                                for (let i = 0; i < levelsGained; i += 5) {
+                                    firesArray.push('🔥'.repeat(Math.min(5, levelsGained - i)));
+                                }
+                                displayHTML = `<div style="font-size: 18px; margin: 5px 0; line-height: 1.5; padding: 0 10px; letter-spacing: 3px;">${firesArray.join('<br>')}</div>`;
                             }
-                            displayHTML = `<div style="font-size: 18px; margin: 5px 0; line-height: 1.5; padding: 0 10px; letter-spacing: 3px;">${firesArray.join('<br>')}</div>`;
+                            
+                            statusColor = '#e67e22';
+                            statusText = '🏃‍♂️ 努力衝刺中...';
                         }
                         
-                        statusColor = '#e67e22';
-                        statusText = '🏃‍♂️ 努力衝刺中...';
+                        naniChallengeEl.innerHTML = `
+                            ${displayHTML}
+                            <div style="font-size: 15px;"><strong>目前等級: LV ${latest.lv}</strong></div>
+                            <div style="color: ${statusColor}; font-weight: bold; margin-top: 8px;">${statusText}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">累積: +${(naniData.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2})} M</div>
+                        `;
                     }
-                    
-                    naniChallengeEl.innerHTML = `
-                        ${displayHTML}
-                        <div style="font-size: 15px;"><strong>目前等級: LV ${latest.lv}</strong></div>
-                        <div style="color: ${statusColor}; font-weight: bold; margin-top: 8px;">${statusText}</div>
-                        <div style="font-size: 12px; color: #666; margin-top: 5px;">累積: +${(naniData.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2})} M</div>
-                    `;
                 }
-            }
 
-            const bettingListEl = document.getElementById('bettingList');
-            bettingListEl.innerHTML = '';
-            
-            let totalMarketExp = leaderboard.reduce((sum, p) => sum + p.expGained, 0);
-            if (totalMarketExp === 0) totalMarketExp = 1;
-            
-            if (leaderboard.length === 0) {
-                bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
-            } else {
-                leaderboard.forEach((player, index) => {
-                    let rawWinRate = (player.expGained / totalMarketExp) * 100;
-                    if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
-
-                    const li = document.createElement('li'); 
-                    li.className = 'leaderboard-item';
-                    
-                    li.innerHTML = `
-                        <div style="display: flex; align-items: center;">
-                            <span class="rank">${index + 1}</span>
-                            <strong>${player.name}</strong> 
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
-                        </div>
-                    `;
-                    bettingListEl.appendChild(li);
-                });
-            }
-
-            const dateSet = new Set();
-            const startDate = new Date(2026, 3, 9);  
-            const eventEndDate = new Date(2026, 4, 27); 
-            
-            const today = new Date();
-            today.setHours(23, 59, 59, 999);
-            const displayEndDate = today < eventEndDate ? today : eventEndDate;
-
-            for (let d = new Date(startDate); d <= displayEndDate; d.setDate(d.getDate() + 1)) {
-                dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
-            }
-            Object.keys(displayData.daily).forEach(d => dateSet.add(d));
-            const dates = Array.from(dateSet).sort(); 
-
-            const tableEl = document.getElementById('dataTable');
-            
-            function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
-                if (!rec) {
-                    let missingLink = '';
-                    if (window.isAdmin && cellDate && cellName) {
-                        missingLink = `<br><a title="補登此日紀錄" style="cursor:pointer; text-decoration:none; font-size: 12px; color: #007B9E; font-weight: bold; background: #e0f7fa; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;" onclick="addMissingRecord('${cellName}', '${cellDate}')">➕ 補登</a>`;
-                    }
-                    return `<td style="color:#ccc; vertical-align: middle;">-${missingLink}</td>`;
-                }
-                let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
-                let actionLinks = '';
-                if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
-                    actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
-                        <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
-                        <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
-                    </span>`;
-                }
+                const bettingListEl = document.getElementById('bettingList');
+                bettingListEl.innerHTML = '';
                 
-                let gainHtml = '';
-                if (dailyGain !== null) {
-                    let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
-                    let gainColor = dailyGain > 0 ? '#d35400' : '#888';
-                    gainHtml = `<br><span style="color:${gainColor}; font-weight:bold; font-size:0.85em;">+${gainM} M</span>`;
-                }
+                let totalMarketExp = leaderboard.reduce((sum, p) => sum + p.expGained, 0);
+                if (totalMarketExp === 0) totalMarketExp = 1;
                 
-                return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
-            }
+                if (leaderboard.length === 0) {
+                    bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
+                } else {
+                    leaderboard.forEach((player, index) => {
+                        let rawWinRate = (player.expGained / totalMarketExp) * 100;
+                        if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
 
-            if (uniqueNames.length === 0) {
-                tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
-            } else {
-                let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
-                uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
-                tableHtml += '</tr></thead><tbody>';
+                        const li = document.createElement('li'); 
+                        li.className = 'leaderboard-item';
+                        
+                        li.innerHTML = `
+                            <div style="display: flex; align-items: center;">
+                                <span class="rank">${index + 1}</span>
+                                <strong>${player.name}</strong> 
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
+                            </div>
+                        `;
+                        bettingListEl.appendChild(li);
+                    });
+                }
 
-                tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
-                uniqueNames.forEach(name => {
-                    tableHtml += renderCell(displayData.baseline[name], null, null, null);
-                });
-                tableHtml += `</tr>`;
+                const dateSet = new Set();
+                const startDate = new Date(2026, 3, 9);  
+                const eventEndDate = new Date(2026, 4, 27); 
+                
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                const displayEndDate = today < eventEndDate ? today : eventEndDate;
 
-                let previousExp = {};
-                uniqueNames.forEach(name => {
-                    previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
-                });
+                for (let d = new Date(startDate); d <= displayEndDate; d.setDate(d.getDate() + 1)) {
+                    dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
+                }
+                Object.keys(displayData.daily).forEach(d => dateSet.add(d));
+                const dates = Array.from(dateSet).sort(); 
 
-                let recordNo = 2;
-                dates.forEach(date => {
-                    tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
-                    uniqueNames.forEach(name => {
-                        const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
-                        let dailyGain = null;
-                        if (rec) {
-                            dailyGain = rec.trueTotalExp - previousExp[name];
-                            previousExp[name] = rec.trueTotalExp; 
+                const tableEl = document.getElementById('dataTable');
+                
+                function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
+                    if (!rec) {
+                        let missingLink = '';
+                        if (window.isAdmin && cellDate && cellName) {
+                            missingLink = `<br><a title="補登此日紀錄" style="cursor:pointer; text-decoration:none; font-size: 12px; color: #007B9E; font-weight: bold; background: #e0f7fa; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;" onclick="addMissingRecord('${cellName}', '${cellDate}')">➕ 補登</a>`;
                         }
-                        tableHtml += renderCell(rec, dailyGain, date, name);
+                        return `<td style="color:#ccc; vertical-align: middle;">-${missingLink}</td>`;
+                    }
+                    let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
+                    let actionLinks = '';
+                    if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
+                        actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
+                            <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
+                            <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
+                        </span>`;
+                    }
+                    
+                    let gainHtml = '';
+                    if (dailyGain !== null) {
+                        let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
+                        let gainColor = dailyGain > 0 ? '#d35400' : '#888';
+                        gainHtml = `<br><span style="color:${gainColor}; font-weight:bold; font-size:0.85em;">+${gainM} M</span>`;
+                    }
+                    
+                    return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
+                }
+
+                if (uniqueNames.length === 0) {
+                    tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
+                } else {
+                    let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
+                    uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
+                    tableHtml += '</tr></thead><tbody>';
+
+                    tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
+                    uniqueNames.forEach(name => {
+                        tableHtml += renderCell(displayData.baseline[name], null, null, null);
                     });
                     tableHtml += `</tr>`;
-                    recordNo++;
-                });
-                tableHtml += '</tbody>';
-                tableEl.innerHTML = tableHtml;
-            }
 
-            const chartLabels = ['起點', ...dates];
-            const chartDataByName = {};
-            uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
-            
-            let lastExpForChart = {};
-            let lastLvForChart = {};
+                    let previousExp = {};
+                    uniqueNames.forEach(name => {
+                        previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
+                    });
 
-            uniqueNames.forEach(name => {
-                const rec = displayData.baseline[name];
-                if (rec) {
-                    chartDataByName[name].lv.push(rec.lv);
-                    chartDataByName[name].expGained.push(0); 
-                    chartDataByName[name].dailyExpGained.push(0); 
-                    lastExpForChart[name] = rec.trueTotalExp;
-                    lastLvForChart[name] = rec.lv;
-                } else {
-                    chartDataByName[name].lv.push(null);
-                    chartDataByName[name].expGained.push(null); 
-                    chartDataByName[name].dailyExpGained.push(0); 
-                    lastExpForChart[name] = 0;
-                    lastLvForChart[name] = null;
+                    let recordNo = 2;
+                    dates.forEach(date => {
+                        tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
+                        uniqueNames.forEach(name => {
+                            const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                            let dailyGain = null;
+                            if (rec) {
+                                dailyGain = rec.trueTotalExp - previousExp[name];
+                                previousExp[name] = rec.trueTotalExp; 
+                            }
+                            tableHtml += renderCell(rec, dailyGain, date, name);
+                        });
+                        tableHtml += `</tr>`;
+                        recordNo++;
+                    });
+                    tableHtml += '</tbody>';
+                    tableEl.innerHTML = tableHtml;
                 }
-            });
 
-            const dToday = new Date();
-            const todayStr = `${String(dToday.getMonth()+1).padStart(2,'0')}/${String(dToday.getDate()).padStart(2,'0')}`;
+                const chartLabels = ['起點', ...dates];
+                const chartDataByName = {};
+                uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
+                
+                let lastExpForChart = {};
+                let lastLvForChart = {};
 
-            dates.forEach(date => {
                 uniqueNames.forEach(name => {
-                    const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                    const rec = displayData.baseline[name];
                     if (rec) {
-                        const gainedExp = rec.trueTotalExp - displayData.baseline[name].trueTotalExp;
                         chartDataByName[name].lv.push(rec.lv);
-                        chartDataByName[name].expGained.push(gainedExp);
-                        
-                        let dailyDiff = rec.trueTotalExp - lastExpForChart[name];
-                        chartDataByName[name].dailyExpGained.push(dailyDiff);
-                        
-                        lastExpForChart[name] = rec.trueTotalExp; 
+                        chartDataByName[name].expGained.push(0); 
+                        chartDataByName[name].dailyExpGained.push(0); 
+                        lastExpForChart[name] = rec.trueTotalExp;
                         lastLvForChart[name] = rec.lv;
                     } else {
-                        if (date === todayStr) {
-                            chartDataByName[name].lv.push(null);
-                            chartDataByName[name].expGained.push(null); 
-                            chartDataByName[name].dailyExpGained.push(0); 
-                        } else if (lastExpForChart[name] !== 0 && displayData.baseline[name]) {
-                            const gainedExp = lastExpForChart[name] - displayData.baseline[name].trueTotalExp;
-                            chartDataByName[name].lv.push(lastLvForChart[name]);
-                            chartDataByName[name].expGained.push(gainedExp);
-                            chartDataByName[name].dailyExpGained.push(0); 
-                        } else {
-                            chartDataByName[name].lv.push(null);
-                            chartDataByName[name].expGained.push(null); 
-                            chartDataByName[name].dailyExpGained.push(0); 
-                        }
+                        chartDataByName[name].lv.push(null);
+                        chartDataByName[name].expGained.push(null); 
+                        chartDataByName[name].dailyExpGained.push(0); 
+                        lastExpForChart[name] = 0;
+                        lastLvForChart[name] = null;
                     }
                 });
-            });
 
-            const datasets = uniqueNames.map((name, index) => {
-                const color = getColorByIndex(index);
-                return {
-                    label: name, 
-                    data: chartDataByName[name].expGained, 
-                    borderColor: color, 
-                    backgroundColor: color + '33', 
-                    borderWidth: 2, 
-                    pointRadius: 4, 
-                    fill: false, 
-                    tension: 0.3, 
-                    customLvData: chartDataByName[name].lv 
-                };
-            });
+                const dToday = new Date();
+                const todayStr = `${String(dToday.getMonth()+1).padStart(2,'0')}/${String(dToday.getDate()).padStart(2,'0')}`;
 
-            const ctxChart = document.getElementById('expChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy(); 
-            chartInstance = new Chart(ctxChart, {
-                type: 'line', data: { labels: chartLabels, datasets: datasets },
-                options: {
-                    responsive: true, 
-                    spanGaps: true, 
-                    scales: { 
-                        y: { 
-                            min: 0, 
-                            title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
-                            ticks: {
-                                callback: function(value) {
-                                    return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
-                                }
+                dates.forEach(date => {
+                    uniqueNames.forEach(name => {
+                        const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                        if (rec) {
+                            const gainedExp = rec.trueTotalExp - displayData.baseline[name].trueTotalExp;
+                            chartDataByName[name].lv.push(rec.lv);
+                            chartDataByName[name].expGained.push(gainedExp);
+                            
+                            let dailyDiff = rec.trueTotalExp - lastExpForChart[name];
+                            chartDataByName[name].dailyExpGained.push(dailyDiff);
+                            
+                            lastExpForChart[name] = rec.trueTotalExp; 
+                            lastLvForChart[name] = rec.lv;
+                        } else {
+                            if (date === todayStr) {
+                                chartDataByName[name].lv.push(null);
+                                chartDataByName[name].expGained.push(null); 
+                                chartDataByName[name].dailyExpGained.push(0); 
+                            } else if (lastExpForChart[name] !== 0 && displayData.baseline[name]) {
+                                const gainedExp = lastExpForChart[name] - displayData.baseline[name].trueTotalExp;
+                                chartDataByName[name].lv.push(lastLvForChart[name]);
+                                chartDataByName[name].expGained.push(gainedExp);
+                                chartDataByName[name].dailyExpGained.push(0); 
+                            } else {
+                                chartDataByName[name].lv.push(null);
+                                chartDataByName[name].expGained.push(null); 
+                                chartDataByName[name].dailyExpGained.push(0); 
                             }
-                        } 
-                    },
-                    plugins: { tooltip: { callbacks: { label: function(context) {
-                        const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
-                        const expGainedVal = context.parsed.y;
-                        return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 總成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
-                    }}}}
-                }
-            });
-
-            let targetIndexInDates = dates.indexOf(todayStr);
-            let displayDateStr = todayStr;
-
-            if (targetIndexInDates === -1) {
-                targetIndexInDates = dates.length - 1;
-                displayDateStr = dates[targetIndexInDates] || '';
-            }
-            const dataIndex = targetIndexInDates + 1; 
-
-            let dailyList = [];
-            uniqueNames.forEach((name, index) => {
-                let gain = chartDataByName[name].dailyExpGained[dataIndex] || 0;
-                let lv = chartDataByName[name].lv[dataIndex] || lastLvForChart[name];
-                dailyList.push({
-                    name: name,
-                    gain: gain,
-                    lv: lv,
-                    bgColor: getColorByIndex(index) + 'CC',
-                    borderColor: getColorByIndex(index)
+                        }
+                    });
                 });
-            });
 
-            dailyList.sort((a, b) => b.gain - a.gain);
+                const datasets = uniqueNames.map((name, index) => {
+                    const color = getColorByIndex(index);
+                    return {
+                        label: name, 
+                        data: chartDataByName[name].expGained, 
+                        borderColor: color, 
+                        backgroundColor: color + '33', 
+                        borderWidth: 2, 
+                        pointRadius: 4, 
+                        fill: false, 
+                        tension: 0.3, 
+                        customLvData: chartDataByName[name].lv 
+                    };
+                });
 
-            const dailyChartTitle = document.getElementById('dailyChartTitle');
-            if (dailyChartTitle) {
-                dailyChartTitle.innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`;
-            }
-
-            const ctxDaily = document.getElementById('dailyExpChart');
-            if (ctxDaily) {
-                if (dailyChartInstance) dailyChartInstance.destroy();
-                dailyChartInstance = new Chart(ctxDaily.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: dailyList.map(item => item.name),
-                        datasets: [{
-                            label: '單日增加 (EXP)',
-                            data: dailyList.map(item => item.gain),
-                            backgroundColor: dailyList.map(item => item.bgColor),
-                            borderColor: dailyList.map(item => item.borderColor),
-                            borderWidth: 1,
-                            customLvData: dailyList.map(item => item.lv)
-                        }]
-                    },
+                const ctxChart = document.getElementById('expChart').getContext('2d');
+                if (chartInstance) chartInstance.destroy(); 
+                chartInstance = new Chart(ctxChart, {
+                    type: 'line', data: { labels: chartLabels, datasets: datasets },
                     options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const lvVal = context.dataset.customLvData[context.dataIndex];
-                                        const gainVal = context.parsed.y;
-                                        return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 今日增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                min: 0,
-                                title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
+                        responsive: true, 
+                        spanGaps: true, 
+                        scales: { 
+                            y: { 
+                                min: 0, 
+                                title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
                                 ticks: {
                                     callback: function(value) {
                                         return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
                                     }
                                 }
-                            }
-                        }
+                            } 
+                        },
+                        plugins: { tooltip: { callbacks: { label: function(context) {
+                            const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
+                            const expGainedVal = context.parsed.y;
+                            return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 總成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
+                        }}}}
                     }
                 });
-            }
 
-            setTimeout(() => {
-                const tableScroll = document.getElementById('tableResponsive');
-                const topScrollWrapper = document.getElementById('topScrollWrapper');
-                const topScrollContent = document.getElementById('topScrollContent');
-                const tableEl = document.getElementById('dataTable');
-                
-                if (tableEl && topScrollContent && tableScroll && topScrollWrapper) {
-                    topScrollContent.style.width = tableEl.scrollWidth + 'px';
-                    
-                    topScrollWrapper.onscroll = () => { tableScroll.scrollLeft = topScrollWrapper.scrollLeft; };
-                    tableScroll.onscroll = () => { topScrollWrapper.scrollLeft = tableScroll.scrollLeft; };
+                let targetIndexInDates = dates.indexOf(todayStr);
+                let displayDateStr = todayStr;
+
+                if (targetIndexInDates === -1) {
+                    targetIndexInDates = dates.length - 1;
+                    displayDateStr = dates[targetIndexInDates] || '';
                 }
-            }, 100);
+                const dataIndex = targetIndexInDates + 1; 
+
+                let dailyList = [];
+                uniqueNames.forEach((name, index) => {
+                    let gain = chartDataByName[name].dailyExpGained[dataIndex] || 0;
+                    let lv = chartDataByName[name].lv[dataIndex] || lastLvForChart[name];
+                    dailyList.push({
+                        name: name,
+                        gain: gain,
+                        lv: lv,
+                        bgColor: getColorByIndex(index) + 'CC',
+                        borderColor: getColorByIndex(index)
+                    });
+                });
+
+                dailyList.sort((a, b) => b.gain - a.gain);
+
+                const dailyChartTitle = document.getElementById('dailyChartTitle');
+                if (dailyChartTitle) {
+                    dailyChartTitle.innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`;
+                }
+
+                const ctxDaily = document.getElementById('dailyExpChart');
+                if (ctxDaily) {
+                    if (dailyChartInstance) dailyChartInstance.destroy();
+                    dailyChartInstance = new Chart(ctxDaily.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: dailyList.map(item => item.name),
+                            datasets: [{
+                                label: '單日增加 (EXP)',
+                                data: dailyList.map(item => item.gain),
+                                backgroundColor: dailyList.map(item => item.bgColor),
+                                borderColor: dailyList.map(item => item.borderColor),
+                                borderWidth: 1,
+                                customLvData: dailyList.map(item => item.lv)
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const lvVal = context.dataset.customLvData[context.dataIndex];
+                                            const gainVal = context.parsed.y;
+                                            return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 今日增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    min: 0,
+                                    title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                setTimeout(() => {
+                    const tableScroll = document.getElementById('tableResponsive');
+                    const topScrollWrapper = document.getElementById('topScrollWrapper');
+                    const topScrollContent = document.getElementById('topScrollContent');
+                    const tableEl = document.getElementById('dataTable');
+                    
+                    if (tableEl && topScrollContent && tableScroll && topScrollWrapper) {
+                        topScrollContent.style.width = tableEl.scrollWidth + 'px';
+                        
+                        topScrollWrapper.onscroll = () => { tableScroll.scrollLeft = topScrollWrapper.scrollLeft; };
+                        tableScroll.onscroll = () => { topScrollWrapper.scrollLeft = tableScroll.scrollLeft; };
+                    }
+                }, 100);
+            } catch (error) {
+                console.error("渲染過程發生錯誤:", error);
+                document.getElementById('status').innerText = "❌ 畫面渲染失敗，請重整網頁或檢查主控台。";
+            }
         }
 
         window.addEventListener('resize', () => {
