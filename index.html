@@ -118,7 +118,16 @@
         .podium-stage-3 { z-index: 1; margin-left: -15px; }
         
         /* 🌟 使用自訂地圖背景時，讓背景完整顯示並置中 */
-        .hof-top3-container.has-custom-bg { background-position: center center; }
+        .hof-top3-container.has-custom-bg { background-position: center bottom; background-size: cover; background-repeat: no-repeat; }
+        
+        /* 🌟 當有自訂地圖背景時，隱藏底座並將人物推到對應的建築物上 */
+        .hof-top3-container.has-custom-bg .stage-box { display: none !important; }
+        .hof-top3-container.has-custom-bg .stage-trophy-floating { display: block; }
+        
+        /* 調整這三個數值，可以微調人物站在地圖上的高低與左右位置 */
+        .hof-top3-container.has-custom-bg .podium-stage-1 { margin-bottom: 120px; }
+        .hof-top3-container.has-custom-bg .podium-stage-2 { margin-bottom: 60px; margin-right: 65px; }
+        .hof-top3-container.has-custom-bg .podium-stage-3 { margin-bottom: 60px; margin-left: 65px; }
         
         .speech-bubble {
             background: #fff; border: 2px solid #333; border-radius: 8px; padding: 4px 6px; font-size: 12px;
@@ -398,7 +407,7 @@
                  已經為你移動到「每日經驗增長長條圖」的下方！
                  ========================================== -->
             <div class="card" id="hallOfFameCard">
-                <h3 style="color: #d35400;">🏆 榮譽殿堂 (名人堂) 開發中</h3>
+                <h3 style="color: #d35400;">🏆 榮譽殿堂 (名人堂)</h3>
                 <p class="hof-desc">※ 角色達 LV 160 解鎖銀獎盃 🥈，達 LV 170 解鎖金獎盃 🏆！</p>
                 <div id="hallOfFameContainer">
                     <!-- 將由 JavaScript 動態生成人物與頒獎台 -->
@@ -472,15 +481,17 @@
         // 🌟 【地圖背景與人物圖片設定區】🌟
         // ==========================================
 
-        // 🖼️ 請把你拍好的「沒有站人的楓之谷地圖空景」上傳後，把網址貼在這裡
-        // 如果留空("")，系統就會自動使用預設的「金屬底座+夕陽漸層」排版
-        window.hallOfFameBg = "https://media.discordapp.net/attachments/1491430470876135535/1498705388739104778/dfacb4033b722196ccb2d2bd24a5ba0a.png?ex=69f221a9&is=69f0d029&hm=3efac6e3f2936296c97c672efeff67a81dc8ee0dfa7ab142433fb6c863724f63&=&format=webp&quality=lossless"; // 👈 已經幫你替換為超夢幻的阿爾卡娜精靈樹背景！
+        // 🖼️ 系統已經為你換上夢幻的阿爾卡娜精靈樹！
+        window.hallOfFameBg = "https://media.discordapp.net/attachments/1491430470876135535/1498705388739104778/dfacb4033b722196ccb2d2bd24a5ba0a.png?ex=69f221a9&is=69f0d029&hm=3efac6e3f2936296c97c672efeff67a81dc8ee0dfa7ab142433fb6c863724f63&=&format=webp&quality=lossless";
 
         window.characterImages = {
-            "嘟嘟": "https://media.discordapp.net/attachments/1491430522071683252/1498687504071528648/image-104.png?ex=69f21101&is=69f0bf81&hm=9391399c2ad834df1703ec9dcdd05f4dbf8a7ed230ca3cdc5091a72cbe30f4a1&=&format=webp&quality=lossless", 
-            "鮭魚": "", 
-            "奶油虎": "", // 👈 記得上傳去背圖後填入網址
-            "新竹難聊人": "", // 👈 記得上傳去背圖後填入網址
+            "嘟嘟": "https://i.imgur.com/K3wS12d.png", 
+            "鮭魚": "https://i.imgur.com/K3wS12d.png", 
+            "Someday": "https://i.imgur.com/K3wS12d.png",
+            "屁花花": "https://i.imgur.com/K3wS12d.png",
+            "En104107": "https://i.imgur.com/K3wS12d.png",
+            "奶油虎": "", // 👈 等你去背好之後貼在這裡
+            "新竹難聊人": "", // 👈 等你去背好之後貼在這裡
             // 若找不到對應名字，就會自動使用下方這張「預設灰色剪影」
             "預設": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>"
         };
@@ -1058,7 +1069,7 @@
 
                     // 檢查是否有設定自訂背景
                     const hasCustomBg = window.hallOfFameBg && window.hallOfFameBg.trim() !== "";
-                    const bgStyle = hasCustomBg ? `background-image: url('${window.hallOfFameBg}'); background-size: cover; background-position: center bottom;` : '';
+                    const bgStyle = hasCustomBg ? `background-image: url('${window.hallOfFameBg}');` : '';
                     const bgClass = hasCustomBg ? 'has-custom-bg' : '';
 
                     hofHtml += `<div class="hof-top3-container ${bgClass}" style="${bgStyle}">`;
