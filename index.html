@@ -1072,14 +1072,14 @@
                 
                 container.innerHTML = `
                 <div style="width: 100%; height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border-radius: 8px; overflow: hidden; ${bgStyle}">
-                    <!-- 黑色半透明遮罩，讓背景變暗一點 -->
-                    <div style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: 1;"></div>
+                    <!-- 半透明遮罩，讓背景變暗凸顯中間視窗 -->
+                    <div style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 1;"></div>
                     
-                    <!-- 提示文字區塊 (毛玻璃效果+金邊) -->
-                    <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(13, 14, 18, 0.75); backdrop-filter: blur(8px); padding: 30px 50px; border-radius: 12px; border: 1px solid var(--gold); box-shadow: var(--shadow-gold);">
-                        <div style="font-size: 48px; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));">🚧</div>
-                        <div style="font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 0.1em; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">榮譽殿堂 尚未開放</div>
-                        <div style="font-size: 13px; color: var(--text-primary); text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">目前僅限管理員預覽，敬請期待！</div>
+                    <!-- 提示文字區塊 (毛玻璃 + 強制亮色文字) -->
+                    <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(19, 21, 28, 0.85); backdrop-filter: blur(8px); padding: 35px 55px; border-radius: 12px; border: 1px solid var(--gold); box-shadow: 0 0 30px rgba(0,0,0,0.8);">
+                        <div style="font-size: 50px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6));">🚧</div>
+                        <div style="font-size: 20px; font-weight: 900; color: #e8c96d; letter-spacing: 0.1em; text-shadow: 2px 2px 4px rgba(0,0,0,0.9);">榮譽殿堂 尚未開放</div>
+                        <div style="font-size: 14px; color: #e8e0cc; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);">目前僅限管理員預覽，敬請期待！</div>
                     </div>
                 </div>`;
                 return;
