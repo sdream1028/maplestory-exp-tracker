@@ -1065,9 +1065,23 @@
             }
 
             if (!window.isAdmin && !window.hofSettings.isPublic) {
-                if(titleEl) titleEl.innerText = "🏆 榮譽殿堂 (開發中)";
-                container.style.display = 'block'; 
-                container.innerHTML = '<div class="closed-notice"><div style="font-size: 40px; margin-bottom: 10px;">🚧</div><div style="font-size: 16px; font-weight: bold; color: #555;">榮譽殿堂 尚未開放</div><div style="font-size: 12px; color: #888; margin-top: 5px;">目前僅管理員可預覽，敬請期待！</div></div>'; 
+                if (titleEl) titleEl.textContent = '🏆 榮譽殿堂 (開發中)';
+                
+                // 🌟 新增：取得阿爾卡娜背景圖片並套用
+                const bgStyle = window.hallOfFameBg ? `background-image: url('${window.hallOfFameBg}'); background-size: cover; background-position: center bottom;` : 'background-color: var(--dark-panel);';
+                
+                container.innerHTML = `
+                <div style="width: 100%; height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border-radius: 8px; overflow: hidden; ${bgStyle}">
+                    <!-- 黑色半透明遮罩，讓背景變暗一點 -->
+                    <div style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: 1;"></div>
+                    
+                    <!-- 提示文字區塊 (毛玻璃效果+金邊) -->
+                    <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(13, 14, 18, 0.75); backdrop-filter: blur(8px); padding: 30px 50px; border-radius: 12px; border: 1px solid var(--gold); box-shadow: var(--shadow-gold);">
+                        <div style="font-size: 48px; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));">🚧</div>
+                        <div style="font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 0.1em; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">榮譽殿堂 尚未開放</div>
+                        <div style="font-size: 13px; color: var(--text-primary); text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">目前僅限管理員預覽，敬請期待！</div>
+                    </div>
+                </div>`;
                 return;
             }
 
