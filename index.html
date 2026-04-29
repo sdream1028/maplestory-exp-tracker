@@ -5,1299 +5,657 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
     <title>首戰龍王 - 找出獄友</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        /* ============================================================
-           CSS 變數與重置
-        ============================================================ */
-        :root {
-            --gold: #c9a84c;
-            --gold-light: #e8c96d;
-            --gold-dark: #8a6b28;
-            --crimson: #9b2335;
-            --crimson-light: #c0392b;
-            --dark-bg: #0d0e12;
-            --dark-panel: #13151c;
-            --dark-card: #191c26;
-            --dark-border: #252836;
-            --dark-border-bright: #353a4f;
-            --text-primary: #e8e0cc;
-            --text-secondary: #8a8499;
-            --text-muted: #4a4660;
-            --green: #2ecc71;
-            --blue: #3498db;
-            --orange: #e67e22;
-            --purple: #9b59b6;
-            --font-display: 'Noto Serif TC', serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --shadow-gold: 0 0 20px rgba(201,168,76,0.15);
-            --radius: 8px;
-            --radius-lg: 14px;
-        }
+        :root { --primary-color: #4CAF50; --secondary-color: #FF9800; --bg-color: #f4f7f6; --card-bg: #ffffff; --text-color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 10px; font-size: 14px; }
+        .container { display: grid; grid-template-columns: 1fr 320px; gap: 15px; max-width: 1200px; margin: 0 auto; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        
+        /* 🌟 防止表格無限變寬撐爆整個網頁 */
+        .main-content { min-width: 0; }
+        
+        header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 10px; }
+        #menuBtn { position: absolute; left: 10px; font-size: 24px; background: none; border: none; cursor: pointer; color: #2c3e50; padding: 5px; }
+        #menuBtn:hover { color: var(--primary-color); }
+        /* 隱藏的管理員開關游標提示 */
+        h2 { margin: 5px 0; color: #2c3e50; font-size: 1.5em; cursor: help; user-select: none; }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Noto Serif TC', -apple-system, serif;
-            background: var(--dark-bg);
-            color: var(--text-primary);
-            min-height: 100vh;
-            font-size: 14px;
-            overflow-x: hidden;
-        }
-
-        /* 背景網格紋理 */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* ============================================================
-           版頭
-        ============================================================ */
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 200;
-            background: rgba(13,14,18,0.92);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--dark-border);
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            height: 56px;
-        }
-
-        .header-title {
-            flex: 1;
-            text-align: center;
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 900;
-            color: var(--gold);
-            letter-spacing: 0.05em;
-            text-shadow: 0 0 30px rgba(201,168,76,0.4);
-            cursor: default;
-            user-select: none;
-        }
-
-        #menuBtn {
-            background: none;
-            border: 1px solid var(--dark-border);
-            color: var(--text-secondary);
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius);
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-        #menuBtn:hover { border-color: var(--gold); color: var(--gold); }
-
-        .admin-badge {
-            display: none;
-            background: linear-gradient(135deg, var(--crimson), #7b1a28);
-            color: #fff;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 20px;
-            letter-spacing: 0.05em;
-            flex-shrink: 0;
-        }
-        .admin-badge.visible { display: block; }
-
-        /* ============================================================
-           主佈局
-        ============================================================ */
-        .container {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 16px;
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 16px;
-        }
-        @media (max-width: 960px) { .container { grid-template-columns: 1fr; } }
-
-        /* ============================================================
-           卡片元件
-        ============================================================ */
-        .card {
-            background: var(--dark-card);
-            border: 1px solid var(--dark-border);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            margin-bottom: 14px;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--dark-border);
-            background: rgba(255,255,255,0.02);
-        }
-        .card-header h3 {
-            font-family: var(--font-display);
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--gold);
-            letter-spacing: 0.05em;
-        }
-
-        .card-body { padding: 14px 16px; }
-
-        /* ============================================================
-           表單元件
-        ============================================================ */
-        .form-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .form-row label {
-            width: 90px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            flex-shrink: 0;
-        }
-        input[type="text"], input[type="number"], textarea, select {
-            background: var(--dark-panel);
-            border: 1px solid var(--dark-border);
-            color: var(--text-primary);
-            border-radius: var(--radius);
-            padding: 7px 10px;
-            font-size: 13px;
-            font-family: inherit;
-            width: 100%;
-            transition: border-color 0.2s;
-            outline: none;
-        }
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        textarea:focus {
-            border-color: var(--gold);
-        }
-        input[type="text"]::placeholder,
-        input[type="number"]::placeholder,
-        textarea::placeholder { color: var(--text-muted); }
-
-        /* ============================================================
-           按鈕
-        ============================================================ */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border: none;
-            border-radius: var(--radius);
-            cursor: pointer;
-            font-size: 13px;
-            font-family: inherit;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            color: #0d0e12;
-        }
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
-            box-shadow: 0 0 16px rgba(201,168,76,0.3);
-        }
-
-        .btn-ghost {
-            background: transparent;
-            border: 1px solid var(--dark-border);
-            color: var(--text-secondary);
-        }
-        .btn-ghost:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
-
-        .btn-danger {
-            background: rgba(155,35,53,0.2);
-            border: 1px solid rgba(155,35,53,0.5);
-            color: #e87070;
-        }
-        .btn-danger:hover:not(:disabled) { background: rgba(155,35,53,0.4); }
-
-        .btn-info {
-            background: rgba(52,152,219,0.2);
-            border: 1px solid rgba(52,152,219,0.4);
-            color: #6bb8e8;
-        }
-        .btn-info:hover:not(:disabled) { background: rgba(52,152,219,0.35); }
-
-        .btn-sm { padding: 5px 10px; font-size: 12px; }
-        .btn-full { width: 100%; justify-content: center; }
-
-        /* ============================================================
-           狀態訊息
-        ============================================================ */
-        #status {
-            font-size: 12px;
-            padding: 8px 12px;
-            border-radius: var(--radius);
-            margin-top: 10px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--dark-border);
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-        }
-        #status.success { border-color: rgba(46,204,113,0.4); color: var(--green); background: rgba(46,204,113,0.07); }
-        #status.error   { border-color: rgba(192,57,43,0.4);  color: #e87070;     background: rgba(192,57,43,0.07); }
-
-        /* ============================================================
-           擷取畫面
-        ============================================================ */
-        #canvasContainer {
-            position: relative;
-            border: 2px dashed var(--dark-border);
-            border-radius: var(--radius);
-            overflow: auto;
-            max-height: 320px;
-            margin-top: 12px;
-            display: none;
-            background: var(--dark-panel);
-        }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 10px; font-size: 1.1em; }
+        
+        .input-group { margin: 8px 0; display: flex; align-items: center; }
+        .input-group label { width: 100px; font-weight: bold; }
+        input[type="text"], input[type="number"] { padding: 6px; width: 140px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+        button { background-color: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; margin: 3px 0; transition: 0.2s;}
+        button:hover { background-color: #45a049; }
+        .action-btn { background-color: #008CBA; margin-right: 5px;}
+        .action-btn:hover { background-color: #007B9E; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        #status { color: #d9534f; font-weight: bold; margin-top: 8px; font-size: 13px; }
+        
+        #canvasContainer { position: relative; max-width: 100%; overflow: auto; border: 2px dashed #ccc; margin-top: 10px; display: none; max-height: 300px; }
         canvas.capture { cursor: crosshair; display: block; max-width: 100%; }
+        .toolbar { margin-top: 10px; display: none; padding: 10px; background: #eef; border-radius: 5px; }
+        
+        .event-sidebar { background: linear-gradient(135deg, #fff9e6, #fff); border: 2px solid var(--secondary-color); }
+        .event-text { line-height: 1.5; white-space: pre-wrap; font-size: 13px; }
+        .highlight { color: #d35400; font-weight: bold; }
+        
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; align-items: center; }
+        .leaderboard-item:nth-child(1) .rank { background: #FFD700; color: #000; }
+        .leaderboard-item:nth-child(2) .rank { background: #C0C0C0; color: #000; }
+        .leaderboard-item:nth-child(3) .rank { background: #CD7F32; color: #fff; }
+        .rank { background: #eee; padding: 2px 7px; border-radius: 50%; font-weight: bold; margin-right: 8px; font-size: 12px; min-width: 18px; text-align: center; }
+        .player-info { flex-grow: 1; }
+        .player-lv { font-weight: bold; color: var(--secondary-color); font-size: 0.9em; text-align: right;}
+        
+        /* 🌟 表格滾動與固定標題列優化 */
+        .table-responsive { overflow-x: auto; overflow-y: auto; max-height: 480px; margin-top: 10px; }
+        .spreadsheet-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border-left: 1px solid #ddd; border-top: 1px solid #ddd; }
+        .spreadsheet-table th, .spreadsheet-table td { border-bottom: 1px solid #ddd; border-right: 1px solid #ddd; padding: 6px 8px; white-space: nowrap; text-align: center; background-color: #fff; }
+        .spreadsheet-table th { background-color: #f2f2f2; font-weight: bold; color: #333; position: sticky; top: 0; z-index: 10; }
+        .spreadsheet-table td:first-child, .spreadsheet-table td:nth-child(2) { font-weight: bold; background-color: #f9f9f9; }
+        .spreadsheet-table tr:hover td { background-color: #f1f1f1; }
 
-        .ocr-toolbar {
-            display: none;
-            gap: 8px;
-            flex-wrap: wrap;
-            padding: 10px 0 4px;
-        }
-        .ocr-toolbar.visible { display: flex; }
+        .img-link { text-decoration: none; margin-left: 5px; font-size: 14px; cursor: pointer; }
 
-        /* ============================================================
-           統計表格
-        ============================================================ */
-        .table-wrapper {
-            overflow: auto;
-            max-height: 500px;
-            border-radius: var(--radius);
-            border: 1px solid var(--dark-border);
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            font-family: var(--font-mono);
-        }
-        .data-table th {
-            background: rgba(201,168,76,0.08);
-            color: var(--gold);
-            padding: 8px 10px;
-            text-align: center;
-            font-size: 11px;
-            letter-spacing: 0.06em;
-            position: sticky;
-            top: 0;
-            border-bottom: 1px solid var(--dark-border);
-            white-space: nowrap;
-        }
-        .data-table td {
-            padding: 7px 10px;
-            border-bottom: 1px solid rgba(37,40,54,0.6);
-            text-align: center;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            vertical-align: middle;
-        }
-        .data-table tr:hover td { background: rgba(201,168,76,0.04); }
-        .data-table td.row-head {
-            color: var(--text-primary);
-            font-weight: 700;
-            background: rgba(255,255,255,0.02);
-        }
-        .data-table td.empty { color: var(--text-muted); }
-        .gain-text { color: var(--orange); font-weight: 700; font-size: 11px; }
-        .img-link { color: var(--blue); cursor: pointer; text-decoration: none; margin-left: 4px; }
-        .action-link { color: var(--text-muted); cursor: pointer; font-size: 11px; margin-left: 3px; }
-        .action-link:hover { color: var(--gold); }
+        .side-menu { position: fixed; top: 0; left: -280px; width: 250px; height: 100%; background: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.3); transition: 0.3s; z-index: 1000; padding: 20px; display: flex; flex-direction: column; }
+        .side-menu.open { left: 0; }
+        .side-menu h3 { border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
+        .menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
+        .menu-overlay.open { display: block; }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1001; }
+        .modal img { max-width: 90%; max-height: 90%; border-radius: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .modal-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; font-weight: bold; }
+        .card-close { position: absolute; top: 10px; right: 15px; color: #333; font-size: 24px; cursor: pointer; font-weight: bold; }
+        .card-close:hover { color: #d9534f; }
+        
+        .upload-wrapper { margin-top: 15px; }
+        .upload-wrapper input[type="file"] { display: none; }
+        .upload-btn { display: inline-block; background-color: #9C27B0; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%; text-align: center; box-sizing: border-box; }
+        .upload-btn:hover { background-color: #7B1FA2; }
 
-        /* ============================================================
-           排行榜
-        ============================================================ */
-        .leaderboard-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--dark-border);
-        }
-        .leaderboard-item:last-child { border-bottom: none; }
-
-        .rank-badge {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-        .rank-1 { background: var(--gold); color: #0d0e12; }
-        .rank-2 { background: #9aa0b0; color: #0d0e12; }
-        .rank-3 { background: #a0693a; color: #fff; }
-        .rank-n { background: var(--dark-border); color: var(--text-secondary); }
-
-        .player-name { font-weight: 700; color: var(--text-primary); font-size: 13px; }
-        .player-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-        .player-gain { font-size: 12px; color: var(--orange); font-weight: 700; text-align: right; margin-left: auto; }
-
-        /* ============================================================
-           側邊欄抽屜
-        ============================================================ */
-        .side-drawer {
-            position: fixed;
-            top: 0;
-            left: -290px;
-            width: 270px;
-            height: 100vh;
-            background: var(--dark-panel);
-            border-right: 1px solid var(--dark-border);
-            z-index: 500;
-            transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .side-drawer.open { left: 0; }
-
-        .drawer-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.65);
-            z-index: 499;
-            display: none;
-        }
-        .drawer-overlay.open { display: block; }
-
-        .drawer-title {
-            font-family: var(--font-display);
-            font-size: 15px;
-            font-weight: 900;
-            color: var(--gold);
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--dark-border);
+        /* 🌟 Nani 150等大火焰的呼吸跳動特效 */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
         }
 
-        .upload-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px;
-            border: 1px dashed var(--dark-border);
-            border-radius: var(--radius);
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .upload-label:hover { border-color: var(--gold); color: var(--gold); }
-        .upload-label input[type="file"] { display: none; }
-
-        .instructions { font-size: 12px; line-height: 1.8; color: var(--text-secondary); }
-        .instructions ol { padding-left: 16px; }
-        .instructions li { margin-bottom: 8px; }
-        .instructions strong { color: var(--text-primary); }
-
-        /* ============================================================
-           Modal 彈窗
-        ============================================================ */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 900;
-        }
-        .modal-overlay.open { display: flex; }
-
-        .modal-box {
-            background: var(--dark-card);
-            border: 1px solid var(--dark-border-bright);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            width: 360px;
-            max-width: 90vw;
-            max-height: 90vh;
-            overflow-y: auto;
+        /* ==========================================
+           🌟 榮譽殿堂 (頒獎台) 專屬 CSS 樣式 - 豪華優化版
+           ========================================== */
+        #hallOfFameCard { padding: 0; overflow: hidden; } 
+        #hallOfFameCard h3 { padding: 15px; margin: 0; background: #fff; border-bottom: 2px solid #f39c12; }
+        .hof-desc { padding: 0 15px 10px 15px; background: #fff; font-size: 12px; color: #666; margin: 0; }
+        
+        .hof-top3-container {
+            display: flex; justify-content: center; align-items: flex-end;
+            height: 380px; /* 拉高容器，確保背景圖片完整顯示 */
+            padding: 40px 10px 0 10px;
+            background: linear-gradient(to bottom, #FFB75E, #ED8F03); /* 如果沒圖片時的預設夕陽漸層 */
             position: relative;
-        }
-        .modal-box.wide { width: 500px; }
-        .modal-box.fullscreen { width: 92vw; height: 88vh; display: flex; flex-direction: column; }
-
-        .modal-title {
-            font-family: var(--font-display);
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--gold);
-            margin-bottom: 16px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--dark-border);
-        }
-        .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 18px;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 22px;
-            cursor: pointer;
-            line-height: 1;
-            transition: color 0.2s;
-        }
-        .modal-close:hover { color: var(--text-primary); }
-
-        /* 圖片預覽 modal */
-        #imgPreviewModal img {
-            max-width: 90vw;
-            max-height: 90vh;
-            border-radius: var(--radius);
-        }
-        #imgPreviewModal .modal-box {
-            background: transparent;
-            border: none;
-            padding: 0;
-        }
-
-        /* ============================================================
-           活動規則
-        ============================================================ */
-        .rules-text {
-            font-size: 13px;
-            line-height: 1.9;
-            color: var(--text-secondary);
-            white-space: pre-wrap;
-        }
-        .rules-text strong { color: var(--gold); }
-
-        /* ============================================================
-           Nani 挑戰區
-        ============================================================ */
-        .nani-box {
-            background: linear-gradient(135deg, rgba(155,89,182,0.12) 0%, rgba(155,35,53,0.08) 100%);
-            border: 1px solid rgba(155,89,182,0.3);
-        }
-        .nani-box .card-header h3 { color: #c39bd3; }
-
-        .nani-content { text-align: center; padding: 8px 0; }
-        .nani-fires { font-size: 20px; letter-spacing: 3px; line-height: 1.6; margin: 8px 0; }
-        .nani-lv { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-        .nani-status { font-size: 12px; color: var(--orange); margin-top: 4px; }
-        .nani-exp { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-
-        /* ============================================================
-           榮譽殿堂
-        ============================================================ */
-        #hofCard .card-header { background: linear-gradient(135deg, rgba(201,168,76,0.1) 0%, rgba(155,35,53,0.08) 100%); }
-        #hofDragContainer {
-            position: relative;
-            width: 100%;
-            height: 560px;
-            background-color: #1a252f;
-            background-size: cover;
-            background-position: center bottom;
             overflow: hidden;
+            border-bottom: 5px solid #4E342E; /* 舞台地板 */
         }
-        .draggable-char {
-            position: absolute;
-            transform: translate(-50%, -100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-            user-select: none;
-            -webkit-user-select: none;
+        
+        /* 夕陽光暈特效 (只在沒有自訂背景時顯示) */
+        .hof-top3-container:not(.has-custom-bg)::before {
+            content: ''; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 150px 150px 0 0; z-index: 0; pointer-events: none;
         }
-        .admin-draggable { cursor: grab; }
-        .admin-draggable:active { cursor: grabbing; z-index: 100 !important; }
 
-        .hof-char-edit-btn {
-            position: absolute;
-            top: 20px;
-            right: -26px;
-            background: #8e44ad;
-            color: white;
-            border: 2px solid rgba(255,255,255,0.6);
-            border-radius: 50%;
-            width: 26px; height: 26px;
-            font-size: 13px;
-            cursor: pointer;
-            z-index: 20;
-            display: flex; align-items: center; justify-content: center;
-            padding: 0;
-            transition: 0.2s;
-        }
-        .hof-char-edit-btn:hover { background: #9b59b6; transform: scale(1.1); }
-
+        .podium-stage { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 1; }
+        
+        /* 預設的排版 (無圖片時) */
+        .podium-stage-1 { z-index: 3; }
+        .podium-stage-2 { z-index: 2; margin-right: -15px; } 
+        .podium-stage-3 { z-index: 1; margin-left: -15px; }
+        
+        /* 🌟 使用自訂地圖背景時，讓背景完整顯示並置中 */
+        .hof-top3-container.has-custom-bg { background-position: center bottom; background-size: cover; background-repeat: no-repeat; }
+        
+        /* 🌟 當有自訂地圖背景時，隱藏底座並將人物推到對應的建築物上 */
+        .hof-top3-container.has-custom-bg .stage-box { display: none !important; }
+        .hof-top3-container.has-custom-bg .stage-trophy-floating { display: block; }
+        
+        /* 調整這三個數值，可以微調人物站在地圖上的高低與左右位置 */
+        .hof-top3-container.has-custom-bg .podium-stage-1 { margin-bottom: 120px; }
+        .hof-top3-container.has-custom-bg .podium-stage-2 { margin-bottom: 60px; margin-right: 65px; }
+        .hof-top3-container.has-custom-bg .podium-stage-3 { margin-bottom: 60px; margin-left: 65px; }
+        
         .speech-bubble {
-            background: rgba(255,255,255,0.96);
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 4px 8px;
-            font-size: 11px;
-            margin-bottom: 8px;
-            position: relative;
-            text-align: center;
-            font-weight: 700;
-            min-width: 70px;
-            line-height: 1.4;
-            color: #000;
-            box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+            background: #fff; border: 2px solid #333; border-radius: 8px; padding: 4px 6px; font-size: 12px;
+            margin-bottom: 8px; position: relative; text-align: center; box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+            font-weight: bold; min-width: 80px; line-height: 1.3; color: #000;
         }
         .speech-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 8px 6px 0 solid;
-            border-color: #333 transparent transparent;
+            content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            border-width: 8px 6px 0; border-style: solid; border-color: #333 transparent transparent transparent;
         }
         .speech-bubble::before {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 6px 4px 0;
-            border-style: solid;
-            border-color: rgba(255,255,255,0.96) transparent transparent;
-            z-index: 1;
+            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            border-width: 6px 4px 0; border-style: solid; border-color: #fff transparent transparent transparent; z-index: 1;
         }
-        .char-img { object-fit: contain; position: relative; z-index: 5; margin-bottom: -5px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); max-width: none; }
+
+        .char-img { object-fit: contain; position: relative; z-index: 5; margin-bottom: -15px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4)); }
+        .char-rank-1 { height: 110px; max-width: 120px; }
+        .char-rank-2 { height: 95px; max-width: 105px; }
+        .char-rank-3 { height: 90px; max-width: 100px; }
 
         .stage-name-tag {
-            position: relative;
-            z-index: 10;
-            margin-top: 5px;
-            background: rgba(0,0,0,0.85);
-            color: var(--gold);
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 2px 8px;
-            font-size: 11px;
-            font-weight: 700;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            white-space: nowrap;
-            max-width: 120px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
+            position: relative; z-index: 10; margin-bottom: -10px;
+            background: rgba(0,0,0,0.85); color: #FFD700; border: 1px solid #555; border-radius: 3px;
+            padding: 2px 8px; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis; text-align: center;
         }
 
-        .hof-closed {
+        /* 無地圖時的備用金屬底座 */
+        .stage-box {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(to right, #95a5a6, #7f8c8d 20%, #34495e 80%, #2c3e50);
+            border: 2px solid #222; border-bottom: none;
+            box-shadow: inset 0 3px 5px rgba(255,255,255,0.3), 0 -2px 10px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden;
+        }
+        .stage-box::before { 
+            content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 0;
+            border: 1px dashed rgba(255,255,255,0.2); border-bottom: none; pointer-events: none;
+        }
+        .stage-1-box { width: 130px; height: 110px; border-top: 6px solid #FFD700; }
+        .stage-2-box { width: 110px; height: 70px; border-top: 6px solid #C0C0C0; }
+        .stage-3-box { width: 110px; height: 50px; border-top: 6px solid #CD7F32; }
+
+        .red-carpet {
+            position: absolute; top: 0; bottom: 0; left: 25%; right: 25%;
+            background: linear-gradient(to right, #c0392b, #e74c3c 50%, #c0392b);
+            border-left: 2px solid rgba(0,0,0,0.3); border-right: 2px solid rgba(0,0,0,0.3);
+        }
+
+        .stage-trophy { font-size: 36px; position: relative; z-index: 5; margin-top: 15px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.6)); }
+        
+        /* 當使用自訂地圖背景時，漂浮在人旁邊的獎盃 */
+        .stage-trophy-floating { display: none; font-size: 30px; margin-top: 5px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.6)); position: relative; z-index: 10; }
+
+        /* 🌟 未上榜玩家專屬：平鋪在地面 */
+        .ground-level {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            width: 100%;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            height: 260px;
+            align-items: flex-end;
+            flex-wrap: wrap;
             gap: 10px;
+            z-index: 4;
+            padding-bottom: 5px;
         }
-        .hof-closed-icon { font-size: 40px; }
-        .hof-closed-title { font-weight: 700; color: var(--text-secondary); font-size: 15px; }
-        .hof-closed-sub { font-size: 12px; color: var(--text-muted); }
-
-        /* ============================================================
-           轉盤
-        ============================================================ */
-        .wheel-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 240px;
-            aspect-ratio: 1;
-            margin: 0 auto;
-            overflow: hidden;
-            border-radius: 50%;
-            border: 4px solid var(--gold);
-            box-shadow: 0 0 24px rgba(201,168,76,0.25);
-        }
-        #wheelCanvas {
-            width: 100%;
-            height: 100%;
-            transform: rotate(0deg);
-            transition: transform 4s cubic-bezier(0.17, 0.67, 0.1, 1);
-        }
-        .wheel-pointer-top {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 13px solid transparent;
-            border-right: 13px solid transparent;
-            border-top: 22px solid #1a1a2e;
-            z-index: 10;
-        }
-        .wheel-pointer-top::after {
-            content: '';
-            position: absolute;
-            top: -20px;
-            left: -10px;
-            width: 0; height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 18px solid var(--gold);
-        }
-
-        /* ============================================================
-           預估勝率
-        ============================================================ */
-        .win-rate-bar {
-            height: 4px;
-            border-radius: 2px;
-            background: rgba(201,168,76,0.15);
-            margin-top: 4px;
-            overflow: hidden;
-        }
-        .win-rate-fill {
-            height: 100%;
-            border-radius: 2px;
-            background: linear-gradient(90deg, var(--gold-dark), var(--gold));
-            transition: width 0.6s ease;
-        }
-
-        /* ============================================================
-           經驗對照表 Modal
-        ============================================================ */
-        #expTableModal .table-wrapper { flex: 1; }
-        .exp-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }
-        .exp-table th {
-            background: rgba(201,168,76,0.1);
-            color: var(--gold);
-            padding: 6px 10px;
-            font-size: 11px;
-            letter-spacing: 0.05em;
-            position: sticky;
-            top: 0;
-            border-bottom: 1px solid var(--dark-border);
-        }
-        .exp-table td {
-            padding: 5px 10px;
-            border-bottom: 1px solid rgba(37,40,54,0.4);
-            color: var(--text-secondary);
-            text-align: center;
-        }
-        .exp-table tr:hover td { background: rgba(201,168,76,0.04); }
-
-        /* ============================================================
-           動畫
-        ============================================================ */
-        @keyframes pulse {
-            0%,100% { transform: scale(1); }
-            50%      { transform: scale(1.15); }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ============================================================
-           小工具
-        ============================================================ */
-        .divider { height: 1px; background: var(--dark-border); margin: 12px 0; }
-        .text-gold { color: var(--gold); }
-        .text-sm { font-size: 12px; }
-        .text-muted { color: var(--text-muted); }
-        .mt-8 { margin-top: 8px; }
-        .mt-12 { margin-top: 12px; }
-        .flex { display: flex; }
-        .gap-8 { gap: 8px; }
-        .gap-6 { gap: 6px; }
-        .items-center { align-items: center; }
-        .flex-wrap { flex-wrap: wrap; }
-
-        /* ============================================================
-           chart.js 容器
-        ============================================================ */
-        .chart-container { position: relative; }
-
-        /* ============================================================
-           RWD 卷軸同步（上方假卷軸）
-        ============================================================ */
-        #topScrollWrapper { overflow-x: auto; overflow-y: hidden; margin-bottom: 4px; }
-        #topScrollContent { height: 1px; }
-
-        /* ============================================================
-           HOF admin 控制列
-        ============================================================ */
-        .hof-admin-bar {
-            display: none;
-            gap: 8px;
-        }
-        .hof-admin-bar.visible { display: flex; }
-
-        /* ============================================================
-           Range slider 樣式
-        ============================================================ */
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
-            border-radius: 2px;
-            background: var(--dark-border);
-            outline: none;
-            cursor: pointer;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--gold);
-            cursor: pointer;
-        }
+        .ground-level .podium-stage { margin-bottom: 5px !important; margin-left: 2px; margin-right: 2px; }
+        .char-rank-ground { height: 80px; max-width: 80px; margin-bottom: -12px; }
+        .ground-level .speech-bubble { font-size: 11px; min-width: 45px; padding: 2px 4px; margin-bottom: 6px; }
+        .ground-level .stage-name-tag { font-size: 11px; padding: 1px 5px; }
+        .ground-level .stage-trophy-floating { font-size: 20px; }
+        .stage-ground-box { width: 70px; height: 25px; border-top: 3px solid #A1887F; background: linear-gradient(to bottom, #8D6E63, #5D4037); }
+        .stage-trophy-ground { font-size: 16px; position: relative; z-index: 5; margin-top: 2px; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5)); }
 
     </style>
 </head>
 <body>
 
-    <!-- ============================================================
-         側邊抽屜
-    ============================================================ -->
-    <div id="sideDrawer" class="side-drawer">
-        <div class="drawer-title">⚙️ 設定與上傳</div>
-        <label class="upload-label">
-            <span>📁 從電腦上傳圖片</span>
-            <input type="file" id="imageUpload" accept="image/*">
-        </label>
-        <div class="divider"></div>
-        <div class="instructions">
-            <strong style="color:var(--gold); font-size:13px; display:block; margin-bottom:8px;">📖 使用說明</strong>
-            <ol>
-                <li><strong>取得圖片：</strong>點選「選擇視窗擷取」或在此處直接上傳。</li>
-                <li><strong>框選辨識：</strong>在圖片上拖曳紅框，點擊辨識按鈕自動帶入數值。</li>
-                <li><strong>確認上傳：</strong>確認名稱、等級、經驗值正確後按上傳按鈕。</li>
+    <!-- 🌟 防護機制 - 停用右鍵與 F12 開發者工具 -->
+    <script>
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) { e.preventDefault(); return false; }
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) { e.preventDefault(); return false; }
+        });
+    </script>
+
+    <header>
+        <button id="menuBtn" onclick="toggleMenu()">☰</button>
+        <h2 ondblclick="enableAdmin()" title="連按兩下開啟管理員模式">🐲 首戰龍王 - 找出獄友 📈</h2>
+    </header>
+
+    <div id="sideMenu" class="side-menu">
+        <h3>設定與上傳</h3>
+        <p style="font-size: 13px; color: #666;">除了使用畫面擷取外，你也可以直接上傳遊戲截圖檔案。</p>
+        <div class="upload-wrapper">
+            <label class="upload-btn">
+                📁 從電腦上傳圖片
+                <input type="file" id="imageUpload" accept="image/*">
+            </label>
+        </div>
+        
+        <div style="margin-top: 25px; font-size: 13px; color: #444; line-height: 1.6; overflow-y: auto;">
+            <h3 style="border-bottom: 2px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 10px; color: #2c3e50;">📖 使用說明</h3>
+            <ol style="padding-left: 20px; margin-top: 0;">
+                <li style="margin-bottom: 10px;"><strong>取得圖片：</strong><br>可點選主畫面的「選擇視窗擷取」來截圖，或在此處直接「從電腦上傳」。</li>
+                <li style="margin-bottom: 10px;"><strong>框選辨識 (選用)：</strong><br>在出現的圖片上，用滑鼠拖曳出紅色框框，點擊下方辨識按鈕即可自動帶入數值。</li>
+                <li style="margin-bottom: 10px;"><strong>檢查與上傳：</strong><br>確認「角色名稱、等級、經驗值」都正確後，按下上傳按鈕。系統會自動幫你計算累積成長量！</li>
+                <li><strong>修改與刪除：</strong><br>若不小心填錯，在統計表內自己上傳的紀錄欄位中，會顯示 ✏️ (修改) 與 🗑️ (刪除) 按鈕供你調整。</li>
             </ol>
         </div>
     </div>
-    <div id="drawerOverlay" class="drawer-overlay" onclick="toggleMenu()"></div>
+    <div id="menuOverlay" class="menu-overlay" onclick="toggleMenu()"></div>
 
-    <!-- ============================================================
-         Header
-    ============================================================ -->
-    <header>
-        <button id="menuBtn" onclick="toggleMenu()">☰</button>
-        <div class="header-title" ondblclick="enableAdmin()" title="連按兩下開啟管理員模式">
-            🐲 首戰龍王 — 找出獄友 📈
-        </div>
-        <span id="adminBadge" class="admin-badge">👑 管理員</span>
-    </header>
-
-    <!-- ============================================================
-         圖片預覽 Modal
-    ============================================================ -->
-    <div id="imgPreviewModal" class="modal-overlay">
-        <div class="modal-box" onclick="closeImgModal()">
-            <img id="modalImg" src="" alt="截圖">
-        </div>
+    <div id="imageModal" class="modal">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <img id="modalImg" src="">
     </div>
 
-    <!-- ============================================================
-         編輯紀錄 Modal
-    ============================================================ -->
-    <div id="editModal" class="modal-overlay">
-        <div class="modal-box">
-            <button class="modal-close" onclick="closeEditModal()">×</button>
-            <div class="modal-title">✏️ 修改紀錄</div>
+    <!-- 一般修改紀錄視窗 -->
+    <div id="editModal" class="modal">
+        <div class="card" style="width: 320px; position: relative;">
+            <span class="card-close" onclick="closeEditModal()">&times;</span>
+            <h3 style="border-bottom: 2px solid var(--primary-color);">✏️ 修改紀錄</h3>
             <input type="hidden" id="editId">
-            <div class="form-row">
-                <label>角色名稱</label>
+            <div class="input-group">
+                <label>角色名稱:</label>
                 <input type="text" id="editName">
             </div>
-            <div class="form-row">
-                <label>等級 (LV)</label>
+            <div class="input-group">
+                <label>等級 (LV):</label>
                 <input type="number" id="editLv">
             </div>
-            <div class="form-row">
-                <label>目前經驗值</label>
+            <div class="input-group">
+                <label>目前經驗值:</label>
                 <input type="number" id="editExp">
             </div>
-            <div class="mt-8">
-                <label class="text-sm text-muted" style="display:block; margin-bottom:6px;">補傳截圖 (選填)</label>
-                <input type="file" id="editImageUpload" accept="image/*" style="font-size:12px; color:var(--text-secondary); width:100%;">
+            <div class="input-group" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
+                <label style="width: 100%; margin-bottom: 5px;">補傳/修改截圖 (選填):</label>
+                <input type="file" id="editImageUpload" accept="image/*" style="font-size: 12px; width: 100%;">
+                <small id="editImageStatus" style="color: #888; margin-top: 5px;"></small>
             </div>
-            <div class="mt-12">
-                <button id="saveEditBtn" class="btn btn-primary btn-full" onclick="saveEdit()">💾 儲存修改</button>
-            </div>
+            <button id="saveEditBtn" onclick="saveEdit()" style="width: 100%; margin-top: 15px;">💾 儲存修改</button>
         </div>
     </div>
 
-    <!-- ============================================================
-         補登紀錄 Modal
-    ============================================================ -->
-    <div id="addMissingModal" class="modal-overlay">
-        <div class="modal-box">
-            <button class="modal-close" onclick="document.getElementById('addMissingModal').classList.remove('open')">×</button>
-            <div class="modal-title">➕ 補登遺漏紀錄</div>
-            <div class="form-row">
-                <label>補登日期</label>
-                <input type="text" id="addMissingDate" readonly style="background:rgba(52,152,219,0.1); border-color:rgba(52,152,219,0.4); color:#6bb8e8;">
+    <!-- 補登紀錄專用視窗 -->
+    <div id="addMissingModal" class="modal">
+        <div class="card" style="width: 320px; position: relative;">
+            <span class="card-close" onclick="document.getElementById('addMissingModal').style.display='none'">&times;</span>
+            <h3 style="border-bottom: 2px solid #008CBA; color: #008CBA;">➕ 補登遺漏紀錄</h3>
+            
+            <div class="input-group">
+                <label>補登日期:</label>
+                <input type="text" id="addMissingDate" readonly style="background:#eee; border:none; outline:none; font-weight:bold; color:#007B9E;">
             </div>
-            <div class="form-row">
-                <label>角色名稱</label>
+            <div class="input-group">
+                <label>角色名稱:</label>
                 <input type="text" id="addMissingName" placeholder="例如: 鮭魚">
             </div>
-            <div class="form-row">
-                <label>等級 (LV)</label>
+            <div class="input-group">
+                <label>等級 (LV):</label>
                 <input type="number" id="addMissingLv" placeholder="請輸入等級">
             </div>
-            <div class="form-row">
-                <label>目前經驗值</label>
+            <div class="input-group">
+                <label>目前經驗值:</label>
                 <input type="number" id="addMissingExp" placeholder="請輸入經驗數字">
             </div>
-            <div class="mt-8">
-                <label class="text-sm text-muted" style="display:block; margin-bottom:6px;">上傳截圖 (選填)</label>
-                <input type="file" id="addMissingImageUpload" accept="image/*" style="font-size:12px; color:var(--text-secondary); width:100%;">
+            <div class="input-group" style="flex-direction: column; align-items: flex-start; margin-top: 10px;">
+                <label style="width: 100%; margin-bottom: 5px;">上傳截圖 (選填):</label>
+                <input type="file" id="addMissingImageUpload" accept="image/*" style="font-size: 12px; width: 100%;">
             </div>
-            <div class="mt-12">
-                <button id="saveMissingBtn" class="btn btn-info btn-full" onclick="saveMissingRecord()">💾 儲存補登紀錄</button>
-            </div>
+            
+            <button id="saveMissingBtn" onclick="saveMissingRecord()" style="width: 100%; margin-top: 15px; background-color: #008CBA;">💾 儲存補登紀錄</button>
         </div>
     </div>
 
-    <!-- ============================================================
-         修改活動規則 Modal
-    ============================================================ -->
-    <div id="editRulesModal" class="modal-overlay">
-        <div class="modal-box wide">
-            <button class="modal-close" onclick="document.getElementById('editRulesModal').classList.remove('open')">×</button>
-            <div class="modal-title">✏️ 修改活動規則與獎勵</div>
-            <textarea id="editRulesTextarea" rows="14" style="resize:vertical; width:100%; font-size:13px; line-height:1.7;"></textarea>
-            <div class="mt-12">
-                <button id="saveRulesBtn" class="btn btn-primary btn-full" onclick="saveRules()">💾 儲存規則更新</button>
-            </div>
+    <!-- 🌟 修改活動規則專用視窗 -->
+    <div id="editRulesModal" class="modal">
+        <div class="card" style="width: 90%; max-width: 500px; position: relative;">
+            <span class="card-close" onclick="document.getElementById('editRulesModal').style.display='none'">&times;</span>
+            <h3 style="border-bottom: 2px solid var(--secondary-color); color: var(--secondary-color);">✏️ 修改活動規則與獎勵</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 5px;">你可以在這裡自由換行輸入，儲存後會即時同步給所有人。</p>
+            <textarea id="editRulesTextarea" rows="15" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; resize: vertical; line-height: 1.5;"></textarea>
+            <button id="saveRulesBtn" onclick="saveRules()" style="width: 100%; margin-top: 15px; background-color: var(--secondary-color); font-weight: bold;">💾 儲存規則更新</button>
         </div>
     </div>
 
-    <!-- ============================================================
-         設定殿堂人物外觀 Modal
-    ============================================================ -->
-    <div id="hofCharModal" class="modal-overlay">
-        <div class="modal-box">
-            <button class="modal-close" onclick="document.getElementById('hofCharModal').classList.remove('open')">×</button>
-            <div class="modal-title">⚙️ 設定人物外觀</div>
-            <div class="form-row">
-                <label>玩家名稱</label>
-                <input type="text" id="hofCharName" readonly style="background:rgba(255,255,255,0.04); cursor:default;">
-            </div>
-            <div class="mt-8">
-                <label class="text-sm text-muted" style="display:block; margin-bottom:6px;">🖼️ 上傳去背圖片 (PNG / WEBP)</label>
-                <input type="file" id="hofCharUpload" accept="image/png,image/jpeg,image/webp" style="font-size:12px; color:var(--text-secondary); width:100%;">
-                <div class="text-sm text-muted mt-8">重新上傳會直接覆蓋舊圖。</div>
-            </div>
-            <div class="mt-12">
-                <label class="text-sm text-muted" style="display:block; margin-bottom:6px;">
-                    📏 圖片大小：<span id="hofCharSizeVal" style="color:var(--gold);">100</span> px
-                </label>
-                <input type="range" id="hofCharSize" min="40" max="300" value="100"
-                    oninput="document.getElementById('hofCharSizeVal').textContent=this.value">
-            </div>
-            <div class="flex gap-8 mt-12">
-                <button id="saveHofCharBtn" class="btn btn-primary" style="flex:1" onclick="saveHofChar()">💾 儲存設定</button>
-                <button class="btn btn-danger" onclick="deleteHofChar()">🗑️ 恢復預設</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================
-         經驗對照表 Modal
-    ============================================================ -->
-    <div id="expTableModal" class="modal-overlay">
-        <div class="modal-box fullscreen">
-            <button class="modal-close" onclick="document.getElementById('expTableModal').classList.remove('open')">×</button>
-            <div class="modal-title">📖 經驗值對照表 (LV 1 ~ 200)</div>
-            <div class="table-wrapper" style="flex:1; margin-top:0;">
-                <table class="exp-table" id="referenceExpTable">
+    <!-- 🌟 經驗表放大專用視窗 (點兩下彈出的視窗) -->
+    <div id="expTableModal" class="modal">
+        <div class="card" style="width: 95%; height: 90%; max-width: 800px; position: relative; display: flex; flex-direction: column; padding-top: 20px;">
+            <span class="card-close" onclick="closeExpTableModal()" style="z-index: 1000; top: 10px; right: 20px; font-size: 30px;">&times;</span>
+            <h3 style="border-bottom: 2px solid var(--primary-color); margin-top: 0; color: #2c3e50;">📖 經驗值對照表 (LV 1 ~ 200)</h3>
+            <div class="table-responsive" style="flex-grow: 1; overflow: auto; margin-top: 10px; background: #fff; border: 1px solid #ddd; border-radius: 5px; max-height: none;">
+                <table class="spreadsheet-table" id="referenceExpTableInside">
                     <thead>
                         <tr>
-                            <th>當前等級</th>
-                            <th>升級所需經驗</th>
-                            <th>累計獲得經驗</th>
-                            <th>倍率</th>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">當前等級</th>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">升下一級所需經驗</th>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">累計獲得經驗</th>
+                            <th style="background-color: #4CAF50; color: white; position: sticky; top: 0;">倍率</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody>
+                        <!-- 將由 JavaScript 動態產生 -->
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- ============================================================
-         主內容
-    ============================================================ -->
     <div class="container">
-        <!-- ==================== 左欄 ==================== -->
-        <div class="main-col">
-
-            <!-- 1. 取得畫面 -->
+        <div class="main-content">
             <div class="card">
-                <div class="card-header">
-                    <h3>① 取得遊戲畫面</h3>
+                <h3>1. 取得遊戲畫面</h3>
+                <button id="captureBtn">🖥️ 選擇視窗擷取畫面</button>
+                <div id="status">準備就緒，可擷取畫面或從左上角 ☰ 上傳圖片！</div>
+                
+                <div id="canvasContainer">
+                    <canvas id="screenCanvas" class="capture"></canvas>
                 </div>
-                <div class="card-body">
-                    <button id="captureBtn" class="btn btn-ghost">🖥️ 選擇視窗擷取畫面</button>
-                    <div id="status">準備就緒，可擷取畫面或從左上角 ☰ 上傳圖片！</div>
-                    <div id="canvasContainer">
-                        <canvas id="screenCanvas" class="capture"></canvas>
-                    </div>
-                    <div id="ocrToolbar" class="ocr-toolbar mt-8">
-                        <button class="btn btn-ghost btn-sm" id="btnName">🏷️ 辨識名稱</button>
-                        <button class="btn btn-ghost btn-sm" id="btnLv">⭐ 辨識等級</button>
-                        <button class="btn btn-ghost btn-sm" id="btnExp">💯 辨識經驗</button>
-                    </div>
+
+                <div class="toolbar" id="ocrToolbar">
+                    <p><strong>第一步：</strong>用滑鼠在上方圖片中<strong>框選</strong>數值區域。<br>
+                        <strong>第二步：</strong>點擊下方按鈕進行辨識：</p>
+                    <button class="action-btn" id="btnName">🏷️ 辨識【名稱】</button>
+                    <button class="action-btn" id="btnLv">⭐ 辨識【等級】</button>
+                    <button class="action-btn" id="btnExp">💯 辨識【經驗數字】</button>
                 </div>
             </div>
 
-            <!-- 2. 確認上傳 -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>② 確認與上傳資料</h3>
+            <div class="card" id="dataCheck">
+                <h3>2. 確認與上傳資料 (附帶截圖存證)</h3>
+                <div class="input-group">
+                    <label for="nameInput">角色名稱: </label>
+                    <input type="text" id="nameInput" placeholder="例如: 鮭魚">
                 </div>
-                <div class="card-body">
-                    <div class="form-row">
-                        <label>角色名稱</label>
-                        <input type="text" id="nameInput" placeholder="例如: 鮭魚">
-                    </div>
-                    <div class="form-row">
-                        <label>等級 (LV)</label>
-                        <input type="number" id="lvInput" placeholder="請辨識或輸入">
-                    </div>
-                    <div class="form-row">
-                        <label>目前經驗值</label>
-                        <input type="number" id="expInput" placeholder="請辨識或輸入數字">
-                    </div>
-                    <div class="mt-12">
-                        <button id="saveBtn" class="btn btn-primary btn-full" disabled>⏳ 等待資料庫連線...</button>
-                    </div>
+                <div class="input-group">
+                    <label for="lvInput">等級 (LV): </label>
+                    <input type="number" id="lvInput" placeholder="請辨識或輸入">
+                </div>
+                <div class="input-group">
+                    <label for="expInput">目前經驗值: </label>
+                    <input type="number" id="expInput" placeholder="請辨識或輸入數字">
+                </div>
+                <button id="saveBtn" disabled>等待資料庫連線...</button>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <!-- 🌟 點擊兩下開啟全螢幕經驗值對照表 -->
+                <h3 ondblclick="openExpTableModal()" title="點擊兩下查詢經驗對照表" style="cursor: zoom-in; user-select: none;">📅 經驗值統計表 (點擊 🖼️ 查詢截圖，<span style="color:#d35400;">點擊兩下查經驗表</span>)</h3>
+                
+                <div id="topScrollWrapper" style="overflow-x: auto; overflow-y: hidden; margin-bottom: 5px;">
+                    <div id="topScrollContent" style="height: 1px;"></div>
+                </div>
+                
+                <!-- 表格容器 -->
+                <div class="table-responsive" id="tableResponsive">
+                    <table class="spreadsheet-table" id="dataTable">
+                        <thead><tr><th>載入中...</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- 3. 統計表 -->
             <div class="card">
-                <div class="card-header">
-                    <h3 style="cursor:zoom-in;" ondblclick="document.getElementById('expTableModal').classList.add('open')" title="點擊兩下查詢經驗對照表">
-                        📅 經驗值統計表
-                        <span style="font-size:11px; color:var(--text-muted); font-weight:400;">（點兩下標題查對照表）</span>
-                    </h3>
-                </div>
-                <div class="card-body" style="padding:0;">
-                    <div id="topScrollWrapper" style="overflow-x:auto; overflow-y:hidden; padding:4px 16px 0;">
-                        <div id="topScrollContent" style="height:1px;"></div>
-                    </div>
-                    <div class="table-wrapper" id="tableResponsive" style="border:none; border-radius:0;">
-                        <table class="data-table" id="dataTable">
-                            <thead><tr><th>載入中...</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+                <h3>📊 全員成長曲線圖 (累積成長量)</h3>
+                <canvas id="expChart"></canvas>
             </div>
 
-            <!-- 4. 成長曲線圖 -->
+            <!-- 🌟 單日經驗增長長條圖 -->
             <div class="card">
-                <div class="card-header"><h3>📊 全員成長曲線圖（累積成長量）</h3></div>
-                <div class="card-body chart-container">
-                    <canvas id="expChart"></canvas>
-                </div>
+                <h3 id="dailyChartTitle" style="color: #007B9E; border-bottom: 2px solid #b3e5fc;">📈 每日經驗增長長條圖 (單日增加量)</h3>
+                <canvas id="dailyExpChart"></canvas>
             </div>
 
-            <!-- 5. 每日增長圖 -->
-            <div class="card">
-                <div class="card-header"><h3 id="dailyChartTitle">📈 每日經驗增長長條圖（單日增加量）</h3></div>
-                <div class="card-body chart-container">
-                    <canvas id="dailyExpChart"></canvas>
-                </div>
-            </div>
-
-            <!-- 6. 榮譽殿堂 -->
-            <div class="card" id="hofCard">
-                <div class="card-header">
-                    <h3 id="hofCardTitle">🏆 榮譽殿堂</h3>
-                    <div class="hof-admin-bar" id="hofAdminBar">
-                        <button id="toggleHofBtn" class="btn btn-ghost btn-sm" onclick="toggleHofVisibility()">👁️ 設為公開</button>
-                        <button id="saveHofPosBtn" class="btn btn-danger btn-sm" style="display:none;" onclick="saveHofPositions()">💾 儲存排版</button>
-                    </div>
-                </div>
+            <!-- ==========================================
+                 🌟 榮譽殿堂 (自訂地圖背景升級版)
+                 已經為你移動到「每日經驗增長長條圖」的下方！
+                 並且現在設定為「僅限管理員可以觀看內容」
+                 ========================================== -->
+            <div class="card" id="hallOfFameCard">
+                <h3 style="color: #d35400;">🏆 榮譽殿堂 (名人堂) 開發中</h3>
+                <p class="hof-desc">※ 角色達 LV 160 解鎖銀獎盃 🥈，達 LV 170 解鎖金獎盃 🏆！</p>
                 <div id="hallOfFameContainer">
-                    <div class="hof-closed">
-                        <div class="hof-closed-icon">🚧</div>
-                        <div class="hof-closed-title">榮譽殿堂 尚未開放</div>
-                        <div class="hof-closed-sub">目前僅限管理員預覽與編輯…敬請期待！</div>
-                    </div>
+                    <!-- 將由 JavaScript 判斷管理員權限後動態生成 -->
+                    <div style="color:#999; padding:20px; text-align:center;">資料載入中...</div>
                 </div>
             </div>
-
         </div>
 
-        <!-- ==================== 右欄 ==================== -->
-        <div class="sidebar-col">
+        <div class="sidebar">
+            <div class="card event-sidebar">
+                <h3>📜 活動規則與獎勵</h3>
+                <!-- 🌟 將活動規則內容綁定 ID，等待 Firebase 載入 -->
+                <div class="event-text" id="eventRulesText">載入中...</div>
+                <button id="editRulesBtn" onclick="openEditRulesModal()" style="display: none; width: 100%; margin-top: 15px; background-color: var(--secondary-color); font-weight: bold;">✏️ 修改活動規則</button>
+            </div>
 
-            <!-- 活動規則 -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>📜 活動規則與獎勵</h3>
-                    <button id="editRulesBtn" class="btn btn-ghost btn-sm" style="display:none;" onclick="openEditRulesModal()">✏️ 編輯</button>
-                </div>
-                <div class="card-body">
-                    <div class="rules-text" id="eventRulesText">載入中...</div>
+            <!-- 🌟 Nani 專屬挑戰區塊 (隨等級增加小火焰) -->
+            <div class="card" style="border: 2px solid #8e44ad; background: #faf5ff;">
+                <h3 style="margin-top: 0; color: #8e44ad; text-align: center; border-bottom: 2px solid #e1bee7; padding-bottom: 8px;">🎯 Nani 專屬挑戰 (目標 LV 150)</h3>
+                <div id="naniChallenge" style="text-align: center; padding: 15px 10px;">
+                    載入中...
                 </div>
             </div>
 
-            <!-- Nani 專屬挑戰 -->
-            <div class="card nani-box">
-                <div class="card-header">
-                    <h3>🎯 Nani 專屬挑戰（目標 LV 150）</h3>
-                </div>
-                <div class="card-body nani-content" id="naniChallenge">載入中...</div>
+            <div class="card">
+                <h3>👑 總活動成長榜 </h3>
+                <ul class="leaderboard-list" id="leaderboardList">
+                    <li>連線中...</li>
+                </ul>
             </div>
 
-            <!-- 總成長榜 -->
-            <div class="card">
-                <div class="card-header"><h3>👑 總活動成長榜</h3></div>
-                <div class="card-body">
-                    <div id="leaderboardList"><div style="color:var(--text-muted); font-size:13px;">連線中...</div></div>
-                </div>
+            <!-- 🌟 預估勝率區塊 (簡化版) -->
+            <div class="card" style="background: linear-gradient(135deg, #fff, #f3f0ff); border: 2px solid #9C27B0;">
+                <h3 style="color: #6A1B9A; border-bottom: 2px solid #e1bee7;">📊 預估勝率榜</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">根據目前累積成長斜率計算出的預估勝率。</p>
+                <ul class="leaderboard-list" id="bettingList">
+                    <li>載入中...</li>
+                </ul>
             </div>
 
-            <!-- 預估勝率 -->
-            <div class="card">
-                <div class="card-header"><h3>📊 預估勝率榜</h3></div>
-                <div class="card-body">
-                    <div class="text-sm text-muted" style="margin-bottom:10px;">根據目前累積成長斜率計算。</div>
-                    <div id="bettingList"><div style="color:var(--text-muted); font-size:13px;">載入中...</div></div>
-                </div>
-            </div>
-
-            <!-- 幸運轉盤 -->
-            <div class="card">
-                <div class="card-header"><h3>🎡 幸運抽獎轉盤</h3></div>
-                <div class="card-body">
-                    <div class="text-sm text-muted" style="margin-bottom:8px;">每行輸入一個名稱或獎品</div>
-                    <textarea id="wheelItems" rows="5" placeholder="參與者A&#10;參與者B&#10;頭獎：200雪" style="margin-bottom:8px;">參與者A
+            <!-- 🎡 幸運抽獎轉盤 -->
+            <div class="card" style="border: 2px solid #81D4FA; background: #FAFAFA; text-align: center;">
+                <h3 style="margin-top: 0; color: #0288D1; border-bottom: 2px solid #B3E5FC; padding-bottom: 8px;">🎡 幸運抽獎轉盤</h3>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">輸入抽獎人員或獎品 (每行一個)</p>
+                <textarea id="wheelItems" rows="5" style="width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; resize: vertical;" placeholder="例如:&#10;玩家A&#10;玩家B&#10;頭獎：200雪">參與者A
 參與者B
 參與者C
 特別獎</textarea>
-                    <button class="btn btn-ghost btn-full btn-sm" onclick="window.updateWheel()" style="margin-bottom:14px;">🔄 更新轉盤名單</button>
-                    <div class="wheel-wrapper">
-                        <canvas id="wheelCanvas" width="400" height="400"></canvas>
-                        <div class="wheel-pointer-top"></div>
-                    </div>
-                    <button id="spinBtn" class="btn btn-primary btn-full mt-12" onclick="window.spinWheel()" style="font-size:15px; padding:12px;">🎯 開始抽獎</button>
+                <button onclick="window.updateWheel()" style="width: 100%; background-color: #03A9F4; color: white; padding: 8px; margin-bottom: 15px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold;">🔄 更新轉盤名單</button>
+                
+                <div style="position: relative; width: 100%; max-width: 250px; aspect-ratio: 1; margin: 0 auto; overflow: hidden; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 4px solid #0288D1;">
+                    <!-- 轉盤本體 -->
+                    <canvas id="wheelCanvas" width="400" height="400" style="width: 100%; height: 100%; transform: rotate(0deg); transition: transform 4s cubic-bezier(0.17, 0.67, 0.1, 1);"></canvas>
+                    <!-- 轉盤指針 (外層陰影與內層藍色) -->
+                    <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #333; z-index: 10;"></div>
+                    <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #0288D1; z-index: 11;"></div>
                 </div>
+                
+                <button id="spinBtn" onclick="window.spinWheel()" style="width: 100%; background-color: #0288D1; font-size: 18px; font-weight: bold; padding: 12px; margin-top: 15px; border-radius: 5px; border: none; color: white; cursor: pointer; box-shadow: 0 4px 0 #01579B; transition: background 0.2s, box-shadow 0.2s, transform 0.2s;">🎯 開始抽獎</button>
             </div>
-
         </div>
     </div>
 
-    <!-- ============================================================
-         Firebase & 核心邏輯
-    ============================================================ -->
+    <!-- Firebase SDK & 程式碼邏輯 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getStorage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ========================================================
-        // 經驗值對照表
-        // ========================================================
-        const expCumulativeTable = [0,15,49,106,198,333,705,1265,2105,3347,5063,7423,10639,14839,20299,27349,36189,47229,60945,77625,97841,122243,151223,185543,226055,273271,328171,391837,464917,548637,644337,752817,875577,1014243,1169783,1343999,1538831,1755431,1995931,2262613,2556829,2881069,3237985,3629145,4057425,4525875,5036295,5591975,6196391,6851591,7561307,8309915,9099546,9932448,10810993,11737682,12715153,13746189,14833725,15980857,17190851,18467152,19813394,21233410,22731242,24311155,25977647,27735462,29589605,31545355,33608280,35784253,38079469,40500462,43054125,45747728,48588940,51585850,54746990,58081360,61598453,65308282,69221409,73348975,77702731,82295072,87139073,92248525,97637974,103322764,109319080,115643994,122315513,129352631,136775383,144604901,152863476,161574620,170763134,180455178,190678346,201461743,212836070,224833710,237488820,250837430,264917543,279769246,295434822,311958871,329388437,347773143,367165330,387620208,409196013,431954172,455959478,481280274,507988649,536160642,565876460,597220704,630282612,665156312,701941090,740741673,781668527,824838172,870373513,918404190,969066948,1022506025,1078873563,1138330042,1201044736,1267196195,1336972753,1410573066,1488206676,1570094607,1656469996,1747578756,1843680276,1945048159,2051971001,2164753214,2283715892,2409197724,2541555960,2681167427,2828429602,2983761744,3147606087,3320429099,3502722812,3695006220,3897826758,4111761861,4337420607,4575445452,4826514058,5091341223,5370680916,5665328424,5976122615,6303948327,6649738888,7014478771,7399206399,7805017101,8233066229,8684572449,9160821209,9663168401,10193044219,10751957231,11341498676,11963346992,12619272595,13311142921,14040927740,14810704767,15622665575,16479121835,17382511898,18335407736,19340522265,20400717070,21519010550,22698586512,23942803236,25255203036,26639522345,28099702352,29639900223,31264500937,32978129770,34785665463,36692254111,38703323816];
+        // ==========================================
+        // 🌟 【防當機修正：必須放最頂端的核心變數】🌟
+        // ==========================================
+        const expCumulativeTable = [0, 15, 49, 106, 198, 333, 705, 1265, 2105, 3347, 5063, 7423, 10639, 14839, 20299, 27349, 36189, 47229, 60945, 77625, 97841, 122243, 151223, 185543, 226055, 273271, 328171, 391837, 464917, 548637, 644337, 752817, 875577, 1014243, 1169783, 1343999, 1538831, 1755431, 1995931, 2262613, 2556829, 2881069, 3237985, 3629145, 4057425, 4525875, 5036295, 5591975, 6196391, 6851591, 7561307, 8309915, 9099546, 9932448, 10810993, 11737682, 12715153, 13746189, 14833725, 15980857, 17190851, 18467152, 19813394, 21233410, 22731242, 24311155, 25977647, 27735462, 29589605, 31545355, 33608280, 35784253, 38079469, 40500462, 43054125, 45747728, 48588940, 51585850, 54746990, 58081360, 61598453, 65308282, 69221409, 73348975, 77702731, 82295072, 87139073, 92248525, 97637974, 103322764, 109319080, 115643994, 122315513, 129352631, 136775383, 144604901, 152863476, 161574620, 170763134, 180455178, 190678346, 201461743, 212836070, 224833710, 237488820, 250837430, 264917543, 279769246, 295434822, 311958871, 329388437, 347773143, 367165330, 387620208, 409196013, 431954172, 455959478, 481280274, 507988649, 536160642, 565876460, 597220704, 630282612, 665156312, 701941090, 740741673, 781668527, 824838172, 870373513, 918404190, 969066948, 1022506025, 1078873563, 1138330042, 1201044736, 1267196195, 1336972753, 1410573066, 1488206676, 1570094607, 1656469996, 1747578756, 1843680276, 1945048159, 2051971001, 2164753214, 2283715892, 2409197724, 2541555960, 2681167427, 2828429602, 2983761744, 3147606087, 3320429099, 3502722812, 3695006220, 3897826758, 4111761861, 4337420607, 4575445452, 4826514058, 5091341223, 5370680916, 5665328424, 5976122615, 6303948327, 6649738888, 7014478771, 7399206399, 7805017101, 8233066229, 8684572449, 9160821209, 9663168401, 10193044219, 10751957231, 11341498676, 11963346992, 12619272595, 13311142921, 14040927740, 14810704767, 15622665575, 16479121835, 17382511898, 18335407736, 19340522265, 20400717070, 21519010550, 22698586512, 23942803236, 25255203036, 26639522345, 28099702352, 29639900223, 31264500937, 32978129770, 34785665463, 36692254111, 38703323816];
+        
+        const expNeededTable = [15, 34, 57, 92, 135, 372, 560, 840, 1242, 1716, 2360, 3216, 4200, 5460, 7050, 8840, 11040, 13716, 16680, 20216, 24402, 28980, 34320, 40512, 47216, 54900, 63666, 73080, 83720, 95700, 108480, 122760, 138666, 155540, 174216, 194832, 216600, 240500, 266682, 294216, 324240, 356916, 391160, 428280, 468450, 510420, 555680, 604416, 655200, 709716, 748608, 789631, 832902, 878545, 926689, 977471, 1031036, 1087536, 1147132, 1209994, 1276301, 1346242, 1420016, 1497832, 1579913, 1666492, 1757815, 1854143, 1955750, 2062925, 2175973, 2295216, 2420993, 2553663, 2693603, 2841212, 2996910, 3161140, 3334370, 3517093, 3709829, 3913127, 4127566, 4353756, 4592341, 4844001, 5109452, 5389449, 5684790, 5996316, 6324914, 6671519, 7037118, 7422752, 7829518, 8258575, 8711144, 9188514, 9692044, 10223168, 10783397, 11374327, 11997640, 12655110, 13348610, 14080113, 14851703, 15665576, 16524049, 17429566, 18384706, 19392187, 20454878, 21575805, 22758159, 24005306, 25320796, 26708375, 28171993, 29715818, 31344244, 33061908, 34873700, 36784778, 38800583, 40926854, 43169645, 45535341, 48030677, 50662758, 53439077, 56367538, 59456479, 62714694, 66151459, 69776558, 73600313, 77633610, 81887931, 86375389, 91108760, 96101520, 101367883, 106922842, 112782213, 118962678, 125481832, 132358236, 139611467, 147262175, 155332142, 163844343, 172823012, 182293713, 192283408, 202820538, 213935103, 225658746, 238024845, 254068606, 264827165, 279339693, 294647508, 310794191, 327825712, 345790561, 364739883, 384727628, 405810702, 428049128, 451506220, 476248760, 502347192, 529875818, 558913012, 589541445, 621848316, 655925603, 691870326, 729784819, 769777027, 811960808, 856456260, 903390063, 952895838, 1005114529, 1060194805, 1118293480, 1179575962, 1244216724, 1312399800, 1384319309, 1460180007, 1540197871, 1624600714, 1713628833, 1807535693, 1906588648, 2011069705, 2121276324];
 
-        const expNeededTable = [15,34,57,92,135,372,560,840,1242,1716,2360,3216,4200,5460,7050,8840,11040,13716,16680,20216,24402,28980,34320,40512,47216,54900,63666,73080,83720,95700,108480,122760,138666,155540,174216,194832,216600,240500,266682,294216,324240,356916,391160,428280,468450,510420,555680,604416,655200,709716,748608,789631,832902,878545,926689,977471,1031036,1087536,1147132,1209994,1276301,1346242,1420016,1497832,1579913,1666492,1757815,1854143,1955750,2062925,2175973,2295216,2420993,2553663,2693603,2841212,2996910,3161140,3334370,3517093,3709829,3913127,4127566,4353756,4592341,4844001,5109452,5389449,5684790,5996316,6324914,6671519,7037118,7422752,7829518,8258575,8711144,9188514,9692044,10223168,10783397,11374327,11997640,12655110,13348610,14080113,14851703,15665576,16524049,17429566,18384706,19392187,20454878,21575805,22758159,24005306,25320796,26708375,28171993,29715818,31344244,33061908,34873700,36784778,38800583,40926854,43169645,45535341,48030677,50662758,53439077,56367538,59456479,62714694,66151459,69776558,73600313,77633610,81887931,86375389,91108760,96101520,101367883,106922842,112782213,118962678,125481832,132358236,139611467,147262175,155332142,163844343,172823012,182293713,192283408,202820538,213935103,225658746,238024845,254068606,264827165,279339693,294647508,310794191,327825712,345790561,364739883,384727628,405810702,428049128,451506220,476248760,502347192,529875818,558913012,589541445,621848316,655925603,691870326,729784819,769777027,811960808,856456260,903390063,952895838,1005114529,1060194805,1118293480,1179575962,1244216724,1312399800,1384319309,1460180007,1540197871,1624600714,1713628833,1807535693,1906588648,2011069705,2121276324];
+        const distinctColors = [
+            '#e6194B', '#3cb44b', '#f58231', '#4363d8', '#ffe119',
+            '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
+            '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
+            '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9'
+        ];
+        function getColorByIndex(index) {
+            return distinctColors[index % distinctColors.length];
+        }
 
-        const COLORS = ['#e6194B','#3cb44b','#f58231','#4363d8','#ffe119','#911eb4','#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff','#9A6324','#fffac8','#800000','#aaffc3','#808000','#ffd8b1','#000075','#a9a9a9'];
-        const getColor = i => COLORS[i % COLORS.length];
+        // ==========================================
+        // 🌟 【地圖背景與人物圖片設定區】🌟
+        // ==========================================
+        window.hallOfFameBg = "https://media.discordapp.net/attachments/1491430470876135535/1498705388739104778/dfacb4033b722196ccb2d2bd24a5ba0a.png?ex=69f221a9&is=69f0d029&hm=3efac6e3f2936296c97c672efeff67a81dc8ee0dfa7ab142433fb6c863724f63&=&format=webp&quality=lossless";
 
-        // 預設灰色剪影
-        const DEFAULT_SILHOUETTE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23666'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23666'/></svg>";
+        window.characterImages = {
+            "嘟嘟": "https://i.imgur.com/K3wS12d.png", 
+            "鮭魚": "https://i.imgur.com/K3wS12d.png", 
+            "Someday": "https://i.imgur.com/K3wS12d.png",
+            "屁花花": "https://i.imgur.com/K3wS12d.png",
+            "En104107": "https://i.imgur.com/K3wS12d.png",
+            "奶油虎": "", 
+            "新竹難聊人": "", 
+            "預設": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='30' r='20' fill='%23999'/><path d='M20,100 Q20,50 50,50 Q80,50 80,100 Z' fill='%23999'/></svg>"
+        };
 
-        // 地圖背景
-        window.hallOfFameBg = "https://truth.bahamut.com.tw/s01/201702/6e2ae1858bbb0c591942093d313f9a46.JPG";
-
-        // ========================================================
-        // Firebase 設定
-        // ========================================================
         let firebaseConfig = {};
         if (typeof __firebase_config !== 'undefined') {
-            try { firebaseConfig = JSON.parse(__firebase_config); } catch(e){}
-        }
-        if (!firebaseConfig.apiKey) {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } else {
             firebaseConfig = {
                 apiKey: "AIzaSyCXQE91NPd2A7kfwqezUhHyGIq_ZvLRv0w",
                 authDomain: "maplestory-tracker-5e59d.firebaseapp.com",
                 projectId: "maplestory-tracker-5e59d",
                 storageBucket: "maplestory-tracker-5e59d.firebasestorage.app",
                 messagingSenderId: "892511796693",
-                appId: "1:892511796693:web:eabe9267050972e6eed15c"
+                appId: "1:892511796693:web:eabe9267050972e6eed15c",
+                measurementId: "G-8DS3CPCTQR"
             };
         }
 
-        const APP_ID = 'maplestory-event-app';
-        let app, auth, db;
-        let currentUser = null;
-        let chartInstance = null, dailyChartInstance = null;
+        const appId = 'maplestory-event-app';
+        let app, auth, db, currentUser = null, chartInstance = null, dailyChartInstance = null; 
+        window.allRecords = []; 
+        window.currentRulesText = ""; 
 
-        window.allRecords  = [];
-        window.currentRulesText = "";
-        window.hofSettings = { isPublic: false, positions: {} };
-        window.localHofPositions = {};
-        window.hofCharacters = {};
+        const statusEl = document.getElementById('status');
+        const saveBtn = document.getElementById('saveBtn');
+
         window.isAdmin = false;
-
-        // debounce 防止多個 snapshot 同時觸發重繪
-        let renderTimer = null;
-        function scheduleRender() {
-            clearTimeout(renderTimer);
-            renderTimer = setTimeout(processAndRender, 120);
-        }
-
-        // ========================================================
-        // 工具函式
-        // ========================================================
-        function setStatus(msg, type = '') {
-            const el = document.getElementById('status');
-            el.textContent = msg;
-            el.className = type;
-        }
-
-        function compressImage(src, maxWidth = 800) {
-            return new Promise(resolve => {
-                if (!src) return resolve(null);
-                const img = new Image();
-                img.onload = () => {
-                    const c = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-                    c.width = w; c.height = h;
-                    c.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(c.toDataURL('image/jpeg', 0.6));
-                };
-                img.onerror = () => resolve(null);
-                img.src = src;
-            });
-        }
-
-        function compressPng(src, maxWidth = 350) {
-            return new Promise(resolve => {
-                if (!src) return resolve(null);
-                const img = new Image();
-                img.onload = () => {
-                    const c = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-                    c.width = w; c.height = h;
-                    c.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(c.toDataURL('image/png'));
-                };
-                img.onerror = () => resolve(null);
-                img.src = src;
-            });
-        }
-
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function getTrueTotalExp(lv, exp) {
-            const idx = Math.min(Math.max(lv - 1, 0), expCumulativeTable.length - 1);
-            return expCumulativeTable[idx] + exp;
-        }
-
-        function formatM(val) {
-            return (val / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' M';
-        }
-
-        function getTodayStr() {
-            const d = new Date();
-            return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-        }
-
-        // ========================================================
-        // 管理員模式
-        // ========================================================
         window.enableAdmin = function() {
             if (window.isAdmin) return;
-            const pwd = prompt("請輸入管理員密碼：");
+            const pwd = prompt("請輸入管理員密碼以開啟全域修改權限：");
             if (pwd === "龍王") {
                 window.isAdmin = true;
-                document.getElementById('adminBadge').classList.add('visible');
-                document.getElementById('editRulesBtn').style.display = '';
-                document.getElementById('hofAdminBar').classList.add('visible');
-                alert("👑 管理員模式已開啟！\n\n• 可拖曳榮譽殿堂角色位置\n• 可點擊角色右上角 ⚙️ 設定圖片\n• 可切換殿堂公開狀態\n• 可編輯活動規則");
-                scheduleRender();
+                alert("👑 管理員模式已開啟！你現在可以修改、刪除紀錄，也能替遺漏者進行補登，並可預覽「榮譽殿堂 (名人堂)」。");
+                document.getElementById('editRulesBtn').style.display = 'block'; 
+                processAndRender(); 
             } else if (pwd !== null) {
                 alert("❌ 密碼錯誤");
             }
-        };
+        }
 
-        // ========================================================
-        // 選單控制
-        // ========================================================
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (error) {
+            console.error(error);
+            statusEl.innerText = "❌ 資料庫設定有誤。";
+        }
+
+        if (app) {
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth); 
+                    }
+                } catch (err) { console.error("登入失敗:", err); }
+            };
+
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (!user) return;
+                saveBtn.disabled = false; saveBtn.innerText = "🚀 上傳至資料庫";
+                
+                const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
+                onSnapshot(publicCollection, (snapshot) => {
+                    window.allRecords = [];
+                    snapshot.forEach(doc => { window.allRecords.push({ id: doc.id, ...doc.data() }); });
+                    processAndRender();
+                }, (error) => { console.error("紀錄讀取失敗:", error); });
+
+                const rulesDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules');
+                onSnapshot(rulesDocRef, (docSnap) => {
+                    const rulesEl = document.getElementById('eventRulesText');
+                    if (docSnap.exists() && docSnap.data().text) {
+                        window.currentRulesText = docSnap.data().text;
+                        rulesEl.innerText = window.currentRulesText;
+                    } else {
+                        window.currentRulesText = `即日起04/09到05/27 舉辦活動\n為了各位可以體驗首戰龍王\n"找出獄友 "\n今天報名開始上線貼入你的第一張經驗值當"起點"。\n\n活動規則 :\n每日上線時貼角色等級 經驗值(藏牌偷練)\n統計到5/27日晚上8點前最後一張圖經驗值"總量"\n\n🏆 結算出來經驗值前四名可挑選：\n1. 突襲卷一組 ( 7張 )\n2. 200 雪 (嘟嘟&奶油虎)\n3. 100 瞬移之石(奶油虎)\n4. 周年轉蛋隱藏獎勵(奶油虎-未知)\n**Leo加碼 130 雪**\n**160+ 額外摸彩資格(汪汪150+)，獎品未定**`;
+                        rulesEl.innerText = window.currentRulesText;
+                    }
+                }, (error) => { console.error("規則讀取失敗:", error); });
+
+            });
+            initAuth();
+        }
+
+        window.openEditRulesModal = function() {
+            document.getElementById('editRulesTextarea').value = window.currentRulesText;
+            document.getElementById('editRulesModal').style.display = 'flex';
+        }
+
+        window.saveRules = async function() {
+            const newText = document.getElementById('editRulesTextarea').value.trim();
+            if (!newText) {
+                alert("規則內容不能為空喔！");
+                return;
+            }
+
+            const btn = document.getElementById('saveRulesBtn');
+            btn.disabled = true;
+            btn.innerText = "儲存同步中...";
+
+            try {
+                const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules');
+                await setDoc(settingsDocRef, { text: newText }, { merge: true });
+                
+                document.getElementById('editRulesModal').style.display = 'none';
+                alert("✅ 活動規則已成功更新，並同步給所有人了！");
+            } catch (err) {
+                console.error("儲存規則失敗", err);
+                alert("修改失敗：" + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "💾 儲存規則更新";
+            }
+        }
+
         window.toggleMenu = function() {
-            document.getElementById('sideDrawer').classList.toggle('open');
-            document.getElementById('drawerOverlay').classList.toggle('open');
-        };
-
-        window.closeImgModal = function() {
-            document.getElementById('imgPreviewModal').classList.remove('open');
-            document.getElementById('modalImg').src = '';
-        };
-
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('menuOverlay').classList.toggle('open');
+        }
+        window.closeModal = function() {
+            document.getElementById('imageModal').style.display = 'none';
+            document.getElementById('modalImg').src = "";
+        }
         window.showImage = function(id) {
             const rec = window.allRecords.find(r => r.id === id);
             if (rec && rec.image) {
                 document.getElementById('modalImg').src = rec.image;
-                document.getElementById('imgPreviewModal').classList.add('open');
+                document.getElementById('imageModal').style.display = 'flex';
             } else {
                 alert("此筆紀錄沒有附帶截圖！");
             }
-        };
+        }
 
         window.closeEditModal = function() {
-            document.getElementById('editModal').classList.remove('open');
-        };
-
+            document.getElementById('editModal').style.display = 'none';
+        }
+        
         window.editRecord = function(id) {
             const rec = window.allRecords.find(r => r.id === id);
             if (!rec) return;
@@ -1305,595 +663,145 @@
             document.getElementById('editName').value = rec.name;
             document.getElementById('editLv').value = rec.lv;
             document.getElementById('editExp').value = rec.exp;
+            
             document.getElementById('editImageUpload').value = '';
-            document.getElementById('editModal').classList.add('open');
-        };
-
+            const statusLabel = document.getElementById('editImageStatus');
+            if (rec.image) {
+                statusLabel.innerText = "🖼️ 此紀錄已有截圖，上傳新檔案將會覆蓋。";
+            } else {
+                statusLabel.innerText = "❌ 此紀錄目前無截圖，可上傳補交。";
+            }
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
         window.saveEdit = async function() {
-            const id   = document.getElementById('editId').value;
+            const id = document.getElementById('editId').value;
             const name = document.getElementById('editName').value.trim();
-            const lv   = parseInt(document.getElementById('editLv').value, 10);
-            const exp  = parseInt(document.getElementById('editExp').value, 10);
-            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整資料！"); return; }
+            const lv = parseInt(document.getElementById('editLv').value, 10);
+            const exp = parseInt(document.getElementById('editExp').value, 10);
+            
+            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整的名稱、等級與經驗值！"); return; }
 
             const btn = document.getElementById('saveEditBtn');
-            btn.disabled = true; btn.textContent = "儲存中...";
+            btn.disabled = true; btn.innerText = "儲存中...";
             try {
-                let updateData = { name, lv, exp };
-                const fileInput = document.getElementById('editImageUpload');
-                if (fileInput.files[0]) {
-                    const raw = await fileToBase64(fileInput.files[0]);
-                    updateData.image = await compressImage(raw);
-                }
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'expRecords', id), updateData);
-                window.closeEditModal();
-            } catch(e) { alert("修改失敗：" + e.message); }
-            finally { btn.disabled = false; btn.textContent = "💾 儲存修改"; }
-        };
+                const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
+                let updateData = { name: name, lv: lv, exp: exp };
 
+                const fileInput = document.getElementById('editImageUpload');
+                if (fileInput.files && fileInput.files[0]) {
+                    btn.innerText = "壓縮圖片中...";
+                    const file = fileInput.files[0];
+                    const base64Str = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    
+                    const compressedImg = await compressImage(base64Str);
+                    if (compressedImg) {
+                        updateData.image = compressedImg; 
+                    }
+                }
+
+                btn.innerText = "更新資料庫...";
+                await updateDoc(recordRef, updateData);
+                window.closeEditModal();
+            } catch (err) {
+                console.error("修改失敗", err);
+                alert("修改失敗：" + err.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "💾 儲存修改";
+            }
+        }
+        
         window.deleteRecord = async function(id) {
-            if (!confirm("確定要刪除這筆紀錄嗎？(刪除後無法復原)")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'expRecords', id));
-            } catch(e) { alert("刪除失敗：" + e.message); }
-        };
+            if (confirm("確定要刪除這筆紀錄嗎？(刪除後無法復原)")) {
+                try {
+                    const recordRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', id);
+                    await deleteDoc(recordRef);
+                } catch (err) {
+                    console.error("刪除失敗", err);
+                    alert("刪除失敗：" + err.message);
+                }
+            }
+        }
 
         window.addMissingRecord = function(name, dateStr) {
             document.getElementById('addMissingName').value = name;
             document.getElementById('addMissingDate').value = dateStr;
             document.getElementById('addMissingLv').value = '';
             document.getElementById('addMissingExp').value = '';
-            document.getElementById('addMissingModal').classList.add('open');
-        };
+            document.getElementById('addMissingImageUpload').value = '';
+            document.getElementById('addMissingModal').style.display = 'flex';
+        }
 
         window.saveMissingRecord = async function() {
             const name = document.getElementById('addMissingName').value.trim();
             const dateStr = document.getElementById('addMissingDate').value;
-            const lv   = parseInt(document.getElementById('addMissingLv').value, 10);
-            const exp  = parseInt(document.getElementById('addMissingExp').value, 10);
-            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整資料！"); return; }
+            const lv = parseInt(document.getElementById('addMissingLv').value, 10);
+            const exp = parseInt(document.getElementById('addMissingExp').value, 10);
+
+            if (!name || isNaN(lv) || isNaN(exp)) { alert("請填寫完整的名稱、等級與經驗值！"); return; }
 
             const btn = document.getElementById('saveMissingBtn');
-            btn.disabled = true; btn.textContent = "儲存中...";
+            btn.disabled = true; btn.innerText = "儲存中...";
+
             try {
                 const [month, day] = dateStr.split('/');
-                const ts = new Date(new Date().getFullYear(), parseInt(month)-1, parseInt(day), 12).getTime();
-                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'expRecords'), {
-                    name, lv, exp, image: null, timestamp: ts, userId: currentUser?.uid || 'admin'
-                });
-                document.getElementById('addMissingModal').classList.remove('open');
-                alert("✅ 補登成功！");
-            } catch(e) { alert("補登失敗：" + e.message); }
-            finally { btn.disabled = false; btn.textContent = "💾 儲存補登紀錄"; }
-        };
+                const currentYear = new Date().getFullYear();
+                const targetDate = new Date(currentYear, parseInt(month) - 1, parseInt(day), 12, 0, 0);
 
-        window.openEditRulesModal = function() {
-            document.getElementById('editRulesTextarea').value = window.currentRulesText;
-            document.getElementById('editRulesModal').classList.add('open');
-        };
-
-        window.saveRules = async function() {
-            const text = document.getElementById('editRulesTextarea').value.trim();
-            if (!text) { alert("規則不能為空！"); return; }
-            const btn = document.getElementById('saveRulesBtn');
-            btn.disabled = true; btn.textContent = "儲存中...";
-            try {
-                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'rules'), { text }, { merge: true });
-                document.getElementById('editRulesModal').classList.remove('open');
-            } catch(e) { alert("修改失敗：" + e.message); }
-            finally { btn.disabled = false; btn.textContent = "💾 儲存規則更新"; }
-        };
-
-        // ========================================================
-        // 榮譽殿堂管理
-        // ========================================================
-        window.toggleHofVisibility = async function() {
-            const btn = document.getElementById('toggleHofBtn');
-            btn.disabled = true;
-            try {
-                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'hof'),
-                    { isPublic: !window.hofSettings.isPublic }, { merge: true });
-            } catch(e) { alert("切換失敗: " + e.message); }
-            finally { btn.disabled = false; }
-        };
-
-        window.saveHofPositions = async function() {
-            const btn = document.getElementById('saveHofPosBtn');
-            btn.disabled = true; btn.textContent = "儲存中...";
-            try {
-                const merged = { ...(window.hofSettings.positions || {}), ...window.localHofPositions };
-                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'hof'),
-                    { positions: merged }, { merge: true });
-                window.localHofPositions = {};
-                btn.style.display = 'none';
-            } catch(e) { alert("儲存失敗: " + e.message); }
-            finally { btn.disabled = false; btn.textContent = "💾 儲存排版"; }
-        };
-
-        window.openHofCharModal = function(name) {
-            document.getElementById('hofCharName').value = name;
-            document.getElementById('hofCharUpload').value = '';
-            const data = window.hofCharacters[name] || {};
-            const sz = data.size || 100;
-            document.getElementById('hofCharSize').value = sz;
-            document.getElementById('hofCharSizeVal').textContent = sz;
-            document.getElementById('hofCharModal').classList.add('open');
-        };
-
-        window.saveHofChar = async function() {
-            const name = document.getElementById('hofCharName').value;
-            const size = parseInt(document.getElementById('hofCharSize').value, 10);
-            const fileInput = document.getElementById('hofCharUpload');
-            const btn = document.getElementById('saveHofCharBtn');
-            btn.disabled = true; btn.textContent = "處理中...";
-            try {
-                let finalImage = window.hofCharacters[name]?.image || null;
-                if (fileInput.files[0]) {
-                    const raw = await fileToBase64(fileInput.files[0]);
-                    finalImage = await compressPng(raw, 350);
-                }
-                const ref = doc(db, 'artifacts', APP_ID, 'public', 'data', 'hofCharacters', name);
-                const payload = { size };
-                if (finalImage) payload.image = finalImage;
-                await setDoc(ref, payload, { merge: true });
-                document.getElementById('hofCharModal').classList.remove('open');
-            } catch(e) { alert("儲存失敗: " + e.message); }
-            finally { btn.disabled = false; btn.textContent = "💾 儲存設定"; }
-        };
-
-        window.deleteHofChar = async function() {
-            const name = document.getElementById('hofCharName').value;
-            if (!confirm(`確定要清除 ${name} 的自訂外觀嗎？`)) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'hofCharacters', name));
-                document.getElementById('hofCharModal').classList.remove('open');
-            } catch(e) { alert("刪除失敗：" + e.message); }
-        };
-
-        // 拖曳實作 (管理員)
-        function makeDraggable(el, playerName) {
-            if (!window.isAdmin) return;
-            el.classList.add('admin-draggable');
-            let p1=0,p2=0,p3=0,p4=0;
-            const onDown = e => {
-                e.preventDefault();
-                const ev = e.touches ? e.touches[0] : e;
-                p3 = ev.clientX; p4 = ev.clientY;
-                document.onmouseup = document.ontouchend = onUp;
-                document.onmousemove = document.ontouchmove = onMove;
-            };
-            const onMove = e => {
-                e.preventDefault();
-                const ev = e.touches ? e.touches[0] : e;
-                p1 = p3 - ev.clientX; p2 = p4 - ev.clientY;
-                p3 = ev.clientX; p4 = ev.clientY;
-                el.style.top  = (el.offsetTop  - p2) + 'px';
-                el.style.left = (el.offsetLeft - p1) + 'px';
-            };
-            const onUp = () => {
-                document.onmouseup = document.onmousemove = null;
-                document.ontouchend = document.ontouchmove = null;
-                const container = document.getElementById('hofDragContainer');
-                if (!container) return;
-                // 修正：同一座標系 offsetWidth/offsetHeight
-                const lp = Math.max(0, Math.min(100, (el.offsetLeft / container.offsetWidth) * 100));
-                const tp = Math.max(0, Math.min(100, (el.offsetTop  / container.offsetHeight) * 100));
-                window.localHofPositions[playerName] = { left: lp, top: tp };
-                document.getElementById('saveHofPosBtn').style.display = '';
-            };
-            el.onmousedown = el.ontouchstart = onDown;
-        }
-
-        // ========================================================
-        // 主渲染函式
-        // ========================================================
-        function processAndRender() {
-            try {
-                const todayStr = getTodayStr();
-
-                // 計算每筆紀錄的 trueTotalExp
-                window.allRecords.forEach(r => {
-                    r.trueTotalExp = getTrueTotalExp(r.lv, r.exp);
-                });
-
-                const sorted = [...window.allRecords].sort((a,b) => a.timestamp - b.timestamp);
-
-                // 計算每人首次/最新紀錄與成長量
-                const playerStats = {};
-                sorted.forEach(r => {
-                    if (!playerStats[r.name]) {
-                        playerStats[r.name] = { name: r.name, firstRecord: r, latestRecord: r, expGained: 0 };
-                    } else {
-                        playerStats[r.name].latestRecord = r;
-                        playerStats[r.name].expGained = r.trueTotalExp - playerStats[r.name].firstRecord.trueTotalExp;
-                    }
-                });
-                const leaderboard = Object.values(playerStats).sort((a,b) => b.expGained - a.expGained);
-
-                // ---------- 排行榜 ----------
-                renderLeaderboard(leaderboard);
-
-                // ---------- Nani 挑戰 ----------
-                renderNaniChallenge(leaderboard);
-
-                // ---------- 預估勝率 ----------
-                renderWinRate(leaderboard);
-
-                // ---------- 榮譽殿堂 ----------
-                renderHof(leaderboard);
-
-                // ---------- 統計表 ----------
-                const uniqueNames = [...new Set(sorted.map(r => r.name))];
-                const { baseline, daily } = buildDisplayData(sorted, uniqueNames);
-
-                // 日期集合
-                const dateSet = new Set();
-                const startDate = new Date(2026, 3, 9);
-                const eventEnd  = new Date(2026, 4, 27);
-                const now = new Date(); now.setHours(23,59,59,999);
-                const dispEnd = now < eventEnd ? now : eventEnd;
-                for (let d = new Date(startDate); d <= dispEnd; d.setDate(d.getDate()+1)) {
-                    dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
-                }
-                Object.keys(daily).forEach(d => dateSet.add(d));
-                const dates = Array.from(dateSet).sort();
-
-                renderTable(uniqueNames, baseline, daily, dates, todayStr);
-                renderCharts(uniqueNames, baseline, daily, dates, todayStr);
-
-                // 同步橫向卷軸
-                setTimeout(() => {
-                    const wrap = document.getElementById('tableResponsive');
-                    const topW = document.getElementById('topScrollWrapper');
-                    const topC = document.getElementById('topScrollContent');
-                    const tbl  = document.getElementById('dataTable');
-                    if (tbl && topC && wrap && topW) {
-                        topC.style.width = tbl.scrollWidth + 'px';
-                        topW.onscroll = () => { wrap.scrollLeft = topW.scrollLeft; };
-                        wrap.onscroll = () => { topW.scrollLeft = wrap.scrollLeft; };
-                    }
-                }, 100);
-
-            } catch(err) {
-                console.error("渲染錯誤:", err);
-                setStatus("❌ 畫面渲染失敗，請重整網頁。", "error");
-            }
-        }
-
-        function buildDisplayData(sorted, uniqueNames) {
-            const baseline = {}, daily = {};
-            uniqueNames.forEach(name => {
-                const recs = sorted.filter(r => r.name === name);
-                if (recs.length > 0) {
-                    baseline[name] = recs[0];
-                    for (let i = 1; i < recs.length; i++) {
-                        const r = recs[i];
-                        const d = new Date(r.timestamp);
-                        const ds = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-                        if (!daily[ds]) daily[ds] = {};
-                        daily[ds][name] = r;
-                    }
-                }
-            });
-            return { baseline, daily };
-        }
-
-        function renderLeaderboard(leaderboard) {
-            const el = document.getElementById('leaderboardList');
-            if (!el) return;
-            if (!leaderboard.length) { el.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">目前還沒有人上傳紀錄喔！</div>'; return; }
-            el.innerHTML = leaderboard.slice(0,5).map((p,i) => {
-                const latest = p.latestRecord;
-                const lvIdx = Math.min(Math.max(latest.lv-1,0), expNeededTable.length-1);
-                const pct = expNeededTable[lvIdx] ? ((latest.exp / expNeededTable[lvIdx])*100).toFixed(1) : '0.0';
-                const rankClass = ['rank-1','rank-2','rank-3'][i] || 'rank-n';
-                return `<div class="leaderboard-item">
-                    <div class="rank-badge ${rankClass}">${i+1}</div>
-                    <div style="flex:1;">
-                        <div class="player-name">${p.name}</div>
-                        <div class="player-meta">LV ${latest.lv} · ${pct}%</div>
-                    </div>
-                    <div class="player-gain" title="+${p.expGained.toLocaleString()} EXP">🔥 +${formatM(p.expGained)}</div>
-                </div>`;
-            }).join('');
-        }
-
-        function renderNaniChallenge(leaderboard) {
-            const el = document.getElementById('naniChallenge');
-            if (!el) return;
-            const naniData = leaderboard.find(p => p.name?.toLowerCase() === 'nani');
-            if (!naniData) {
-                el.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">尚未加入紀錄</div>';
-                return;
-            }
-            const latest = naniData.latestRecord;
-            const startLv = 134;
-            const isAchieved = latest.lv >= 150;
-            if (isAchieved) {
-                el.innerHTML = `<div style="font-size:60px; animation: pulse 1.5s infinite; margin:8px 0;">🔥</div>
-                    <div class="nani-lv">LV ${latest.lv} — 目標達成！</div>
-                    <div class="nani-status">🎊 恭喜 Nani 達成 LV 150 目標！</div>
-                    <div class="nani-exp">累積: +${formatM(naniData.expGained)}</div>`;
-            } else {
-                const lvg = Math.max(0, latest.lv - startLv);
-                const fires = lvg > 0 ? '🔥'.repeat(lvg) : '🌱';
-                el.innerHTML = `<div class="nani-fires">${fires}</div>
-                    <div class="nani-lv">目前 LV ${latest.lv}</div>
-                    <div class="nani-status">🏃 努力衝刺中...</div>
-                    <div class="nani-exp">累積: +${formatM(naniData.expGained)}</div>`;
-            }
-        }
-
-        function renderWinRate(leaderboard) {
-            const el = document.getElementById('bettingList');
-            if (!el) return;
-            if (!leaderboard.length) { el.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">目前無賽況資料。</div>'; return; }
-            const total = leaderboard.reduce((s,p) => s + p.expGained, 0) || 1;
-            el.innerHTML = leaderboard.map((p,i) => {
-                const rate = ((p.expGained / total) * 100) || (100 / leaderboard.length);
-                const rankClass = ['rank-1','rank-2','rank-3'][i] || 'rank-n';
-                return `<div class="leaderboard-item">
-                    <div class="rank-badge ${rankClass}">${i+1}</div>
-                    <div style="flex:1;">
-                        <div class="player-name">${p.name}</div>
-                        <div class="win-rate-bar"><div class="win-rate-fill" style="width:${Math.min(rate,100)}%"></div></div>
-                    </div>
-                    <div style="color:var(--gold); font-size:12px; font-weight:700; margin-left:8px; flex-shrink:0;">${rate.toFixed(1)}%</div>
-                </div>`;
-            }).join('');
-        }
-
-        function renderHof(leaderboard) {
-            const container = document.getElementById('hallOfFameContainer');
-            const titleEl   = document.getElementById('hofCardTitle');
-            const toggleBtn = document.getElementById('toggleHofBtn');
-            if (!container) return;
-
-            if (toggleBtn) {
-                if (window.hofSettings.isPublic) {
-                    toggleBtn.textContent = '🟢 已公開（點擊隱藏）';
-                    toggleBtn.className = 'btn btn-sm';
-                    toggleBtn.style.cssText = 'background:rgba(46,204,113,0.15);border:1px solid rgba(46,204,113,0.4);color:#2ecc71;';
-                } else {
-                    toggleBtn.textContent = '👁️ 設為公開';
-                    toggleBtn.className = 'btn btn-ghost btn-sm';
-                    toggleBtn.style.cssText = '';
-                }
-            }
-
-            if (!window.isAdmin && !window.hofSettings.isPublic) {
-                if (titleEl) titleEl.textContent = '🏆 榮譽殿堂（開發中）';
-                container.innerHTML = `<div class="hof-closed">
-                    <div class="hof-closed-icon">🚧</div>
-                    <div class="hof-closed-title">榮譽殿堂 尚未開放</div>
-                    <div class="hof-closed-sub">名次結算中，敬請期待！</div>
-                </div>`;
-                return;
-            }
-
-            if (titleEl) {
-                titleEl.textContent = window.hofSettings.isPublic ? '🏆 榮譽殿堂' : '🏆 榮譽殿堂（管理員預覽）';
-            }
-
-            const defaultPositions = [{l:50,t:35},{l:30,t:55},{l:70,t:55}];
-            let html = `<div id="hofDragContainer" style="background-image:url('${window.hallOfFameBg}'); background-size:cover; background-position:center bottom;">`;
-
-            if (!leaderboard.length) {
-                html += '<div style="color:#fff; text-align:center; position:absolute; width:100%; top:42%; font-weight:700; text-shadow:2px 2px 4px #000;">目前尚無角色紀錄，快來搶頭香！</div>';
-            } else {
-                leaderboard.forEach((player, i) => {
-                    const charData = window.hofCharacters[player.name] || {};
-                    const imgSrc = charData.image || DEFAULT_SILHOUETTE;
-                    const defH = i === 0 ? 130 : i <= 2 ? 110 : 80;
-                    const h = charData.size || defH;
-                    const editBtn = window.isAdmin
-                        ? `<button class="hof-char-edit-btn" onmousedown="event.stopPropagation();" ontouchstart="event.stopPropagation();" onclick="openHofCharModal('${player.name}')">⚙️</button>`
-                        : '';
-                    let pos;
-                    if (window.localHofPositions[player.name]) {
-                        pos = { l: window.localHofPositions[player.name].left, t: window.localHofPositions[player.name].top };
-                    } else if (window.hofSettings.positions?.[player.name]) {
-                        pos = { l: window.hofSettings.positions[player.name].left, t: window.hofSettings.positions[player.name].top };
-                    } else {
-                        pos = i < 3 ? defaultPositions[i] : { l: 10 + ((i-3)*18)%80, t: 92 };
-                    }
-                    html += `<div class="draggable-char" id="hof_${i}" data-name="${player.name}" style="left:${pos.l}%;top:${pos.t}%;">
-                        ${editBtn}
-                        <div class="speech-bubble">LV ${player.latestRecord.lv}<br>${player.name}</div>
-                        <img src="${imgSrc}" class="char-img" style="height:${h}px;" alt="${player.name}" draggable="false">
-                        <div class="stage-name-tag">${player.name}</div>
-                    </div>`;
-                });
-            }
-            html += '</div>';
-            container.innerHTML = html;
-
-            if (window.isAdmin) {
-                setTimeout(() => {
-                    document.querySelectorAll('.draggable-char').forEach(el => {
-                        makeDraggable(el, el.dataset.name);
+                let proofImg = null;
+                const fileInput = document.getElementById('addMissingImageUpload');
+                if (fileInput.files && fileInput.files[0]) {
+                    btn.innerText = "壓縮圖片中...";
+                    const file = fileInput.files[0];
+                    const base64Str = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
                     });
-                }, 0);
-            }
-        }
-
-        function renderCell(rec, dailyGain, cellDate, cellName) {
-            if (!rec) {
-                let extra = '';
-                if (window.isAdmin && cellDate && cellName) {
-                    extra = `<br><span class="action-link" onclick="addMissingRecord('${cellName}','${cellDate}')" title="補登此日">➕補登</span>`;
+                    proofImg = await compressImage(base64Str);
                 }
-                return `<td class="empty">—${extra}</td>`;
-            }
-            const imgLink  = rec.image ? `<a class="img-link" onclick="showImage('${rec.id}')" title="查看截圖">🖼️</a>` : '';
-            const canEdit  = (currentUser && rec.userId === currentUser.uid) || window.isAdmin;
-            const actions  = canEdit ? `<span class="action-link" onclick="editRecord('${rec.id}')" title="修改">✏️</span><span class="action-link" onclick="deleteRecord('${rec.id}')" title="刪除">🗑️</span>` : '';
-            const gainHtml = dailyGain !== null
-                ? `<br><span class="gain-text">+${formatM(dailyGain)}</span>`
-                : '';
-            return `<td>LV ${rec.lv}<br><span style="color:var(--text-muted); font-size:11px;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actions}</td>`;
-        }
 
-        function renderTable(uniqueNames, baseline, daily, dates, todayStr) {
-            const tbl = document.getElementById('dataTable');
-            if (!tbl) return;
-            if (!uniqueNames.length) {
-                tbl.innerHTML = '<tr><td style="text-align:center;color:var(--text-muted);padding:20px;">尚無資料</td></tr>';
-                return;
-            }
-            let html = `<thead><tr><th>#</th><th>日期</th>${uniqueNames.map(n=>`<th>${n}</th>`).join('')}</tr></thead><tbody>`;
-            html += `<tr><td class="row-head">1</td><td class="row-head" style="color:var(--gold);">🚀 04/09 起點</td>${uniqueNames.map(n=>renderCell(baseline[n],null,null,null)).join('')}</tr>`;
-            const prevExp = {};
-            uniqueNames.forEach(n => { prevExp[n] = baseline[n]?.trueTotalExp ?? 0; });
-            let no = 2;
-            dates.forEach(date => {
-                html += `<tr><td class="row-head">${no}</td><td class="row-head">${date}</td>`;
-                uniqueNames.forEach(n => {
-                    const rec = daily[date]?.[n] ?? null;
-                    let gain = null;
-                    if (rec) { gain = rec.trueTotalExp - prevExp[n]; prevExp[n] = rec.trueTotalExp; }
-                    html += renderCell(rec, gain, date, n);
+                btn.innerText = "新增至資料庫...";
+                const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
+                await addDoc(publicCollection, { 
+                    name: name, 
+                    lv: lv, 
+                    exp: exp, 
+                    image: proofImg, 
+                    timestamp: targetDate.getTime(), 
+                    userId: currentUser ? currentUser.uid : 'admin_retroactive'
                 });
-                html += '</tr>';
-                no++;
-            });
-            html += '</tbody>';
-            tbl.innerHTML = html;
-        }
 
-        function renderCharts(uniqueNames, baseline, daily, dates, todayStr) {
-            const labels = ['起點', ...dates];
-            const byName = {};
-            const lastExp = {}, lastLv = {};
-
-            uniqueNames.forEach(n => {
-                byName[n] = { expGained: [], dailyGain: [], lv: [] };
-                const b = baseline[n];
-                if (b) {
-                    byName[n].expGained.push(0);
-                    byName[n].dailyGain.push(0);
-                    byName[n].lv.push(b.lv);
-                    lastExp[n] = b.trueTotalExp;
-                    lastLv[n]  = b.lv;
-                } else {
-                    byName[n].expGained.push(null);
-                    byName[n].dailyGain.push(0);
-                    byName[n].lv.push(null);
-                    lastExp[n] = 0; lastLv[n] = null;
-                }
-            });
-
-            dates.forEach(date => {
-                uniqueNames.forEach(n => {
-                    const rec = daily[date]?.[n] ?? null;
-                    if (rec) {
-                        const gained = baseline[n] ? rec.trueTotalExp - baseline[n].trueTotalExp : 0;
-                        byName[n].expGained.push(gained);
-                        byName[n].dailyGain.push(rec.trueTotalExp - lastExp[n]);
-                        byName[n].lv.push(rec.lv);
-                        lastExp[n] = rec.trueTotalExp;
-                        lastLv[n]  = rec.lv;
-                    } else if (date !== todayStr && lastExp[n] && baseline[n]) {
-                        byName[n].expGained.push(lastExp[n] - baseline[n].trueTotalExp);
-                        byName[n].dailyGain.push(0);
-                        byName[n].lv.push(lastLv[n]);
-                    } else {
-                        byName[n].expGained.push(null);
-                        byName[n].dailyGain.push(0);
-                        byName[n].lv.push(null);
-                    }
-                });
-            });
-
-            const chartConfig = { responsive: true, spanGaps: true, plugins: { legend: { labels: { color: '#8a8499', font: { size: 11 } } }, tooltip: { callbacks: { label(ctx) {
-                const n = ctx.dataset.label;
-                const lv = ctx.dataset.lvData?.[ctx.dataIndex];
-                return ` ${n} | LV ${lv ?? '-'} | ${(ctx.parsed.y/1e6).toFixed(2)} M`;
-            }}}}};
-
-            const expCtx = document.getElementById('expChart');
-            if (expCtx) {
-                if (chartInstance) chartInstance.destroy();
-                chartInstance = new Chart(expCtx, {
-                    type: 'line',
-                    data: {
-                        labels,
-                        datasets: uniqueNames.map((n,i) => ({
-                            label: n,
-                            data: byName[n].expGained,
-                            borderColor: getColor(i),
-                            backgroundColor: getColor(i) + '22',
-                            borderWidth: 2, pointRadius: 4, fill: false, tension: 0.3,
-                            lvData: byName[n].lv
-                        }))
-                    },
-                    options: { ...chartConfig, scales: { x: { ticks: { color: '#4a4660', font:{size:10} } }, y: { min:0, ticks: { color:'#4a4660', callback: v => formatM(v) }, grid: { color:'rgba(255,255,255,0.04)' } } } }
-                });
-            }
-
-            // 每日圖 — 找當日或最後一天的資料
-            const todayIdx = dates.indexOf(todayStr);
-            const dataIdx  = (todayIdx === -1 ? dates.length-1 : todayIdx) + 1;
-            const displayDate = dates[dataIdx-1] || todayStr;
-            const el = document.getElementById('dailyChartTitle');
-            if (el) el.textContent = `📈 每日經驗增長長條圖（${displayDate} 單日增加量）`;
-
-            const dailyList = uniqueNames.map((n,i) => ({
-                name: n, lv: byName[n].lv[dataIdx] ?? lastLv[n],
-                gain: byName[n].dailyGain[dataIdx] ?? 0,
-                color: getColor(i)
-            })).sort((a,b) => b.gain - a.gain);
-
-            const dCtx = document.getElementById('dailyExpChart');
-            if (dCtx) {
-                if (dailyChartInstance) dailyChartInstance.destroy();
-                dailyChartInstance = new Chart(dCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: dailyList.map(d => d.name),
-                        datasets: [{ label: '單日增加 (EXP)', data: dailyList.map(d => d.gain),
-                            backgroundColor: dailyList.map(d => d.color + 'cc'),
-                            borderColor: dailyList.map(d => d.color),
-                            borderWidth: 1, lvData: dailyList.map(d => d.lv) }]
-                    },
-                    options: { responsive: true, plugins: { legend:{display:false}, tooltip: { callbacks: { label(ctx) {
-                        const lv = ctx.dataset.lvData?.[ctx.dataIndex];
-                        return ` LV ${lv ?? '-'} | 今日 +${(ctx.parsed.y/1e6).toFixed(2)} M`;
-                    }}}},
-                    scales: { x: {ticks:{color:'#4a4660',font:{size:10}}}, y: {min:0, ticks:{color:'#4a4660',callback:v=>formatM(v)}, grid:{color:'rgba(255,255,255,0.04)'}} } }
-                });
+                document.getElementById('addMissingModal').style.display = 'none';
+                alert("✅ 補登成功！");
+            } catch (err) {
+                console.error("補登失敗", err);
+                alert("補登失敗：" + err.message);
+            } finally {
+                btn.disabled = false; btn.innerText = "💾 儲存補登紀錄";
             }
         }
 
-        // ========================================================
-        // 經驗對照表
-        // ========================================================
-        function renderExpTable() {
-            const tbody = document.querySelector('#referenceExpTable tbody');
-            if (!tbody) return;
-            let html = '';
-            for (let i=0; i<200; i++) {
-                const lv = i+1;
-                const needed = expNeededTable[i] ?? '-';
-                const cum    = expCumulativeTable[i] ?? '-';
-                const mult   = i > 0 && expNeededTable[i] && expNeededTable[i-1]
-                    ? (expNeededTable[i]/expNeededTable[i-1]).toFixed(2) : '—';
-                html += `<tr><td style="color:var(--gold); font-weight:700;">LV ${lv}</td><td>${needed !== '-' ? needed.toLocaleString() : '-'}</td><td>${cum !== '-' ? cum.toLocaleString() : '-'}</td><td>${mult}</td></tr>`;
-            }
-            tbody.innerHTML = html;
+        window.openExpTableModal = function() {
+            document.getElementById('expTableModal').style.display = 'flex';
         }
-        renderExpTable();
 
-        // ========================================================
-        // OCR 擷取
-        // ========================================================
+        window.closeExpTableModal = function() {
+            document.getElementById('expTableModal').style.display = 'none';
+        }
+
         const canvas = document.getElementById('screenCanvas');
-        const ctx2d  = canvas.getContext('2d');
-        let baseImage = new Image(), isDrawing = false, sx=0, sy=0, cx2=0, cy2=0, selection=null;
+        const ctx = canvas.getContext('2d');
+        let baseImage = new Image(), isDrawing = false, startX, startY, currentX, currentY, selectionRect = null; 
 
         document.getElementById('captureBtn').addEventListener('click', async () => {
             try {
-                setStatus("請選擇遊戲視窗...");
+                statusEl.innerText = "請選擇遊戲視窗...";
                 const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 const video = document.createElement('video');
                 video.srcObject = stream;
@@ -1901,301 +809,824 @@
                     video.play();
                     setTimeout(() => {
                         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-                        ctx2d.drawImage(video, 0, 0);
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                         baseImage.src = canvas.toDataURL();
-                        stream.getTracks().forEach(t => t.stop());
-                        showOcr();
-                        setStatus("✅ 擷取成功！請用滑鼠在圖片上框選數值。", "success");
+                        stream.getTracks().forEach(track => track.stop());
+                        showCanvas();
+                        statusEl.innerText = "✅ 擷取成功！請用滑鼠在圖片上框選數值。";
                     }, 500);
                 };
-            } catch {
-                setStatus("❌ 無法取得畫面，請允許螢幕分享權限。", "error");
-            }
+            } catch (err) { statusEl.innerText = "❌ 無法取得畫面，請允許螢幕分享權限。"; }
         });
 
         document.getElementById('imageUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = ev => {
-                baseImage.onload = () => {
+            reader.onload = function(event) {
+                baseImage.onload = function() {
                     canvas.width = baseImage.width; canvas.height = baseImage.height;
-                    ctx2d.drawImage(baseImage, 0, 0);
-                    showOcr();
-                    setStatus("✅ 圖片上傳成功！請用滑鼠在圖片上框選數值。", "success");
-                    toggleMenu();
-                };
-                baseImage.src = ev.target.result;
+                    ctx.drawImage(baseImage, 0, 0);
+                    showCanvas();
+                    statusEl.innerText = "✅ 圖片上傳成功！請用滑鼠在圖片上框選數值。";
+                    toggleMenu(); 
+                }
+                baseImage.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
 
-        function showOcr() {
+        function showCanvas() {
             document.getElementById('canvasContainer').style.display = 'block';
-            document.getElementById('ocrToolbar').classList.add('visible');
+            document.getElementById('ocrToolbar').style.display = 'block';
         }
 
-        canvas.addEventListener('mousedown', e => {
-            const r = canvas.getBoundingClientRect();
-            const scX = canvas.width / r.width, scY = canvas.height / r.height;
-            sx = (e.clientX - r.left) * scX; sy = (e.clientY - r.top) * scY;
-            isDrawing = true; selection = null;
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect(); 
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            startX = (e.clientX - rect.left) * scaleX; 
+            startY = (e.clientY - rect.top) * scaleY;
+            isDrawing = true; selectionRect = null; 
         });
-        canvas.addEventListener('mousemove', e => {
+        canvas.addEventListener('mousemove', (e) => {
             if (!isDrawing) return;
-            const r = canvas.getBoundingClientRect();
-            const scX = canvas.width / r.width, scY = canvas.height / r.height;
-            cx2 = (e.clientX - r.left) * scX; cy2 = (e.clientY - r.top) * scY;
-            ctx2d.clearRect(0,0,canvas.width,canvas.height);
-            ctx2d.drawImage(baseImage, 0, 0);
-            ctx2d.strokeStyle = '#c9a84c'; ctx2d.lineWidth = Math.max(2, canvas.width/400);
-            ctx2d.strokeRect(sx, sy, cx2-sx, cy2-sy);
-            ctx2d.fillStyle = 'rgba(201,168,76,0.12)';
-            ctx2d.fillRect(sx, sy, cx2-sx, cy2-sy);
+            const rect = canvas.getBoundingClientRect(); 
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            currentX = (e.clientX - rect.left) * scaleX; 
+            currentY = (e.clientY - rect.top) * scaleY;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(baseImage, 0, 0);
+            ctx.strokeStyle = "red"; ctx.lineWidth = Math.max(2, canvas.width/500); 
+            ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+            ctx.fillStyle = "rgba(255, 0, 0, 0.2)"; ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
         });
-        canvas.addEventListener('mouseup', () => {
-            isDrawing = false;
-            const w = Math.abs(cx2-sx), h = Math.abs(cy2-sy);
-            if (w>5 && h>5) selection = { x:Math.min(sx,cx2), y:Math.min(sy,cy2), w, h };
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDrawing) return; isDrawing = false;
+            const width = Math.abs(currentX - startX), height = Math.abs(currentY - startY);
+            const x = Math.min(startX, currentX), y = Math.min(startY, currentY);
+            if (width > 5 && height > 5) selectionRect = { x, y, w: width, h: height };
         });
 
         async function recognizeSelected(type) {
-            if (!selection) { setStatus("❌ 請先用滑鼠在圖片上畫出框框！", "error"); return; }
-            setStatus("⏳ 辨識中，請稍候...");
-            const tmp = document.createElement('canvas');
-            tmp.width = selection.w; tmp.height = selection.h;
-            tmp.getContext('2d').drawImage(baseImage, selection.x, selection.y, selection.w, selection.h, 0, 0, selection.w, selection.h);
+            if (!selectionRect) { statusEl.innerText = "❌ 請先用滑鼠在圖片上畫出紅框！"; return; }
+            statusEl.innerText = "⏳ 正在辨識框選區域，請稍候...";
+            const tempCanvas = document.createElement('canvas'); tempCanvas.width = selectionRect.w; tempCanvas.height = selectionRect.h;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(baseImage, selectionRect.x, selectionRect.y, selectionRect.w, selectionRect.h, 0, 0, selectionRect.w, selectionRect.h);
             try {
-                const lang = type === 'name' ? 'eng+chi_tra' : 'eng';
-                const res  = await Tesseract.recognize(tmp.toDataURL(), lang);
-                let text   = res.data.text.trim();
+                const lang = (type === 'name') ? 'eng+chi_tra' : 'eng';
+                const result = await Tesseract.recognize(tempCanvas.toDataURL(), lang);
+                let text = result.data.text.trim();
+                
                 if (type === 'name') {
-                    document.getElementById('nameInput').value = text.replace(/[\r\n]+/g,'');
+                    document.getElementById('nameInput').value = text.replace(/[\r\n]+/g, '');
                 } else if (type === 'lv') {
-                    document.getElementById('lvInput').value = text.replace(/\D/g,'');
-                } else {
-                    const m = text.replace(/,/g,'').match(/\d+/);
-                    document.getElementById('expInput').value = m ? m[0] : '';
+                    document.getElementById('lvInput').value = text.replace(/\D/g, ''); 
+                } else if (type === 'exp') {
+                    text = text.replace(/,/g, ''); 
+                    const match = text.match(/\d+/);
+                    document.getElementById('expInput').value = match ? match[0] : '';
                 }
-                setStatus("✅ 辨識完成！可繼續框選或直接上傳。", "success");
-            } catch {
-                setStatus("❌ 辨識失敗，請重試或手動輸入。", "error");
-            }
+                statusEl.innerText = "✅ 辨識完成！可繼續框選，直接上傳。";
+            } catch (error) { statusEl.innerText = "❌ 辨識失敗，請重試或手動輸入。"; }
         }
 
         document.getElementById('btnName').addEventListener('click', () => recognizeSelected('name'));
-        document.getElementById('btnLv').addEventListener('click',   () => recognizeSelected('lv'));
-        document.getElementById('btnExp').addEventListener('click',  () => recognizeSelected('exp'));
+        document.getElementById('btnLv').addEventListener('click', () => recognizeSelected('lv'));
+        document.getElementById('btnExp').addEventListener('click', () => recognizeSelected('exp'));
 
-        // ========================================================
-        // 上傳
-        // ========================================================
-        document.getElementById('saveBtn').addEventListener('click', async () => {
+        function compressImage(imgSrc, maxWidth = 800) {
+            return new Promise((resolve) => {
+                if (!imgSrc) return resolve(null);
+                const img = new Image();
+                img.onload = () => {
+                    const tempCanvas = document.createElement('canvas');
+                    let width = img.width, height = img.height;
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                    tempCanvas.width = width; tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    resolve(tempCanvas.toDataURL('image/jpeg', 0.6)); 
+                };
+                img.onerror = () => resolve(null);
+                img.src = imgSrc;
+            });
+        }
+
+        saveBtn.addEventListener('click', async () => {
             const name = document.getElementById('nameInput').value.trim();
-            const lv   = parseInt(document.getElementById('lvInput').value, 10);
-            const exp  = parseInt(document.getElementById('expInput').value, 10);
-            if (!name || isNaN(lv) || isNaN(exp)) { setStatus("❌ 請填寫完整的名稱、等級與經驗值！", "error"); return; }
-            if (!currentUser) { setStatus("❌ 資料庫尚未連線，無法上傳。", "error"); return; }
+            const lv = parseInt(document.getElementById('lvInput').value, 10);
+            const exp = parseInt(document.getElementById('expInput').value, 10); 
 
-            const btn = document.getElementById('saveBtn');
-            btn.disabled = true;
+            if (!name || isNaN(lv) || isNaN(exp)) { statusEl.innerText = "❌ 請填寫完整的名稱、等級與經驗值！"; return; }
+            if (!currentUser) { statusEl.innerText = "❌ 資料庫尚未連線，無法上傳。"; return; }
 
+            saveBtn.disabled = true;
             try {
-                const todayStr  = getTodayStr();
-                const userRecs  = window.allRecords.filter(r => r.userId === currentUser.uid).sort((a,b) => a.timestamp-b.timestamp);
-                const isFirst   = userRecs.length === 0;
-
-                let existingId = null;
-                if (!isFirst) {
-                    for (let i=1; i<userRecs.length; i++) {
-                        const d = new Date(userRecs[i].timestamp);
-                        const ds = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-                        if (ds === todayStr) existingId = userRecs[i].id;
+                const userRecords = window.allRecords.filter(r => r.userId === currentUser.uid).sort((a, b) => a.timestamp - b.timestamp);
+                const isFirstEver = userRecords.length === 0;
+                const todayStr = `${String(new Date().getMonth()+1).padStart(2,'0')}/${String(new Date().getDate()).padStart(2,'0')}`;
+                
+                let existingDailyId = null;
+                if (!isFirstEver) {
+                    for (let i = 1; i < userRecords.length; i++) { 
+                        const rDate = new Date(userRecords[i].timestamp);
+                        const rDateStr = `${String(rDate.getMonth()+1).padStart(2,'0')}/${String(rDate.getDate()).padStart(2,'0')}`;
+                        if (rDateStr === todayStr) {
+                            existingDailyId = userRecords[i].id; 
+                        }
                     }
                 }
 
                 let proofImg = null;
-                if (baseImage.src && baseImage.src.length > 10) {
-                    setStatus("⏳ 壓縮截圖中...");
+                if (baseImage.src) {
+                    statusEl.innerText = existingDailyId ? "⏳ 正在覆蓋今日截圖並上傳..." : "⏳ 正在壓縮截圖並新增紀錄...";
                     proofImg = await compressImage(baseImage.src);
-                }
-
-                const payload = { name, lv, exp, image: proofImg, timestamp: Date.now(), userId: currentUser.uid };
-
-                if (existingId) {
-                    setStatus("⏳ 覆蓋今日紀錄...");
-                    await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'expRecords', existingId), payload);
                 } else {
-                    setStatus("⏳ 新增紀錄...");
-                    await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'expRecords'), payload);
+                    statusEl.innerText = existingDailyId ? "⏳ 正在覆蓋今日紀錄 (無截圖)..." : "⏳ 正在新增紀錄 (無截圖)...";
                 }
 
-                setStatus("✅ 上傳成功！圖表與排行榜已更新。", "success");
-                document.getElementById('lvInput').value  = '';
-                document.getElementById('expInput').value = '';
-                baseImage.src = '';
+                if (existingDailyId) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'expRecords', existingDailyId);
+                    await updateDoc(docRef, { name: name, lv: lv, exp: exp, image: proofImg, timestamp: Date.now() });
+                } else {
+                    const publicCollection = collection(db, 'artifacts', appId, 'public', 'data', 'expRecords');
+                    await addDoc(publicCollection, { 
+                        name: name, lv: lv, exp: exp, 
+                        image: proofImg, 
+                        timestamp: Date.now(), userId: currentUser.uid 
+                    });
+                }
+                
+                statusEl.innerText = "✅ 上傳成功！圖表與排行榜已更新。";
+                document.getElementById('lvInput').value = ''; document.getElementById('expInput').value = '';
+                baseImage.src = ''; 
                 document.getElementById('canvasContainer').style.display = 'none';
-            } catch(err) {
-                console.error(err);
-                setStatus("❌ 上傳失敗，請檢查網路或聯繫管理員。", "error");
-            } finally {
-                btn.disabled = false;
-            }
+            } catch (err) {
+                console.error("儲存失敗", err); statusEl.innerText = "❌ 上傳失敗，檔案可能過大或連線異常。";
+            } finally { saveBtn.disabled = false; }
         });
 
-        // ========================================================
-        // Firebase 初始化
-        // ========================================================
-        try {
-            app  = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db   = getFirestore(app);
-        } catch(e) {
-            console.error(e);
-            setStatus("❌ 資料庫設定有誤。", "error");
+        function renderReferenceExpTable() {
+            const tbody = document.querySelector('#referenceExpTableInside tbody');
+            if (!tbody || !expNeededTable || !expCumulativeTable) return;
+            
+            let html = '';
+            for (let i = 0; i < 200; i++) {
+                const lv = i + 1;
+                const needed = expNeededTable[i];
+                const cumulative = expCumulativeTable[i];
+                
+                let multiplier = '-';
+                if (i > 0) {
+                    multiplier = (needed / expNeededTable[i - 1]).toFixed(2);
+                }
+                
+                html += `<tr>
+                    <td style="font-weight: bold; background-color: #f9f9f9;">LV ${lv}</td>
+                    <td>${needed ? needed.toLocaleString() : '-'}</td>
+                    <td>${cumulative !== undefined ? cumulative.toLocaleString() : '-'}</td>
+                    <td>${multiplier}</td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
         }
 
-        if (app) {
-            const initAuth = async () => {
-                setStatus("⏳ 正在連接雲端資料庫...");
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        try { await signInWithCustomToken(auth, __initial_auth_token); }
-                        catch { await signInAnonymously(auth); }
+        renderReferenceExpTable();
+
+        // 🌟 這裡加上了 try...catch，萬一有錯才不會卡死
+        function processAndRender() {
+            try {
+                if (!expCumulativeTable || !expNeededTable) return; 
+
+                window.allRecords.forEach(r => {
+                    const lvIndex = Math.min(Math.max(r.lv - 1, 0), 199);
+                    r.trueTotalExp = expCumulativeTable[lvIndex] + r.exp;
+                });
+
+                const sortedRecords = [...window.allRecords].sort((a, b) => a.timestamp - b.timestamp);
+                
+                const playerStats = {};
+                sortedRecords.forEach(r => {
+                    if (!playerStats[r.name]) {
+                        playerStats[r.name] = {
+                            name: r.name,
+                            firstRecord: r, 
+                            latestRecord: r, 
+                            expGained: 0 
+                        };
                     } else {
-                        await signInAnonymously(auth);
+                        playerStats[r.name].latestRecord = r; 
+                        playerStats[r.name].expGained = r.trueTotalExp - playerStats[r.name].firstRecord.trueTotalExp;
                     }
-                } catch(err) {
-                    setStatus(`❌ 資料庫連線失敗！${err.message}`, "error");
+                });
+
+                const leaderboard = Object.values(playerStats).sort((a, b) => b.expGained - a.expGained);
+
+                const listEl = document.getElementById('leaderboardList'); listEl.innerHTML = '';
+                const top5 = leaderboard.slice(0, 5);
+                if (top5.length === 0) { listEl.innerHTML = '<li>目前還沒有人上傳紀錄喔！</li>'; } 
+                else {
+                    top5.forEach((player, index) => {
+                        const latest = player.latestRecord;
+                        const lvIndex = Math.min(Math.max(latest.lv - 1, 0), 199);
+                        const percentage = ((latest.exp / expNeededTable[lvIndex]) * 100).toFixed(2);
+                        const expGainedM = (player.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
+                        
+                        const li = document.createElement('li'); li.className = 'leaderboard-item';
+                        li.innerHTML = `
+                            <span class="rank">${index + 1}</span>
+                            <div class="player-info"><strong>${player.name}</strong></div>
+                            <div class="player-lv">LV ${latest.lv} (${percentage}%)<br>
+                            <span title="詳細成長量: +${player.expGained.toLocaleString()} EXP" style="color:#d35400; font-weight:bold; font-size:0.85em; cursor:help;">
+                                🔥 成長: +${expGainedM} M EXP
+                            </span>
+                            </div>`;
+                        listEl.appendChild(li);
+                    });
                 }
-            };
 
-            onAuthStateChanged(auth, user => {
-                currentUser = user;
-                if (!user) { setStatus("⏳ 等待驗證..."); return; }
-                const saveBtn = document.getElementById('saveBtn');
-                saveBtn.disabled = false;
-                saveBtn.textContent = '🚀 上傳至資料庫';
-                setStatus("✅ 資料庫連線成功！準備就緒。", "success");
-
-                // 紀錄
-                onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'expRecords'), snap => {
-                    window.allRecords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    scheduleRender();
-                }, e => console.error("紀錄讀取失敗:", e));
-
-                // 規則
-                onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'rules'), snap => {
-                    const el = document.getElementById('eventRulesText');
-                    if (snap.exists() && snap.data().text) {
-                        window.currentRulesText = snap.data().text;
-                        el.textContent = window.currentRulesText;
+                // ==========================================
+                // 🌟 處理榮譽殿堂 (Hall of Fame)
+                // ==========================================
+                const hofContainer = document.getElementById('hallOfFameContainer');
+                if (hofContainer) {
+                    if (!window.isAdmin) {
+                        // 🔒 如果不是管理員，只顯示開發中提示，隱藏實際內容
+                        hofContainer.innerHTML = '<div style="color:#999; padding:40px 20px; text-align:center; background:#fff;"><div style="font-size: 40px; margin-bottom: 10px;">🚧</div><div style="font-size: 16px; font-weight: bold; color: #555;">榮譽殿堂 (名人堂) 開發中</div><div style="font-size: 12px; color: #888; margin-top: 5px;">目前僅限管理員預覽，敬請期待！</div></div>';
                     } else {
-                        window.currentRulesText = `即日起 04/09 到 05/27 舉辦活動\n為了各位可以體驗首戰龍王\n"找出獄友"\n今天報名開始上線貼入你的第一張經驗值當"起點"。\n\n活動規則 :\n每日上線時貼角色等級 經驗值（藏牌偷練）\n統計到 5/27 日晚上 8 點前最後一張圖經驗值"總量"\n\n🏆 結算出來經驗值前四名可挑選：\n1. 突襲卷一組（7 張）\n2. 200 雪（嘟嘟 & 奶油虎）\n3. 100 瞬移之石（奶油虎）\n4. 周年轉蛋隱藏獎勵（奶油虎—未知）\n**Leo 加碼 130 雪**\n**160+ 額外摸彩資格（汪汪 150+），獎品未定**`;
-                        el.textContent = window.currentRulesText;
+                        // ✅ 如果是管理員，繪製完整的阿爾卡娜排版
+                        // 依總活動成長榜 (expGained) 排列，leaderboard 已經幫我們排好了！
+                        const hofPlayers = [...leaderboard]; 
+
+                        function getTrophy(lv) {
+                            if (lv >= 170) return '🏆';
+                            if (lv >= 160) return '🥈';
+                            return '';
+                        }
+
+                        let hofHtml = '';
+                        if (hofPlayers.length > 0) {
+                            // --- 上半部：前三名大舞台 ---
+                            const top3 = hofPlayers.slice(0, 3);
+                            const first = top3[0];
+                            const second = top3[1];
+                            const third = top3[2];
+
+                            const hasCustomBg = window.hallOfFameBg && window.hallOfFameBg.trim() !== "";
+                            const bgStyle = hasCustomBg ? `background-image: url('${window.hallOfFameBg}');` : '';
+                            const bgClass = hasCustomBg ? 'has-custom-bg' : '';
+
+                            hofHtml += `<div class="hof-top3-container ${bgClass}" style="${bgStyle}">`;
+
+                            const genStage = (player, rank, isGround) => {
+                                if (!player) return '';
+                                const lv = player.latestRecord.lv;
+                                const imgSrc = window.characterImages[player.name] || window.characterImages['預設'];
+                                const trophy = getTrophy(lv);
+                                const rankClass = isGround ? 'ground' : rank;
+                                
+                                return `
+                                    <div class="podium-stage podium-stage-${rankClass}">
+                                        <div class="speech-bubble">我是${lv}等<br>${player.name}！</div>
+                                        <img src="${imgSrc}" class="char-img char-rank-${rankClass}" alt="${player.name}">
+                                        <div class="stage-name-tag">${player.name}</div>
+                                        ${trophy ? `<div class="stage-trophy-floating">${trophy}</div>` : ''}
+                                        <div class="stage-box stage-${rankClass}-box">
+                                            ${rank === 1 ? '<div class="red-carpet"></div>' : ''}
+                                            ${trophy ? `<div class="stage-trophy">${trophy}</div>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            };
+
+                            // 依照真實頒獎台站位排版：第2名(左)、第1名(中)、第3名(右)
+                            if (second) hofHtml += genStage(second, 2, false);
+                            if (first) hofHtml += genStage(first, 1, false);
+                            if (third) hofHtml += genStage(third, 3, false);
+
+                            // --- 下半部：未上榜者全數放到阿爾卡娜地上 ---
+                            if (hofPlayers.length > 3) {
+                                const others = hofPlayers.slice(3);
+                                hofHtml += `<div class="ground-level">`;
+                                others.forEach((player, index) => {
+                                    hofHtml += genStage(player, index + 4, true);
+                                });
+                                hofHtml += `</div>`;
+                            }
+
+                            hofHtml += `</div>`;
+                        } else {
+                            hofHtml = '<div style="color:#999; padding:20px; text-align:center;">目前尚無角色紀錄，快來搶頭香！</div>';
+                        }
+                        
+                        hofContainer.innerHTML = hofHtml;
                     }
-                }, e => console.error("規則讀取失敗:", e));
+                }
 
-                // HOF 設定
-                onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'settings', 'hof'), snap => {
-                    if (snap.exists()) {
-                        window.hofSettings = snap.data();
-                        if (!window.hofSettings.positions) window.hofSettings.positions = {};
+                const uniqueNames = [...new Set(sortedRecords.map(r => r.name))];
+                const displayData = { baseline: {}, daily: {} };
+
+                uniqueNames.forEach(name => {
+                    const userRecs = sortedRecords.filter(r => r.name === name);
+                    if (userRecs.length > 0) {
+                        displayData.baseline[name] = userRecs[0]; 
+                        
+                        for (let i = 1; i < userRecs.length; i++) {
+                            const rec = userRecs[i];
+                            const d = new Date(rec.timestamp);
+                            const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+                            if (!displayData.daily[dateStr]) displayData.daily[dateStr] = {};
+                            displayData.daily[dateStr][name] = rec;
+                        }
                     }
-                    scheduleRender();
-                }, e => console.error("HOF 設定讀取失敗:", e));
+                });
 
-                // HOF 角色圖片
-                onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'hofCharacters'), snap => {
-                    window.hofCharacters = {};
-                    snap.docs.forEach(d => { window.hofCharacters[d.id] = d.data(); });
-                    scheduleRender();
-                }, e => console.error("HOF 圖片讀取失敗:", e));
-            });
+                const naniChallengeEl = document.getElementById('naniChallenge');
+                if (naniChallengeEl) {
+                    naniChallengeEl.innerHTML = '<div style="color:#999;">尚未加入紀錄</div>';
+                    let naniData = null;
 
-            initAuth();
+                    leaderboard.forEach(player => {
+                        if (player.name && player.name.toLowerCase() === 'nani') {
+                            naniData = player;
+                        }
+                    });
+
+                    if (naniData) {
+                        const latest = naniData.latestRecord;
+                        const startLv = 134; 
+                        const isAchieved = latest.lv >= 150;
+                        
+                        let displayHTML = '';
+                        let statusColor = '';
+                        let statusText = '';
+
+                        if (isAchieved) {
+                            displayHTML = '<div style="font-size: 64px; margin: 10px 0; text-shadow: 0 0 15px #FF9800; animation: pulse 1.5s infinite;">🔥</div>';
+                            statusColor = '#27ae60';
+                            statusText = '🎊 恭喜 Nani 達成 LV 150 目標！🎊';
+                        } else {
+                            const levelsGained = Math.max(0, latest.lv - startLv);
+                            
+                            if (levelsGained === 0) {
+                                displayHTML = '<div style="font-size: 18px; margin: 5px 0;">🌱</div>';
+                            } else {
+                                let firesArray = [];
+                                for (let i = 0; i < levelsGained; i += 5) {
+                                    firesArray.push('🔥'.repeat(Math.min(5, levelsGained - i)));
+                                }
+                                displayHTML = `<div style="font-size: 18px; margin: 5px 0; line-height: 1.5; padding: 0 10px; letter-spacing: 3px;">${firesArray.join('<br>')}</div>`;
+                            }
+                            
+                            statusColor = '#e67e22';
+                            statusText = '🏃‍♂️ 努力衝刺中...';
+                        }
+                        
+                        naniChallengeEl.innerHTML = `
+                            ${displayHTML}
+                            <div style="font-size: 15px;"><strong>目前等級: LV ${latest.lv}</strong></div>
+                            <div style="color: ${statusColor}; font-weight: bold; margin-top: 8px;">${statusText}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">累積: +${(naniData.expGained / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2})} M</div>
+                        `;
+                    }
+                }
+
+                const bettingListEl = document.getElementById('bettingList');
+                bettingListEl.innerHTML = '';
+                
+                let totalMarketExp = leaderboard.reduce((sum, p) => sum + p.expGained, 0);
+                if (totalMarketExp === 0) totalMarketExp = 1;
+                
+                if (leaderboard.length === 0) {
+                    bettingListEl.innerHTML = '<li>目前無賽況資料可供預測。</li>';
+                } else {
+                    leaderboard.forEach((player, index) => {
+                        let rawWinRate = (player.expGained / totalMarketExp) * 100;
+                        if (rawWinRate === 0) rawWinRate = (1 / leaderboard.length); 
+
+                        const li = document.createElement('li'); 
+                        li.className = 'leaderboard-item';
+                        
+                        li.innerHTML = `
+                            <div style="display: flex; align-items: center;">
+                                <span class="rank">${index + 1}</span>
+                                <strong>${player.name}</strong> 
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="color: #6A1B9A; font-weight: bold; font-size: 13px;">預估勝率: ${rawWinRate.toFixed(1)}%</span>
+                            </div>
+                        `;
+                        bettingListEl.appendChild(li);
+                    });
+                }
+
+                const dateSet = new Set();
+                const startDate = new Date(2026, 3, 9);  
+                const eventEndDate = new Date(2026, 4, 27); 
+                
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                const displayEndDate = today < eventEndDate ? today : eventEndDate;
+
+                for (let d = new Date(startDate); d <= displayEndDate; d.setDate(d.getDate() + 1)) {
+                    dateSet.add(`${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`);
+                }
+                Object.keys(displayData.daily).forEach(d => dateSet.add(d));
+                const dates = Array.from(dateSet).sort(); 
+
+                const tableEl = document.getElementById('dataTable');
+                
+                function renderCell(rec, dailyGain = null, cellDate = null, cellName = null) {
+                    if (!rec) {
+                        let missingLink = '';
+                        if (window.isAdmin && cellDate && cellName) {
+                            missingLink = `<br><a title="補登此日紀錄" style="cursor:pointer; text-decoration:none; font-size: 12px; color: #007B9E; font-weight: bold; background: #e0f7fa; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;" onclick="addMissingRecord('${cellName}', '${cellDate}')">➕ 補登</a>`;
+                        }
+                        return `<td style="color:#ccc; vertical-align: middle;">-${missingLink}</td>`;
+                    }
+                    let imgLink = rec.image ? `<br><a class="img-link" title="點擊查看截圖" onclick="showImage('${rec.id}'); return false;">🖼️ (截圖)</a>` : '';
+                    let actionLinks = '';
+                    if ((currentUser && rec.userId === currentUser.uid) || window.isAdmin) {
+                        actionLinks = `<br><span style="font-size: 14px; margin-top: 4px; display: inline-block;">
+                            <a title="修改" style="cursor:pointer; text-decoration:none; margin-right: 5px;" onclick="editRecord('${rec.id}')">✏️</a>
+                            <a title="刪除" style="cursor:pointer; text-decoration:none;" onclick="deleteRecord('${rec.id}')">🗑️</a>
+                        </span>`;
+                    }
+                    
+                    let gainHtml = '';
+                    if (dailyGain !== null) {
+                        let gainM = (dailyGain / 1000000).toLocaleString(undefined, {maximumFractionDigits: 2});
+                        let gainColor = dailyGain > 0 ? '#d35400' : '#888';
+                        gainHtml = `<br><span style="color:${gainColor}; font-weight:bold; font-size:0.85em;">+${gainM} M</span>`;
+                    }
+                    
+                    return `<td>LV ${rec.lv}<br><span style="color:#888; font-size:0.85em;">${rec.exp.toLocaleString()}</span>${gainHtml} ${imgLink} ${actionLinks}</td>`;
+                }
+
+                if (uniqueNames.length === 0) {
+                    tableEl.innerHTML = '<tr><td style="text-align:center;">尚無資料</td></tr>';
+                } else {
+                    let tableHtml = '<thead><tr><th>#</th><th>紀錄日期</th>';
+                    uniqueNames.forEach(name => { tableHtml += `<th>${name}</th>`; });
+                    tableHtml += '</tr></thead><tbody>';
+
+                    tableHtml += `<tr><td>1</td><td style="font-weight:bold; color:var(--secondary-color);">🚀 04/09 初始起點</td>`;
+                    uniqueNames.forEach(name => {
+                        tableHtml += renderCell(displayData.baseline[name], null, null, null);
+                    });
+                    tableHtml += `</tr>`;
+
+                    let previousExp = {};
+                    uniqueNames.forEach(name => {
+                        previousExp[name] = displayData.baseline[name] ? displayData.baseline[name].trueTotalExp : 0;
+                    });
+
+                    let recordNo = 2;
+                    dates.forEach(date => {
+                        tableHtml += `<tr><td>${recordNo}</td><td>${date}</td>`;
+                        uniqueNames.forEach(name => {
+                            const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                            let dailyGain = null;
+                            if (rec) {
+                                dailyGain = rec.trueTotalExp - previousExp[name];
+                                previousExp[name] = rec.trueTotalExp; 
+                            }
+                            tableHtml += renderCell(rec, dailyGain, date, name);
+                        });
+                        tableHtml += `</tr>`;
+                        recordNo++;
+                    });
+                    tableHtml += '</tbody>';
+                    tableEl.innerHTML = tableHtml;
+                }
+
+                const chartLabels = ['起點', ...dates];
+                const chartDataByName = {};
+                uniqueNames.forEach(n => chartDataByName[n] = { lv: [], expGained: [], dailyExpGained: [] });
+                
+                let lastExpForChart = {};
+                let lastLvForChart = {};
+
+                uniqueNames.forEach(name => {
+                    const rec = displayData.baseline[name];
+                    if (rec) {
+                        chartDataByName[name].lv.push(rec.lv);
+                        chartDataByName[name].expGained.push(0); 
+                        chartDataByName[name].dailyExpGained.push(0); 
+                        lastExpForChart[name] = rec.trueTotalExp;
+                        lastLvForChart[name] = rec.lv;
+                    } else {
+                        chartDataByName[name].lv.push(null);
+                        chartDataByName[name].expGained.push(null); 
+                        chartDataByName[name].dailyExpGained.push(0); 
+                        lastExpForChart[name] = 0;
+                        lastLvForChart[name] = null;
+                    }
+                });
+
+                const dToday = new Date();
+                const todayStr = `${String(dToday.getMonth()+1).padStart(2,'0')}/${String(dToday.getDate()).padStart(2,'0')}`;
+
+                dates.forEach(date => {
+                    uniqueNames.forEach(name => {
+                        const rec = (displayData.daily[date] && displayData.daily[date][name]) ? displayData.daily[date][name] : null;
+                        if (rec) {
+                            const gainedExp = rec.trueTotalExp - displayData.baseline[name].trueTotalExp;
+                            chartDataByName[name].lv.push(rec.lv);
+                            chartDataByName[name].expGained.push(gainedExp);
+                            
+                            let dailyDiff = rec.trueTotalExp - lastExpForChart[name];
+                            chartDataByName[name].dailyExpGained.push(dailyDiff);
+                            
+                            lastExpForChart[name] = rec.trueTotalExp; 
+                            lastLvForChart[name] = rec.lv;
+                        } else {
+                            if (date === todayStr) {
+                                chartDataByName[name].lv.push(null);
+                                chartDataByName[name].expGained.push(null); 
+                                chartDataByName[name].dailyExpGained.push(0); 
+                            } else if (lastExpForChart[name] !== 0 && displayData.baseline[name]) {
+                                const gainedExp = lastExpForChart[name] - displayData.baseline[name].trueTotalExp;
+                                chartDataByName[name].lv.push(lastLvForChart[name]);
+                                chartDataByName[name].expGained.push(gainedExp);
+                                chartDataByName[name].dailyExpGained.push(0); 
+                            } else {
+                                chartDataByName[name].lv.push(null);
+                                chartDataByName[name].expGained.push(null); 
+                                chartDataByName[name].dailyExpGained.push(0); 
+                            }
+                        }
+                    });
+                });
+
+                const datasets = uniqueNames.map((name, index) => {
+                    const color = getColorByIndex(index);
+                    return {
+                        label: name, 
+                        data: chartDataByName[name].expGained, 
+                        borderColor: color, 
+                        backgroundColor: color + '33', 
+                        borderWidth: 2, 
+                        pointRadius: 4, 
+                        fill: false, 
+                        tension: 0.3, 
+                        customLvData: chartDataByName[name].lv 
+                    };
+                });
+
+                const ctxChart = document.getElementById('expChart').getContext('2d');
+                if (chartInstance) chartInstance.destroy(); 
+                chartInstance = new Chart(ctxChart, {
+                    type: 'line', data: { labels: chartLabels, datasets: datasets },
+                    options: {
+                        responsive: true, 
+                        spanGaps: true, 
+                        scales: { 
+                            y: { 
+                                min: 0, 
+                                title: { display: true, text: '總成長經驗值 (百萬 EXP)' },
+                                ticks: {
+                                    callback: function(value) {
+                                        return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                    }
+                                }
+                            } 
+                        },
+                        plugins: { tooltip: { callbacks: { label: function(context) {
+                            const lvVal = context.chart.data.datasets[context.datasetIndex].customLvData[context.dataIndex];
+                            const expGainedVal = context.parsed.y;
+                            return ` ${context.dataset.label} | LV: ${lvVal !== null ? lvVal : '-'} | 總成長: +${expGainedVal !== null ? expGainedVal.toLocaleString() : '0'} EXP`;
+                        }}}}
+                    }
+                });
+
+                let targetIndexInDates = dates.indexOf(todayStr);
+                let displayDateStr = todayStr;
+
+                if (targetIndexInDates === -1) {
+                    targetIndexInDates = dates.length - 1;
+                    displayDateStr = dates[targetIndexInDates] || '';
+                }
+                const dataIndex = targetIndexInDates + 1; 
+
+                let dailyList = [];
+                uniqueNames.forEach((name, index) => {
+                    let gain = chartDataByName[name].dailyExpGained[dataIndex] || 0;
+                    let lv = chartDataByName[name].lv[dataIndex] || lastLvForChart[name];
+                    dailyList.push({
+                        name: name,
+                        gain: gain,
+                        lv: lv,
+                        bgColor: getColorByIndex(index) + 'CC',
+                        borderColor: getColorByIndex(index)
+                    });
+                });
+
+                dailyList.sort((a, b) => b.gain - a.gain);
+
+                const dailyChartTitle = document.getElementById('dailyChartTitle');
+                if (dailyChartTitle) {
+                    dailyChartTitle.innerText = `📈 每日經驗增長長條圖 (${displayDateStr} 單日增加量)`;
+                }
+
+                const ctxDaily = document.getElementById('dailyExpChart');
+                if (ctxDaily) {
+                    if (dailyChartInstance) dailyChartInstance.destroy();
+                    dailyChartInstance = new Chart(ctxDaily.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: dailyList.map(item => item.name),
+                            datasets: [{
+                                label: '單日增加 (EXP)',
+                                data: dailyList.map(item => item.gain),
+                                backgroundColor: dailyList.map(item => item.bgColor),
+                                borderColor: dailyList.map(item => item.borderColor),
+                                borderWidth: 1,
+                                customLvData: dailyList.map(item => item.lv)
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const lvVal = context.dataset.customLvData[context.dataIndex];
+                                            const gainVal = context.parsed.y;
+                                            return ` LV: ${lvVal !== null && lvVal !== undefined ? lvVal : '-'} | 今日增加: +${gainVal !== null ? gainVal.toLocaleString() : '0'} EXP`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    min: 0,
+                                    title: { display: true, text: '單日經驗增長量 (百萬 EXP)' },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return (value / 1000000).toLocaleString(undefined, {maximumFractionDigits: 1}) + ' M';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                setTimeout(() => {
+                    const tableScroll = document.getElementById('tableResponsive');
+                    const topScrollWrapper = document.getElementById('topScrollWrapper');
+                    const topScrollContent = document.getElementById('topScrollContent');
+                    const tableEl = document.getElementById('dataTable');
+                    
+                    if (tableEl && topScrollContent && tableScroll && topScrollWrapper) {
+                        topScrollContent.style.width = tableEl.scrollWidth + 'px';
+                        
+                        topScrollWrapper.onscroll = () => { tableScroll.scrollLeft = topScrollWrapper.scrollLeft; };
+                        tableScroll.onscroll = () => { topScrollWrapper.scrollLeft = tableScroll.scrollLeft; };
+                    }
+                }, 100);
+            } catch (error) {
+                console.error("渲染過程發生錯誤:", error);
+                document.getElementById('status').innerText = "❌ 畫面渲染失敗，請重整網頁或檢查主控台。";
+            }
         }
 
         window.addEventListener('resize', () => {
-            const tbl = document.getElementById('dataTable');
-            const top = document.getElementById('topScrollContent');
-            if (tbl && top) top.style.width = tbl.scrollWidth + 'px';
+            const tableEl = document.getElementById('dataTable');
+            const topScrollContent = document.getElementById('topScrollContent');
+            if (tableEl && topScrollContent) {
+                topScrollContent.style.width = tableEl.scrollWidth + 'px';
+            }
         });
 
-    </script>
-
-    <!-- ============================================================
-         轉盤邏輯（獨立腳本，不依賴 Firebase）
-    ============================================================ -->
-    <script>
+        // ==========================================
+        // 🎡 轉盤功能邏輯 
+        // ==========================================
         window.currentRotation = 0;
         window.currentWheelItems = [];
 
-        const WHEEL_COLORS = ['#ffffff','#f0f0e8','#e8e4d8','#f5f0e0','#ebebeb','#f7f3ec'];
-
         window.drawWheel = function() {
-            const canv = document.getElementById('wheelCanvas');
-            if (!canv) return;
-            const c = canv.getContext('2d');
-            const raw = document.getElementById('wheelItems').value.split('\n').filter(s => s.trim());
-            const items = raw.length ? raw : ['請輸入名單'];
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const rawItems = document.getElementById('wheelItems').value.split('\n');
+            const items = rawItems.filter(i => i.trim() !== '');
+            
+            if(items.length === 0) {
+                items.push("請輸入名單");
+            }
             window.currentWheelItems = items;
 
-            const cw = canv.width, ch = canv.height, cx = cw/2, cy = ch/2, r = Math.min(cx,cy)-2;
-            c.clearRect(0,0,cw,ch);
-            const arc = 2*Math.PI / items.length;
-            c.save(); c.translate(cx,cy); c.rotate(-Math.PI/2);
+            const cw = canvas.width;
+            const ch = canvas.height;
+            const cx = cw / 2;
+            const cy = ch / 2;
+            const radius = Math.min(cx, cy);
 
-            items.forEach((item, i) => {
+            ctx.clearRect(0, 0, cw, ch);
+            const arc = 2 * Math.PI / items.length;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(-Math.PI / 2); 
+
+            for (let i = 0; i < items.length; i++) {
                 const angle = i * arc;
-                c.beginPath();
-                c.moveTo(0,0);
-                c.arc(0,0,r,angle,angle+arc);
-                c.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
-                c.fill();
-                c.strokeStyle = '#ccc'; c.lineWidth = 1; c.stroke();
+                ctx.beginPath();
+                
+                let color;
+                if (i % 2 === 0) {
+                    color = '#ffffff'; 
+                } else {
+                    color = '#e1f5fe'; 
+                }
+                if (i === items.length - 1 && items.length % 2 !== 0) {
+                    color = '#b3e5fc'; 
+                }
+                ctx.fillStyle = color;
+                
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, angle, angle + arc);
+                ctx.fill();
+                
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#dddddd"; 
+                ctx.stroke();
 
-                c.save();
-                c.translate(Math.cos(angle+arc/2)*(r*0.55), Math.sin(angle+arc/2)*(r*0.55));
-                c.rotate(angle+arc/2);
-                const fs = items.length > 14 ? 13 : items.length > 8 ? 16 : 20;
-                c.font = `bold ${fs}px 'Noto Serif TC', serif`;
-                c.fillStyle = '#2c2c2a';
-                c.textAlign = 'center'; c.textBaseline = 'middle';
-                c.fillText(item, 0, 0);
-                c.restore();
-            });
-            c.restore();
-
-            // 中心圓
-            c.beginPath(); c.arc(cx,cy,16,0,2*Math.PI);
-            c.fillStyle = '#1a1a2e'; c.fill();
-            c.strokeStyle = '#c9a84c'; c.lineWidth = 2; c.stroke();
+                ctx.save();
+                ctx.fillStyle = "#333333"; 
+                ctx.shadowColor = "transparent"; 
+                ctx.shadowBlur = 0;
+                
+                let fontSize = items.length > 15 ? 14 : (items.length > 8 ? 18 : 22);
+                ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
+                
+                ctx.translate(Math.cos(angle + arc / 2) * (radius * 0.55), Math.sin(angle + arc / 2) * (radius * 0.55));
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(items[i], 0, 0);
+                ctx.restore();
+            }
+            ctx.restore();
         };
 
-        window.updateWheel = function() { window.drawWheel(); };
+        window.updateWheel = function() {
+            window.drawWheel();
+        };
 
         window.spinWheel = function() {
-            if (!window.currentWheelItems.length) return;
+            if (!window.currentWheelItems || window.currentWheelItems.length === 0) return;
             const btn = document.getElementById('spinBtn');
-            btn.disabled = true; btn.textContent = '⏳ 旋轉中...';
-            const deg = (Math.floor(Math.random()*5)+6)*360 + Math.random()*360;
-            window.currentRotation += deg;
-            const canv = document.getElementById('wheelCanvas');
-            canv.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.1, 1)';
-            canv.style.transform = `rotate(${window.currentRotation}deg)`;
+            btn.disabled = true;
+            btn.style.backgroundColor = "#95a5a6";
+            btn.style.boxShadow = "none";
+            btn.style.transform = "translateY(2px)";
+            btn.innerText = "旋轉中...";
+
+            const items = window.currentWheelItems;
+            
+            const randomDeg = Math.random() * 360; 
+            const spins = (Math.floor(Math.random() * 5) + 6) * 360;
+            const totalDeg = spins + randomDeg;
+
+            window.currentRotation += totalDeg;
+
+            const canvas = document.getElementById('wheelCanvas');
+            canvas.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.1, 1)';
+            canvas.style.transform = `rotate(${window.currentRotation}deg)`;
+
             setTimeout(() => {
-                btn.disabled = false; btn.textContent = '🎯 開始抽獎';
-                const actual = window.currentRotation % 360;
-                const pointer = (360 - actual + 360) % 360;
-                const itemArc = 360 / window.currentWheelItems.length;
-                const winIdx  = Math.floor(pointer / itemArc) % window.currentWheelItems.length;
-                alert(`🎉 恭喜中獎：【 ${window.currentWheelItems[winIdx]} 】！`);
-            }, 4100);
+                btn.disabled = false;
+                btn.style.backgroundColor = "#0288D1";
+                btn.style.boxShadow = "0 4px 0 #01579B";
+                btn.style.transform = "translateY(0)";
+                btn.innerText = "🎯 開始抽獎";
+                
+                const actualDeg = window.currentRotation % 360;
+                
+                let pointerDeg = (360 - actualDeg) % 360;
+                if (pointerDeg < 0) pointerDeg += 360; 
+                
+                const itemAngle = 360 / items.length;
+                const winningIndex = Math.floor(pointerDeg / itemAngle) % items.length;
+
+                alert(`🎉 恭喜中獎：【 ${items[winningIndex]} 】！`);
+            }, 4050);
         };
 
-        setTimeout(() => { window.drawWheel(); }, 600);
-    </script>
+        setTimeout(() => {
+            window.drawWheel();
+        }, 500);
 
+    </script>
 </body>
 </html>
